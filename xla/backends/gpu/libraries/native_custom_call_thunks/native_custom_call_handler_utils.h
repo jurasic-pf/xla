@@ -35,7 +35,7 @@ limitations under the License.
 
 // Helpers for writing custom-call thunk-folding handlers. See
 // `native_custom_call_handler_registry.h` for the mechanism itself and
-// `g3doc/native_custom_call_handlers.md` for a tutorial.
+// `README.md` for a tutorial.
 
 namespace xla::gpu {
 
