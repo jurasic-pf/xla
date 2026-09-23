@@ -197,6 +197,114 @@ ENTRY root {
             peak_memory);
 }
 
+// Pins the list schedule of a tuple heavy while body. Its instructions read
+// tuple elements through aliases, use the same buffer through two operands or
+// twice through one, and use constants and parameters, whose buffers the
+// heuristic ignores. Some ready instructions keep a stale priority until an
+// instruction that shares an operand with them is scheduled, and dead
+// instructions compete with the root. Counting a buffer twice, counting an
+// ignored buffer as freed, refreshing priorities at other points, dropping
+// the live out uses or reading only top level value sets each changes the
+// order.
+TEST_F(HloSchedulingTest, ListSchedulerTupleHeavyWhileBodyOrder) {
+  const char* module_str = R"(
+HloModule tuple_heavy_while
+
+body {
+  p = (f32[8], f32[16], f32[32], f32[64], s32[]) parameter(0)
+  a = f32[8] get-tuple-element(p), index=0
+  b = f32[16] get-tuple-element(p), index=1
+  c = f32[32] get-tuple-element(p), index=2
+  d = f32[64] get-tuple-element(p), index=3
+  i = s32[] get-tuple-element(p), index=4
+  one = s32[] constant(1)
+  next_i = s32[] add(i, one)
+  n_a = f32[8] negate(a)
+  n_b = f32[16] negate(b)
+  n_c = f32[32] negate(c)
+  n_d = f32[64] negate(d)
+  t = (f32[8], f32[16]) tuple(n_a, n_b)
+  ta = f32[8] get-tuple-element(t), index=0
+  tb = f32[16] get-tuple-element(t), index=1
+  q = f32[4] slice(tb), slice={[0:4]}
+  u = ((f32[8], f32[16]), f32[8]) tuple(t, ta)
+  ug = (f32[8], f32[16]) get-tuple-element(u), index=0
+  ua = f32[8] get-tuple-element(ug), index=0
+  x = f32[8] add(ua, ta)
+  y = f32[8] add(x, x)
+  z = f32[16] add(tb, n_b)
+  cat = f32[24] concatenate(y, z), dimensions={0}
+  s_c = f32[24] slice(n_c), slice={[0:24]}
+  ts = (f32[24]) tuple(s_c)
+  gs = f32[24] get-tuple-element(ts), index=0
+  k = f32[24] constant({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+                        16, 17, 18, 19, 20, 21, 22, 23})
+  r = f32[72] concatenate(k, gs, k), dimensions={0}
+  s_d = f32[48] slice(n_d), slice={[8:56]}
+  w = f32[96] concatenate(cat, s_c, s_d), dimensions={0}
+  v = f32[96] multiply(w, w)
+  sv = f32[24] slice(v), slice={[0:24]}
+  vk = f32[24] add(sv, k)
+  vk2 = f32[24] multiply(vk, vk)
+  r_a = f32[8] slice(vk2), slice={[0:8]}
+  dead = f32[4] slice(r_a), slice={[0:4]}
+  r_b = f32[16] slice(vk), slice={[8:24]}
+  big = f32[64] concatenate(r_b, r_b, r_b, r_b), dimensions={0}
+  big2 = f32[32] concatenate(r_b, r_b), dimensions={0}
+  r_d = f32[64] add(n_d, d)
+  ROOT out = (f32[8], f32[16], f32[32], f32[64], s32[]) tuple(r_a, r_b, c, r_d, next_i)
+}
+
+cond {
+  cond_p = (f32[8], f32[16], f32[32], f32[64], s32[]) parameter(0)
+  cond_i = s32[] get-tuple-element(cond_p), index=4
+  limit = s32[] constant(3)
+  ROOT lt = pred[] compare(cond_i, limit), direction=LT
+}
+
+ENTRY main {
+  pa = f32[8] parameter(0)
+  pb = f32[16] parameter(1)
+  pc = f32[32] parameter(2)
+  pd = f32[64] parameter(3)
+  zero = s32[] constant(0)
+  e_b = f32[16] exponential(pb)
+  e_d = f32[64] exponential(pd)
+  init = (f32[8], f32[16], f32[32], f32[64], s32[]) tuple(pa, e_b, pc, e_d, zero)
+  ROOT loop = (f32[8], f32[16], f32[32], f32[64], s32[]) while(init), condition=cond, body=body
+})";
+
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<HloModule> module,
+                       ParseAndReturnVerifiedModule(module_str));
+  BufferValue::SizeFunction size_fn = [](const BufferValue& buffer) {
+    return ShapeUtil::ByteSizeOf(buffer.shape(), /*pointer_size=*/8);
+  };
+  ASSERT_OK_AND_ASSIGN(
+      HloSchedule schedule,
+      ScheduleModule(module.get(),
+                     ListMemoryScheduler(&alias_info_, &size_fn)));
+
+  auto names = [&](absl::string_view computation_name) {
+    std::vector<std::string> result;
+    for (const HloInstruction* instruction :
+         schedule.sequence(FindComputation(module.get(), computation_name))
+             .instructions()) {
+      result.emplace_back(instruction->name());
+    }
+    return result;
+  };
+  EXPECT_THAT(names("body"),
+              ::testing::ElementsAre("one", "p", "i", "next_i", "d", "c", "k",
+                                     "b", "a", "n_a", "n_b", "t", "tb", "ta",
+                                     "u", "ug", "ua", "x", "y", "q", "z", "cat",
+                                     "n_c", "s_c", "ts", "gs", "n_d", "s_d",
+                                     "r_d", "w", "v", "sv", "vk", "r_b", "vk2",
+                                     "r_a", "dead", "out", "big2", "r", "big"));
+  EXPECT_THAT(names("main"),
+              ::testing::ElementsAre("zero", "pd", "pc", "pb", "pa", "e_b",
+                                     "e_d", "init", "loop"));
+}
+
 TEST_F(HloSchedulingTest, DefaultSchedulerRunsThreeSchedulers) {
   const char* module_str = R"(
 HloModule test_aliasing_module
