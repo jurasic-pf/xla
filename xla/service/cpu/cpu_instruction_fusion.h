@@ -17,6 +17,7 @@ limitations under the License.
 #define XLA_SERVICE_CPU_CPU_INSTRUCTION_FUSION_H_
 
 #include <cstdint>
+#include <memory>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
@@ -25,18 +26,24 @@ limitations under the License.
 #include "absl/types/span.h"
 #include "xla/hlo/analysis/hlo_reachability.h"
 #include "xla/hlo/ir/hlo_instruction.h"
+#include "xla/service/cpu/cpu_hlo_cost_analysis.h"
+#include "xla/service/cpu/cpu_performance_model.h"
 #include "xla/service/fusion_node_indexing_evaluation.h"
 #include "xla/service/instruction_fusion.h"
+#include "xla/stream_executor/device_description.h"
 
 namespace xla {
 namespace cpu {
 
 class CpuInstructionFusion : public InstructionFusion {
  public:
-  explicit CpuInstructionFusion(const AliasInfo* alias_info,
-                                bool may_duplicate = true)
+  explicit CpuInstructionFusion(
+      const AliasInfo* alias_info, bool may_duplicate = true,
+      const se::DeviceDescription& device_info =
+          CpuPerformanceModel::DefaultDeviceInfo())
       : InstructionFusion(CpuInstructionFusion::IsExpensive, alias_info,
-                          may_duplicate) {}
+                          may_duplicate),
+        performance_model_(device_info) {}
   ~CpuInstructionFusion() override = default;
 
   // Returns the threshold for a constant to be considered a large constant.
@@ -56,17 +63,24 @@ class CpuInstructionFusion : public InstructionFusion {
 
   absl::StatusOr<bool> RunImpl(HloModule* module,
                                const absl::flat_hash_set<absl::string_view>&
-                                   execution_threads) override {
-    fusion_node_evaluations_.clear();
-    ComputeInstructionsToSkip(module, execution_threads);
-    return InstructionFusion::RunImpl(module, execution_threads);
-  }
+                                   execution_threads) override;
 
  private:
   static bool IsExpensive(const HloInstruction& instruction);
 
+  // Returns true if the performance model estimates that fusing `producer`
+  // into all of its users is at least as fast as materializing it.
+  bool FusionIntoAllUsersIsFaster(const HloInstruction& producer);
+  bool EstimateFusionIntoAllUsersIsFaster(const HloInstruction& producer);
+
+  // Returns the flops of the operands of `producer` that are only used,
+  // directly or indirectly, by `producer`.
+  int64_t OperandChainFlops(const HloInstruction& producer) const;
+
   HloInstruction* FuseInstruction(HloInstruction* fusion_instruction,
                                   HloInstruction* producer) override;
+  HloInstruction* FuseInstructionImpl(HloInstruction* fusion_instruction,
+                                      HloInstruction* producer);
 
   bool ShouldSkip(const HloInstruction* inst) const;
   void ComputeInstructionsToSkip(
@@ -77,6 +91,13 @@ class CpuInstructionFusion : public InstructionFusion {
   // indexed with different index vectors.
   absl::flat_hash_map<const HloInstruction*, FusionNodeIndexingEvaluation>
       fusion_node_evaluations_;
+
+  CpuPerformanceModel performance_model_;
+  // Reset in RunImpl. Null if the module could not be analyzed.
+  std::unique_ptr<CpuHloCostAnalysis> cost_analysis_;
+  // Results of FusionIntoAllUsersIsFaster by unique id, invalidated in
+  // FuseInstruction.
+  absl::flat_hash_map<int64_t, bool> fusion_is_faster_;
 
   absl::flat_hash_set<const HloInstruction*> instructions_to_skip_;
 };
