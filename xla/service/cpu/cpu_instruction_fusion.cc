@@ -15,21 +15,32 @@ limitations under the License.
 
 #include "xla/service/cpu/cpu_instruction_fusion.h"
 
+#include <algorithm>
 #include <cstdint>
+#include <memory>
+#include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "xla/codegen/emitters/elemental_hlo_to_mlir.h"
 #include "xla/hlo/analysis/hlo_reachability.h"
 #include "xla/hlo/ir/hlo_casting_utils.h"
+#include "xla/hlo/ir/hlo_computation.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_instructions.h"
 #include "xla/hlo/ir/hlo_module.h"
 #include "xla/hlo/ir/hlo_opcode.h"
 #include "xla/layout_util.h"
+#include "xla/service/cpu/cpu_hlo_cost_analysis.h"
 #include "xla/service/cpu/cpu_options.h"
+#include "xla/service/cpu/cpu_performance_model.h"
 #include "xla/service/fusion_node_indexing_evaluation.h"
+#include "xla/service/hlo_cost_analysis.h"
 #include "xla/service/hlo_module_config.h"
 #include "xla/service/instruction_fusion.h"
 #include "xla/service/pattern_matcher.h"
@@ -473,8 +484,9 @@ FusionDecision CpuInstructionFusion::ShouldFuse(HloInstruction* consumer,
 
   // Cost condition: not fuse (simple, expensive producers) and (consumers who
   // reuse operand elements).
-  if (producer->opcode() != HloOpcode::kFusion && is_expensive(*producer) &&
-      ReusesOperandElements(consumer, operand_index)) {
+  if (producer->opcode() != HloOpcode::kFusion &&
+      ReusesOperandElements(consumer, operand_index) &&
+      is_expensive(*producer)) {
     return FusionDecision::Forbid("Fusion is not profitable.");
   }
 
@@ -527,8 +539,16 @@ FusionDecision CpuInstructionFusion::ShouldFuse(HloInstruction* consumer,
       fusion_node_evaluations_.emplace(consumer,
                                        FusionNodeIndexingEvaluation(consumer));
     }
-    if (fusion_node_evaluations_.at(consumer).CodeDuplicationTooHigh(
-            producer)) {
+    const FusionNodeIndexingEvaluation& evaluation =
+        fusion_node_evaluations_.at(consumer);
+    // Below the limit, CodeDuplicationTooHigh only rejects emitting an op that
+    // invalidates the elemental IR emitter's cache, e.g. a reduce, more than
+    // once. Each copy recomputes the op, which the performance model accounts
+    // for.
+    if (evaluation.CodeDuplicationTooHigh(producer) &&
+        (evaluation.EvaluateEmittedInstructions(producer) >
+             FusionNodeIndexingEvaluation::kAllowedCodeDuplication ||
+         !FusionIntoAllUsersIsFaster(*producer))) {
       return FusionDecision::Forbid("Code duplication too high");
     }
   }
@@ -584,7 +604,154 @@ HloInstruction::FusionKind CpuInstructionFusion::ChooseKind(
              : HloInstruction::FusionKind::kLoop;
 }
 
+absl::StatusOr<bool> CpuInstructionFusion::RunImpl(
+    HloModule* module,
+    const absl::flat_hash_set<absl::string_view>& execution_threads) {
+  fusion_node_evaluations_.clear();
+  fusion_is_faster_.clear();
+  ComputeInstructionsToSkip(module, execution_threads);
+
+  HloCostAnalysis::Options options;
+  options.count_multiple_input_accesses = true;
+  cost_analysis_ = std::make_unique<CpuHloCostAnalysis>(options);
+  for (HloComputation* computation :
+       module->MakeNonfusionComputations(execution_threads)) {
+    if (absl::Status status = computation->Accept(cost_analysis_.get());
+        !status.ok()) {
+      VLOG(1) << "Cost analysis failed, falling back to IsExpensive: "
+              << status;
+      cost_analysis_.reset();
+      break;
+    }
+  }
+  set_is_expensive([this](const HloInstruction& instruction) {
+    if (cost_analysis_ == nullptr) {
+      return IsExpensive(instruction);
+    }
+    // Duplicating an expensive producer into several users gives each of its
+    // fusible operands several users too, which the model does not account
+    // for.
+    if (IsExpensive(instruction) && instruction.user_count() > 1 &&
+        absl::c_any_of(instruction.operands(), [](const HloInstruction* op) {
+          return CanBeLoopFused(*op) && op->opcode() != HloOpcode::kBroadcast &&
+                 op->opcode() != HloOpcode::kIota;
+        })) {
+      return true;
+    }
+    return !FusionIntoAllUsersIsFaster(instruction);
+  });
+
+  absl::StatusOr<bool> changed =
+      InstructionFusion::RunImpl(module, execution_threads);
+  cost_analysis_.reset();
+  fusion_is_faster_.clear();
+  return changed;
+}
+
+bool CpuInstructionFusion::FusionIntoAllUsersIsFaster(
+    const HloInstruction& producer) {
+  if (cost_analysis_ == nullptr || producer.user_count() == 0) {
+    return false;
+  }
+  if (producer.opcode() == HloOpcode::kBroadcast ||
+      producer.opcode() == HloOpcode::kIota ||
+      ShapeUtil::IsEffectiveScalar(producer.shape())) {
+    return true;
+  }
+  // A producer that fits into the cache is cheap to materialize, and the
+  // estimate is dominated by the per-opcode flop counts, which do not account
+  // for code generation costs.
+  if (!producer.shape().IsArray() ||
+      ShapeUtil::ByteSizeOfElements(producer.shape()) <
+          performance_model_.device_info().l2_cache_size()) {
+    return !IsExpensive(producer);
+  }
+  auto [it, inserted] =
+      fusion_is_faster_.try_emplace(producer.unique_id(), false);
+  if (!inserted) {
+    return it->second;
+  }
+  it->second = EstimateFusionIntoAllUsersIsFaster(producer);
+  return it->second;
+}
+
+bool CpuInstructionFusion::EstimateFusionIntoAllUsersIsFaster(
+    const HloInstruction& producer) {
+  // If any user is not fused, the producer is materialized anyway.
+  for (const HloInstruction* user : producer.users()) {
+    if (!user->IsLoopFusion() && !CanBeLoopFused(*user)) {
+      return false;
+    }
+  }
+  std::vector<const HloInstruction*> users(producer.users().begin(),
+                                           producer.users().end());
+  CpuPerformanceModel::RunTimes run_times = performance_model_.EstimateRunTimes(
+      &producer, cost_analysis_.get(), users);
+  // Operands used only by the producer are fused into it once if it is
+  // materialized, and recomputed in each user if it is duplicated into fusions.
+  if (producer.user_count() > 1 &&
+      absl::c_all_of(producer.users(), [](const HloInstruction* user) {
+        return user->opcode() == HloOpcode::kFusion;
+      })) {
+    run_times.time_fused += CpuPerformanceModel::ComputeTime(
+        performance_model_.device_info(),
+        (producer.user_count() - 1) * OperandChainFlops(producer));
+  }
+  return run_times.time_fused <= run_times.time_unfused;
+}
+
+int64_t CpuInstructionFusion::OperandChainFlops(
+    const HloInstruction& producer) const {
+  // An operand whose users are all in `chain` is fused into the producer if
+  // the producer is materialized.
+  absl::flat_hash_set<const HloInstruction*> chain = {&producer};
+  std::vector<const HloInstruction*> worklist = {&producer};
+  int64_t flops = 0;
+  while (!worklist.empty()) {
+    const HloInstruction* instr = worklist.back();
+    worklist.pop_back();
+    for (const HloInstruction* operand : instr->operands()) {
+      if (chain.contains(operand) || !CanBeLoopFused(*operand) ||
+          !absl::c_all_of(operand->users(), [&](const HloInstruction* user) {
+            return chain.contains(user);
+          })) {
+        continue;
+      }
+      chain.insert(operand);
+      worklist.push_back(operand);
+      flops += std::max<int64_t>(0, cost_analysis_->flop_count(*operand));
+    }
+  }
+  return flops;
+}
+
 HloInstruction* CpuInstructionFusion::FuseInstruction(
+    HloInstruction* fusion_instruction, HloInstruction* producer) {
+  fusion_is_faster_.erase(producer->unique_id());
+  HloInstruction* new_producer = FuseInstructionImpl(fusion_instruction,
+                                                     producer);
+  // The estimates for these instructions depend on the fused instructions or
+  // on the users of the fused instructions.
+  fusion_is_faster_.erase(fusion_instruction->unique_id());
+  for (const HloInstruction* operand : fusion_instruction->operands()) {
+    fusion_is_faster_.erase(operand->unique_id());
+    for (const HloInstruction* operand_operand : operand->operands()) {
+      fusion_is_faster_.erase(operand_operand->unique_id());
+    }
+  }
+  if (cost_analysis_ != nullptr) {
+    if (absl::Status status =
+            cost_analysis_->RevisitInstruction(fusion_instruction);
+        !status.ok()) {
+      VLOG(1) << "Cost analysis failed, falling back to IsExpensive: "
+              << status;
+      cost_analysis_.reset();
+    }
+  }
+  return new_producer;
+}
+
+HloInstruction* CpuInstructionFusion::FuseInstructionImpl(
     HloInstruction* fusion_instruction, HloInstruction* producer) {
   if (!may_duplicate()) {
     return InstructionFusion::FuseInstruction(fusion_instruction, producer);
