@@ -26,6 +26,7 @@ class CpuHloCostAnalysis : public HloCostAnalysis {
       : HloCostAnalysis(options) {}
 
   absl::Status HandleElementwiseOp(const HloInstruction* hlo) override;
+  absl::Status HandleBroadcast(const HloInstruction* broadcast) override;
 
   int64_t GetFlopsPerElementwiseOpElement(PrimitiveType type,
                                           HloOpcode opcode) const;

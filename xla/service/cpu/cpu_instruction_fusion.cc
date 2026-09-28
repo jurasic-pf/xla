@@ -16,6 +16,7 @@ limitations under the License.
 #include "xla/service/cpu/cpu_instruction_fusion.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -26,6 +27,7 @@ limitations under the License.
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "absl/types/span.h"
 #include "xla/codegen/emitters/elemental_hlo_to_mlir.h"
 #include "xla/hlo/analysis/hlo_reachability.h"
@@ -45,6 +47,7 @@ limitations under the License.
 #include "xla/service/instruction_fusion.h"
 #include "xla/service/pattern_matcher.h"
 #include "xla/shape_util.h"
+#include "xla/stream_executor/device_description.h"
 #include "xla/xla_data.pb.h"
 
 namespace xla {
@@ -661,16 +664,6 @@ absl::StatusOr<bool> CpuInstructionFusion::RunImpl(
     if (cost_analysis_ == nullptr) {
       return IsExpensive(instruction);
     }
-    // Duplicating an expensive producer into several users gives each of its
-    // fusible operands several users too, which the model does not account
-    // for.
-    if (IsExpensive(instruction) && instruction.user_count() > 1 &&
-        absl::c_any_of(instruction.operands(), [](const HloInstruction* op) {
-          return CanBeLoopFused(*op) && op->opcode() != HloOpcode::kBroadcast &&
-                 op->opcode() != HloOpcode::kIota;
-        })) {
-      return true;
-    }
     return !FusionIntoAllUsersIsFaster(instruction);
   });
 
@@ -716,46 +709,89 @@ bool CpuInstructionFusion::EstimateFusionIntoAllUsersIsFaster(
       return false;
     }
   }
+  // Users that are only consumed, directly or through other single-user
+  // fusible instructions, by the same instruction end up in the same fusion,
+  // which computes the producer once per element.
+  absl::flat_hash_set<const HloInstruction*> destinations;
+  for (const HloInstruction* user : producer.users()) {
+    while (user->opcode() != HloOpcode::kFusion && user->user_count() == 1 &&
+           CanBeLoopFused(*user)) {
+      user = user->users().front();
+    }
+    destinations.insert(user);
+  }
   std::vector<const HloInstruction*> users(producer.users().begin(),
                                            producer.users().end());
-  CpuPerformanceModel::RunTimes run_times = performance_model_.EstimateRunTimes(
-      &producer, cost_analysis_.get(), users);
-  // Operands used only by the producer are fused into it once if it is
-  // materialized, and recomputed in each user if it is duplicated into fusions.
-  if (producer.user_count() > 1 &&
-      absl::c_all_of(producer.users(), [](const HloInstruction* user) {
-        return user->opcode() == HloOpcode::kFusion;
-      })) {
-    run_times.time_fused += CpuPerformanceModel::ComputeTime(
-        performance_model_.device_info(),
-        (producer.user_count() - 1) * OperandChainFlops(producer));
+  if (destinations.size() == 1) {
+    CpuPerformanceModel::RunTimes run_times =
+        performance_model_.EstimateRunTimes(&producer, cost_analysis_.get(),
+                                            users);
+    return run_times.time_fused <= run_times.time_unfused;
   }
-  return run_times.time_fused <= run_times.time_unfused;
+  // With several users, the operands of `producer` that do not fit into the
+  // cache are recomputed in each user as well. Compares materializing
+  // `producer` with recomputing it and these operands in each user. The work
+  // of the users themselves is the same in both cases.
+  absl::flat_hash_set<const HloInstruction*> chain = RecomputedChain(producer);
+  int64_t flops = 0;
+  int64_t input_bytes = 0;
+  absl::flat_hash_set<const HloInstruction*> inputs;
+  for (const HloInstruction* instr : chain) {
+    flops += std::max<int64_t>(0, cost_analysis_->flop_count(*instr));
+    for (const HloInstruction* operand : instr->operands()) {
+      if (!chain.contains(operand) && operand->shape().IsArray() &&
+          inputs.insert(operand).second) {
+        input_bytes += ShapeUtil::ByteSizeOfElements(operand->shape());
+      }
+    }
+  }
+  const se::DeviceDescription& device_info = performance_model_.device_info();
+  int64_t bytes = ShapeUtil::ByteSizeOfElements(producer.shape());
+  absl::Duration read_inputs = CpuPerformanceModel::ReadTimeWithDRAMHeuristic(
+      device_info, input_bytes, input_bytes);
+
+  absl::Duration time_unfused =
+      CpuPerformanceModel::CombineComputeAndMemoryAccessTime(
+          CpuPerformanceModel::ComputeTime(device_info, flops),
+          read_inputs + CpuPerformanceModel::WriteTime(device_info, bytes));
+  absl::Duration time_fused;
+  for (const HloInstruction* user : producer.users()) {
+    float utilization = CpuPerformanceModel::GetOperandUtilization(
+        cost_analysis_.get(), user, &producer);
+    time_unfused += CpuPerformanceModel::ReadTimeWithDRAMHeuristic(
+        device_info, bytes, std::llround(bytes * utilization));
+    time_fused += CpuPerformanceModel::CombineComputeAndMemoryAccessTime(
+        CpuPerformanceModel::ComputeTime(device_info,
+                                         std::llround(flops * utilization)),
+        read_inputs);
+  }
+  VLOG(3) << "Producer: " << producer.name() << ", chain size: " << chain.size()
+          << ", unfused time: " << time_unfused
+          << ", fused time: " << time_fused;
+  return time_fused <= time_unfused;
 }
 
-int64_t CpuInstructionFusion::OperandChainFlops(
-    const HloInstruction& producer) const {
-  // An operand whose users are all in `chain` is fused into the producer if
-  // the producer is materialized.
+absl::flat_hash_set<const HloInstruction*>
+CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) const {
+  // Operands that do not fit into the cache are fused into each user together
+  // with the producer. Smaller operands are materialized and read instead.
   absl::flat_hash_set<const HloInstruction*> chain = {&producer};
   std::vector<const HloInstruction*> worklist = {&producer};
-  int64_t flops = 0;
   while (!worklist.empty()) {
     const HloInstruction* instr = worklist.back();
     worklist.pop_back();
     for (const HloInstruction* operand : instr->operands()) {
       if (chain.contains(operand) || !CanBeLoopFused(*operand) ||
-          !absl::c_all_of(operand->users(), [&](const HloInstruction* user) {
-            return chain.contains(user);
-          })) {
+          !operand->shape().IsArray() ||
+          ShapeUtil::ByteSizeOfElements(operand->shape()) <
+              performance_model_.device_info().l2_cache_size()) {
         continue;
       }
       chain.insert(operand);
       worklist.push_back(operand);
-      flops += std::max<int64_t>(0, cost_analysis_->flop_count(*operand));
     }
   }
-  return flops;
+  return chain;
 }
 
 HloInstruction* CpuInstructionFusion::FuseInstruction(
