@@ -1010,6 +1010,77 @@ ENTRY main {
               op::Fusion(op::Exp(op::Parameter(0))));
 }
 
+TEST_F(InstructionFusionTest, FuseExpensiveProducerIntoReductionsOverDifferentDims) {
+  // The pattern of a pairwise gradient: two reductions over different
+  // dimensions of a large intermediate that is computed from small inputs.
+  // Both reductions recompute the intermediate.
+  absl::string_view module_string = R"(
+HloModule module
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  x = f32[1024,3]{1,0} parameter(0)
+  y = f32[1024,3]{1,0} parameter(1)
+  bx = f32[1024,1024,3]{2,1,0} broadcast(x), dimensions={0,2}
+  by = f32[1024,1024,3]{2,1,0} broadcast(y), dimensions={1,2}
+  r = f32[1024,1024,3]{2,1,0} subtract(bx, by)
+  rr = f32[1024,1024,3]{2,1,0} multiply(r, r)
+  c = f32[] constant(0)
+  d2 = f32[1024,1024]{1,0} reduce(rr, c), dimensions={2}, to_apply=add
+  s = f32[1024,1024]{1,0} rsqrt(d2)
+  a = f32[1024]{0} reduce(s, c), dimensions={1}, to_apply=add
+  b = f32[1024]{0} reduce(s, c), dimensions={0}, to_apply=add
+  ROOT t = (f32[1024]{0}, f32[1024]{0}) tuple(a, b)
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  EXPECT_THAT(module->entry_computation()->root_instruction(),
+              op::Tuple(op::Fusion(op::Parameter(), op::Parameter()),
+                        op::Fusion(op::Parameter(), op::Parameter())));
+}
+
+TEST_F(InstructionFusionTest, FuseExpensiveProducerWhoseUsersMeetAgain) {
+  // Both users of the exponential end up in the fusion of the add, which
+  // computes the exponential once per element.
+  absl::string_view module_string = R"(
+HloModule module
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  x = f32[1024,1024]{1,0} parameter(0)
+  e = f32[1024,1024]{1,0} exponential(x)
+  s = f32[1024,1024]{1,0} sine(e)
+  l = f32[1024,1024]{1,0} log(e)
+  a = f32[1024,1024]{1,0} add(s, l)
+  c = f32[] constant(0)
+  ROOT r = f32[1024]{0} reduce(a, c), dimensions={1}, to_apply=add
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  EXPECT_THAT(module->entry_computation()->root_instruction(),
+              op::Fusion(op::Parameter(0)));
+}
+
 TEST_F(OpcodeFusionTest, BigConstantNotInFusion) {
   absl::string_view module_string = R"(
 HloModule module

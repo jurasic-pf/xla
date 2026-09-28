@@ -73,9 +73,10 @@ class CpuInstructionFusion : public InstructionFusion {
   bool FusionIntoAllUsersIsFaster(const HloInstruction& producer);
   bool EstimateFusionIntoAllUsersIsFaster(const HloInstruction& producer);
 
-  // Returns the flops of the operands of `producer` that are only used,
-  // directly or indirectly, by `producer`.
-  int64_t OperandChainFlops(const HloInstruction& producer) const;
+  // Returns `producer` and its operands, direct or indirect, that are
+  // recomputed in each user if `producer` is fused into its users.
+  absl::flat_hash_set<const HloInstruction*> RecomputedChain(
+      const HloInstruction& producer) const;
 
   HloInstruction* FuseInstruction(HloInstruction* fusion_instruction,
                                   HloInstruction* producer) override;
