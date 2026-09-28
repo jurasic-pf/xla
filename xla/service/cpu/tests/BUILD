@@ -56,7 +56,6 @@ cc_library(
         "//xla/service:executable",
         "//xla/service:llvm_compiler",
         "//xla/service:platform_util",
-        "//xla/service/cpu:cpu_compiler",
         "//xla/stream_executor:platform",
         "//xla/tests:codegen_utils",
         "//xla/tests:hlo_pjrt_test_base",
@@ -76,6 +75,7 @@ xla_test(
     srcs = ["cpu_fusion_test.cc"],
     backends = ["cpu"],
     deps = [
+        "//xla:comparison_util",
         "//xla:error_spec",
         "//xla:literal",
         "//xla:literal_util",
