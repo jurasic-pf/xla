@@ -954,6 +954,67 @@ ENTRY main {
   EXPECT_THAT(module->entry_computation()->root_instruction(), op::Fusion());
 }
 
+TEST_F(InstructionFusionTest, FuseExpensiveProducerWhenRecomputeIsFaster) {
+  // Recomputing the sqrt three times per element is cheaper than writing and
+  // reading back its 4 MiB output.
+  absl::string_view module_string = R"(
+HloModule module
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  x = f32[1024,1024]{1,0} parameter(0)
+  y = f32[1024,1024,3]{2,1,0} parameter(1)
+  s = f32[1024,1024]{1,0} sqrt(x)
+  b = f32[1024,1024,3]{2,1,0} broadcast(s), dimensions={0,1}
+  d = f32[1024,1024,3]{2,1,0} divide(y, b)
+  c = f32[] constant(0)
+  ROOT r = f32[1024,3]{1,0} reduce(d, c), dimensions={1}, to_apply=add
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  EXPECT_THAT(module->entry_computation()->root_instruction(),
+              op::Fusion(op::Parameter(), op::Parameter()));
+}
+
+TEST_F(InstructionFusionTest, DoNotFuseExpensiveProducerWhenRecomputeIsSlower) {
+  // Fusing would compute the exponential 64 times per element.
+  absl::string_view module_string = R"(
+HloModule module
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  x = f32[131072]{0} parameter(0)
+  e = f32[131072]{0} exponential(x)
+  b = f32[131072,64]{1,0} broadcast(e), dimensions={0}
+  c = f32[] constant(0)
+  ROOT r = f32[64]{0} reduce(b, c), dimensions={0}, to_apply=add
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  EXPECT_THAT(module->entry_computation()->root_instruction(),
+              op::Fusion(op::Exp(op::Parameter(0))));
+}
+
 TEST_F(OpcodeFusionTest, BigConstantNotInFusion) {
   absl::string_view module_string = R"(
 HloModule module

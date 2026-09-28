@@ -16,9 +16,13 @@ limitations under the License.
 #ifndef XLA_BACKENDS_CPU_TRANSFORMS_YNN_MATCHER_H_
 #define XLA_BACKENDS_CPU_TRANSFORMS_YNN_MATCHER_H_
 
+#include <cstdint>
+#include <queue>
 #include <string>
 
+#include "absl/algorithm/container.h"
 #include "absl/base/no_destructor.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -30,6 +34,7 @@ limitations under the License.
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_opcode.h"
 #include "xla/shape.h"
+#include "xla/shape_util.h"
 
 namespace xla::cpu {
 
@@ -124,7 +129,7 @@ class YnnMatcher : public LibraryMatcher {
     }
     if (fuse_reduce_ && (instr->opcode() == HloOpcode::kReduce ||
                          instr->opcode() == HloOpcode::kReduceWindow)) {
-      return true;
+      return !MaterializesComputedInput(instr);
     }
     return fuse_eltwise_ && instr->IsElementwise();
   }
@@ -136,6 +141,53 @@ class YnnMatcher : public LibraryMatcher {
   absl::string_view fusion_kind() const override { return kYnnFusionKind; }
 
  private:
+  // Returns true if a fusion started at `reduce` cannot absorb a computed
+  // input of `reduce` that is at least as large as the input of `reduce` and
+  // does not fit into the cache, e.g. because it has other users or is not
+  // supported. The fusion would read that input from memory, whereas loop
+  // fusion can recompute it.
+  bool MaterializesComputedInput(const HloInstruction* reduce) {
+    static constexpr int64_t kCacheBytes = int64_t{1} << 20;
+    const int64_t reduce_input_bytes =
+        ShapeUtil::ByteSizeOfElements(reduce->operand(0)->shape());
+    if (reduce_input_bytes < kCacheBytes) {
+      return false;
+    }
+    // Follows the upward growth in LibraryRewriter::FuseNeighbors: an operand is
+    // absorbed if it is supported and all of its users are absorbed.
+    absl::flat_hash_set<const HloInstruction*> absorbed = {reduce};
+    std::queue<const HloInstruction*> queue;
+    queue.push(reduce);
+    while (!queue.empty() &&
+           static_cast<int64_t>(absorbed.size()) < MaxFusionSize()) {
+      const HloInstruction* instr = queue.front();
+      queue.pop();
+      for (const HloInstruction* operand : instr->operands()) {
+        if (absorbed.contains(operand) ||
+            operand->opcode() == HloOpcode::kParameter ||
+            operand->opcode() == HloOpcode::kConstant ||
+            !operand->shape().IsArray()) {
+          continue;
+        }
+        bool all_users_absorbed =
+            absl::c_all_of(operand->users(), [&](const HloInstruction* user) {
+              return absorbed.contains(user);
+            });
+        absl::StatusOr<bool> supported = IsOpSupported(operand);
+        if (all_users_absorbed && supported.ok() && *supported) {
+          absorbed.insert(operand);
+          queue.push(operand);
+          continue;
+        }
+        if (ShapeUtil::ByteSizeOfElements(operand->shape()) >=
+            reduce_input_bytes) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   absl::flat_hash_set<DebugOptions::LibraryFusionType> fusion_types_;
 };
 
