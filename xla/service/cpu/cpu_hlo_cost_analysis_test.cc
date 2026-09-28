@@ -59,22 +59,22 @@ HloModule m
 
 fused {
   p0 = f32[1000] parameter(0)
-  b = f32[1000,8] broadcast(p0), dimensions={0}
-  ROOT exp = f32[1000,8] exponential(b)
+  b = f32[1000,64] broadcast(p0), dimensions={0}
+  ROOT exp = f32[1000,64] exponential(b)
 }
 
 ENTRY e {
   p = f32[1000] parameter(0)
-  ROOT fusion = f32[1000,8] fusion(p), kind=kLoop, calls=fused
+  ROOT fusion = f32[1000,64] fusion(p), kind=kLoop, calls=fused
 })";
   ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(hlo_string));
   CpuHloCostAnalysis analysis(options_);
   ASSERT_IS_OK(module->entry_computation()->Accept(&analysis));
 
   const HloInstruction* fusion = module->entry_computation()->root_instruction();
-  EXPECT_FLOAT_EQ(analysis.operand_utilization(*fusion, 0), 8);
-  EXPECT_EQ(analysis.operand_bytes_accessed(*fusion, 0), 8 * 1000 * 4);
-  EXPECT_EQ(analysis.flop_count(*fusion), 15 * 8 * 1000);
+  EXPECT_FLOAT_EQ(analysis.operand_utilization(*fusion, 0), 64);
+  EXPECT_EQ(analysis.operand_bytes_accessed(*fusion, 0), 64 * 1000 * 4);
+  EXPECT_EQ(analysis.flop_count(*fusion), 15 * 64 * 1000);
 }
 
 TEST_F(CpuHloCostAnalysisTest, FusionFlopsScaleWithUtilization) {
@@ -85,19 +85,44 @@ HloModule m
 fused {
   p0 = f32[1000] parameter(0)
   exp = f32[1000] exponential(p0)
-  ROOT b = f32[1000,8] broadcast(exp), dimensions={0}
+  ROOT b = f32[1000,64] broadcast(exp), dimensions={0}
 }
 
 ENTRY e {
   p = f32[1000] parameter(0)
-  ROOT fusion = f32[1000,8] fusion(p), kind=kLoop, calls=fused
+  ROOT fusion = f32[1000,64] fusion(p), kind=kLoop, calls=fused
 })";
   ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(hlo_string));
   CpuHloCostAnalysis analysis(options_);
   ASSERT_IS_OK(module->entry_computation()->Accept(&analysis));
 
   const HloInstruction* fusion = module->entry_computation()->root_instruction();
-  EXPECT_EQ(analysis.flop_count(*fusion), 15 * 8 * 1000);
+  EXPECT_EQ(analysis.flop_count(*fusion), 15 * 64 * 1000);
+}
+
+TEST_F(CpuHloCostAnalysisTest, SmallMinorBroadcastDoesNotRecompute) {
+  // The loop over the minor dimension of size 3 is unrolled, so the
+  // exponential is computed once per element of its operand.
+  absl::string_view hlo_string = R"(
+HloModule m
+
+fused {
+  p0 = f32[1000] parameter(0)
+  exp = f32[1000] exponential(p0)
+  ROOT b = f32[1000,3] broadcast(exp), dimensions={0}
+}
+
+ENTRY e {
+  p = f32[1000] parameter(0)
+  ROOT fusion = f32[1000,3] fusion(p), kind=kLoop, calls=fused
+})";
+  ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(hlo_string));
+  CpuHloCostAnalysis analysis(options_);
+  ASSERT_IS_OK(module->entry_computation()->Accept(&analysis));
+
+  const HloInstruction* fusion = module->entry_computation()->root_instruction();
+  EXPECT_FLOAT_EQ(analysis.operand_utilization(*fusion, 0), 1);
+  EXPECT_EQ(analysis.flop_count(*fusion), 15 * 1000);
 }
 
 }  // namespace

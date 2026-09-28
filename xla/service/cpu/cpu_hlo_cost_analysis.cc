@@ -9,6 +9,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/status/status_macros.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_opcode.h"
 #include "xla/primitive_util.h"
@@ -22,6 +23,31 @@ namespace xla::cpu {
 absl::Status CpuHloCostAnalysis::HandleElementwiseOp(
     const HloInstruction* hlo) {
   current_properties_[kFlopsKey] = GetFlopsForElementwiseOp(hlo);
+  return absl::OkStatus();
+}
+
+absl::Status CpuHloCostAnalysis::HandleBroadcast(
+    const HloInstruction* broadcast) {
+  ABSL_RETURN_IF_ERROR(HloCostAnalysis::HandleBroadcast(broadcast));
+  if (!options_.count_multiple_input_accesses ||
+      !broadcast->shape().has_layout()) {
+    return absl::OkStatus();
+  }
+  // Loops over small dimensions that are minor to all operand dimensions are
+  // unrolled, and the operand is computed once for all of their iterations.
+  static constexpr int64_t kMaxUnrolledElements = 8;
+  const Shape& shape = broadcast->shape();
+  int64_t minor_elements = 1;
+  for (int64_t dim : shape.layout().minor_to_major()) {
+    if (absl::c_linear_search(broadcast->dimensions(), dim)) {
+      break;
+    }
+    minor_elements *= shape.dimensions(dim);
+  }
+  if (minor_elements > 1 && minor_elements <= kMaxUnrolledElements) {
+    current_properties_.set_operand_utilization(
+        0, current_properties_.operand_utilization(0) / minor_elements);
+  }
   return absl::OkStatus();
 }
 
