@@ -272,9 +272,13 @@ class ComponentHoister {
 
 // Returns the computed (non-parameter, non-constant) instructions that the
 // inputs of `reduce` are produced from through cheap layout or elementwise
-// ops, up to a limit.
+// ops, up to a limit. Only arrays of at least 1/8 of the size of the inputs
+// count: sharing a small value, e.g. a broadcast scalar, shares no work.
 absl::flat_hash_set<const HloInstruction*> ComputedAncestors(
     const HloInstruction* reduce) {
+  const int64_t min_elements =
+      ShapeUtil::ElementsIn(reduce->operand(0)->shape()) / 8;
+  absl::flat_hash_set<const HloInstruction*> large;
   absl::flat_hash_set<const HloInstruction*> seen;
   std::vector<const HloInstruction*> worklist;
   const int64_t n = reduce->operand_count() / 2;
@@ -288,6 +292,11 @@ absl::flat_hash_set<const HloInstruction*> ComputedAncestors(
         instr->opcode() == HloOpcode::kConstant || !seen.insert(instr).second) {
       continue;
     }
+    if (instr->shape().IsArray() &&
+        ShapeUtil::ElementsIn(instr->shape()) >= min_elements &&
+        instr->opcode() != HloOpcode::kBroadcast) {
+      large.insert(instr);
+    }
     if (instr->IsElementwise() || instr->opcode() == HloOpcode::kBroadcast ||
         instr->opcode() == HloOpcode::kReshape ||
         instr->opcode() == HloOpcode::kBitcast ||
@@ -298,7 +307,7 @@ absl::flat_hash_set<const HloInstruction*> ComputedAncestors(
       }
     }
   }
-  return seen;
+  return large;
 }
 
 // Merges reductions that have the same input shape, dimensions, reducer
