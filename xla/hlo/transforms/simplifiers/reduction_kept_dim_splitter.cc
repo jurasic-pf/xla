@@ -401,12 +401,26 @@ absl::StatusOr<bool> MergeSiblingReductions(HloComputation* computation,
     }
   }
   bool changed = false;
+  std::unique_ptr<HloReachabilityMap> reachability;
+  absl::flat_hash_map<const HloInstruction*,
+                      absl::flat_hash_set<const HloInstruction*>>
+      ancestors_cache;
+  auto ancestors_of = [&](const HloInstruction* r)
+      -> const absl::flat_hash_set<const HloInstruction*>& {
+    auto it = ancestors_cache.find(r);
+    if (it == ancestors_cache.end()) {
+      it = ancestors_cache.emplace(r, ComputedAncestors(r)).first;
+    }
+    return it->second;
+  };
   for (auto& [key, members] : groups) {
     if (members.size() < 2) {
       continue;
     }
-    std::unique_ptr<HloReachabilityMap> reachability =
-        HloReachabilityMap::Build(computation);
+    // Built once, and again only after a merge changed the graph.
+    if (reachability == nullptr) {
+      reachability = HloReachabilityMap::Build(computation);
+    }
     std::vector<HloInstruction*> chosen;
     int64_t operands = 0;
     for (HloInstruction* r : members) {
@@ -419,11 +433,11 @@ absl::StatusOr<bool> MergeSiblingReductions(HloComputation* computation,
       });
       // Only merge reductions that recompute shared work; others gain nothing
       // from one loop.
-      absl::flat_hash_set<const HloInstruction*> ancestors =
-          ComputedAncestors(r);
+      const absl::flat_hash_set<const HloInstruction*>& ancestors =
+          ancestors_of(r);
       bool shares_work =
           chosen.empty() || absl::c_any_of(chosen, [&](HloInstruction* c) {
-            return absl::c_any_of(ComputedAncestors(c),
+            return absl::c_any_of(ancestors_of(c),
                                   [&](const HloInstruction* a) {
                                     return ancestors.contains(a);
                                   });
@@ -473,9 +487,11 @@ absl::StatusOr<bool> MergeSiblingReductions(HloComputation* computation,
           r->shape().IsTuple()
               ? computation->AddInstruction(HloInstruction::CreateTuple(parts))
               : parts[0];
+      ancestors_cache.erase(r);
       ABSL_RETURN_IF_ERROR(computation->ReplaceInstruction(r, replacement));
     }
     changed = true;
+    reachability = nullptr;
   }
   return changed;
 }
