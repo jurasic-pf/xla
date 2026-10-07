@@ -83,6 +83,16 @@ bool ChainStopsAtMaterialized() {
   return on;
 }
 
+// Experiment only: XLA_CPU_COPIES_ABOVE_CAP=0 restores the hard limit of
+// kAllowedCodeDuplication copies.
+bool CopiesAboveCapAllowed() {
+  static const bool on = [] {
+    const char* env = std::getenv("XLA_CPU_COPIES_ABOVE_CAP");
+    return env == nullptr || env[0] != '0';
+  }();
+  return on;
+}
+
 // Limits the copies of a producer in one fusion, which grow code size and
 // compile time.
 constexpr int64_t kMaxEmittedCopies = 64;
@@ -701,7 +711,8 @@ FusionDecision CpuInstructionFusion::ShouldFuse(HloInstruction* consumer,
       bool fuse =
           copies <= FusionNodeIndexingEvaluation::kAllowedCodeDuplication
               ? FusionIntoAllUsersIsFaster(*producer)
-              : copies <= kMaxEmittedCopies && cost_analysis_ != nullptr &&
+              : CopiesAboveCapAllowed() && copies <= kMaxEmittedCopies &&
+                    cost_analysis_ != nullptr &&
                     RecomputeInEachUserIsFaster(*producer, consumer, copies);
       if (!fuse) {
         return FusionDecision::Forbid("Code duplication too high");
