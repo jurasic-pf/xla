@@ -257,6 +257,7 @@ cc_library(
         "//xla/hlo/transforms/simplifiers:slice_sinker",
         "//xla/hlo/transforms/simplifiers:sort_simplifier",
         "//xla/hlo/transforms/simplifiers:sub_byte_normalization",
+        "//xla/hlo/transforms/simplifiers:reduction_kept_dim_splitter",
         "//xla/hlo/transforms/simplifiers:tree_reduction_rewriter",
         "//xla/hlo/transforms/simplifiers:tuple_simplifier",
         "//xla/hlo/transforms/simplifiers:zero_sized_hlo_elimination",

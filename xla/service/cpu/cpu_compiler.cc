@@ -21,6 +21,7 @@ limitations under the License.
 #include <cstring>
 #include <functional>
 #include <limits>
+#include <cstdlib>
 #include <memory>
 #include <optional>
 #include <string>
@@ -162,6 +163,7 @@ limitations under the License.
 #include "xla/hlo/transforms/simplifiers/result_caster.h"
 #include "xla/hlo/transforms/simplifiers/sort_simplifier.h"
 #include "xla/hlo/transforms/simplifiers/sub_byte_normalization.h"
+#include "xla/hlo/transforms/simplifiers/reduction_kept_dim_splitter.h"
 #include "xla/hlo/transforms/simplifiers/tree_reduction_rewriter.h"
 #include "xla/hlo/transforms/simplifiers/tuple_simplifier.h"
 #include "xla/hlo/transforms/simplifiers/zero_sized_hlo_elimination.h"
@@ -518,6 +520,11 @@ std::unique_ptr<HloPassFix<HloPassPipeline>> CreateSimplificationPipeline(
   // Conversion to MLIR only works with simplified gathers.
   pipeline->AddPass<GatherSimplifier>();
 
+  // Experiment only: XLA_CPU_SPLIT_KEPT_DIM=1.
+  if (const char* env = std::getenv("XLA_CPU_SPLIT_KEPT_DIM");
+      env != nullptr && env[0] == '1') {
+    pipeline->AddPass<ReductionKeptDimSplitter>();
+  }
   if (!IsHostOffload(module) &&
       absl::c_contains(module->config()
                            .debug_options()
