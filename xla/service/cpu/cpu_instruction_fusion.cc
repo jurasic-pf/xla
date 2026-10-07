@@ -536,10 +536,27 @@ FusionDecision CpuInstructionFusion::ShouldFuse(HloInstruction* consumer,
   static constexpr int64_t kMaxReductionsInFusion = 5;
   if (consumer->opcode() == HloOpcode::kFusion &&
       producer->opcode() == HloOpcode::kReduce) {
+    // Experiment only: XLA_CPU_TINY_REDUCE_UNCOUNTED=1 does not count
+    // reductions over at most 8 elements, which are unrolled into a few ops.
+    static const bool tiny_uncounted = [] {
+      const char* env = std::getenv("XLA_CPU_TINY_REDUCE_UNCOUNTED");
+      return env != nullptr && env[0] == '1';
+    }();
+    auto is_tiny = [](const HloInstruction* instr) {
+      int64_t reduced = 1;
+      for (int64_t dim : instr->dimensions()) {
+        reduced *= instr->operand(0)->shape().dimensions(dim);
+      }
+      return reduced <= 8;
+    };
     int64_t num_fused_reductions = absl::c_count_if(
-        consumer->fused_instructions(), [](const HloInstruction* instr) {
-          return instr->opcode() == HloOpcode::kReduce;
+        consumer->fused_instructions(), [&](const HloInstruction* instr) {
+          return instr->opcode() == HloOpcode::kReduce &&
+                 !(tiny_uncounted && is_tiny(instr));
         });
+    if (tiny_uncounted && is_tiny(producer)) {
+      num_fused_reductions = 0;
+    }
     if (num_fused_reductions > kMaxReductionsInFusion) {
       return FusionDecision::Forbid(
           "Too many reductions inside single fusion.");

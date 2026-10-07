@@ -16,6 +16,7 @@ limitations under the License.
 #include "xla/service/cpu/cpu_performance_model.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -83,6 +84,17 @@ se::DeviceDescription CpuPerformanceModel::DefaultDeviceInfo() {
   device_info.set_clock_rate_ghz(3.0);
   device_info.set_memory_bandwidth(int64_t{100} * 1000 * 1000 * 1000);
   device_info.set_l2_cache_size(int64_t{1} << 20);
+  // Experiment only: XLA_CPU_MODEL_GBPS / XLA_CPU_MODEL_GFLOPS override the
+  // memory bandwidth and peak compute (keeping core count and clock).
+  if (const char* env = std::getenv("XLA_CPU_MODEL_GBPS"); env != nullptr) {
+    device_info.set_memory_bandwidth(
+        static_cast<int64_t>(std::atof(env) * 1e9));
+  }
+  if (const char* env = std::getenv("XLA_CPU_MODEL_GFLOPS"); env != nullptr) {
+    device_info.set_fpus_per_core(std::max(
+        1, static_cast<int>(std::atof(env) /
+                            (2 * 3.0 * device_info.core_count()))));
+  }
   return device_info;
 }
 
