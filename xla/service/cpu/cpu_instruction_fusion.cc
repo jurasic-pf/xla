@@ -822,8 +822,11 @@ bool CpuInstructionFusion::FusionIntoAllUsersIsFaster(
   if (!inserted) {
     return it->second;
   }
-  it->second = EstimateFusionIntoAllUsersIsFaster(producer);
-  return it->second;
+  // The estimate can recurse into this function and insert into the map, so
+  // `it` may be invalidated.
+  bool faster = EstimateFusionIntoAllUsersIsFaster(producer);
+  fusion_is_faster_[producer.unique_id()] = faster;
+  return faster;
 }
 
 bool CpuInstructionFusion::EstimateFusionIntoAllUsersIsFaster(
