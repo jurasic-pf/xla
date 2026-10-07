@@ -389,6 +389,46 @@ absl::StatusOr<bool> ReductionKeptDimSplitter::RunImpl(
     HloModule* module,
     const absl::flat_hash_set<absl::string_view>& execution_threads) {
   bool changed = false;
+  // Width-1 slices of a small dimension (e.g. the x, y or z component of a
+  // [M, N, 3] array) are pushed up the same way, so that the 3-component array
+  // is not needed by them.
+  if (unroll_small_reductions_) {
+    for (HloComputation* computation :
+         module->MakeNonfusionComputations(execution_threads)) {
+      ComponentHoister hoister(computation);
+      for (HloInstruction* slice : computation->MakeInstructionPostOrder()) {
+        if (slice->opcode() != HloOpcode::kSlice) {
+          continue;
+        }
+        const Shape& in = slice->operand(0)->shape();
+        int64_t dim = -1;
+        bool simple = true;
+        for (int64_t i = 0; i < in.dimensions().size(); ++i) {
+          const bool full = slice->slice_starts(i) == 0 &&
+                            slice->slice_strides(i) == 1 &&
+                            slice->slice_limits(i) == in.dimensions(i);
+          if (full) {
+            continue;
+          }
+          if (dim != -1 || slice->shape().dimensions(i) != 1 ||
+              in.dimensions(i) > max_kept_dim_size_) {
+            simple = false;
+          }
+          dim = i;
+        }
+        if (!simple || dim == -1 ||
+            slice->operand(0)->opcode() == HloOpcode::kParameter) {
+          continue;
+        }
+        HloInstruction* component = hoister.Component(
+            slice->mutable_operand(0), dim, slice->slice_starts(dim));
+        HloInstruction* reshaped = computation->AddInstruction(
+            HloInstruction::CreateReshape(slice->shape(), component));
+        ABSL_RETURN_IF_ERROR(computation->ReplaceInstruction(slice, reshaped));
+        changed = true;
+      }
+    }
+  }
   // Reductions over one dimension of at most `max_kept_dim_size_` elements
   // become elementwise ops on the components, e.g. sum(d * d, axis=-1) over
   // xyz becomes d0 * d0 + d1 * d1 + d2 * d2.
