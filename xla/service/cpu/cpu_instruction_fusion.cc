@@ -18,6 +18,7 @@ limitations under the License.
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <memory>
 #include <vector>
 
@@ -54,6 +55,25 @@ namespace xla {
 namespace cpu {
 
 namespace {
+
+// Experiment only: XLA_CPU_TINY_REDUCE_UNCOUNTED=1 treats reductions over at
+// most 8 elements as cheap: they do not end recomputed chains and do not count
+// towards kMaxReductionsInFusion.
+bool TinyReductionsAreCheap() {
+  static const bool on = [] {
+    const char* env = std::getenv("XLA_CPU_TINY_REDUCE_UNCOUNTED");
+    return env != nullptr && env[0] == '1';
+  }();
+  return on;
+}
+
+bool ReducesAtMost8(const HloInstruction& reduce) {
+  int64_t reduced = 1;
+  for (int64_t dim : reduce.dimensions()) {
+    reduced *= reduce.operand(0)->shape().dimensions(dim);
+  }
+  return reduced <= 8;
+}
 
 // Limits the copies of a producer in one fusion, which grow code size and
 // compile time.
@@ -813,8 +833,9 @@ CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) const {
     worklist.pop_back();
     for (const HloInstruction* operand : instr->operands()) {
       if (chain.contains(operand) || !CanBeLoopFused(*operand) ||
-          operand->opcode() == HloOpcode::kReduce ||
-          operand->opcode() == HloOpcode::kReduceWindow ||
+          ((operand->opcode() == HloOpcode::kReduce &&
+            !(TinyReductionsAreCheap() && ReducesAtMost8(*operand))) ||
+           operand->opcode() == HloOpcode::kReduceWindow) ||
           !operand->shape().IsArray() ||
           ShapeUtil::ByteSizeOfElements(operand->shape()) <
               performance_model_.device_info().l2_cache_size()) {
