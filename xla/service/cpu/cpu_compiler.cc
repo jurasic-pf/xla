@@ -523,7 +523,10 @@ std::unique_ptr<HloPassFix<HloPassPipeline>> CreateSimplificationPipeline(
   // Experiment only: XLA_CPU_SPLIT_KEPT_DIM=1.
   if (const char* env = std::getenv("XLA_CPU_SPLIT_KEPT_DIM");
       env != nullptr && env[0] == '1') {
-    pipeline->AddPass<ReductionKeptDimSplitter>();
+    const char* unroll = std::getenv("XLA_CPU_UNROLL_TINY_REDUCE");
+    pipeline->AddPass<ReductionKeptDimSplitter>(
+        /*max_kept_dim_size=*/8, /*min_reduced_elements=*/1024,
+        /*unroll_small_reductions=*/unroll != nullptr && unroll[0] == '1');
   }
   if (!IsHostOffload(module) &&
       absl::c_contains(module->config()

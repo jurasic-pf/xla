@@ -274,6 +274,46 @@ absl::StatusOr<bool> ReductionKeptDimSplitter::RunImpl(
     HloModule* module,
     const absl::flat_hash_set<absl::string_view>& execution_threads) {
   bool changed = false;
+  // Reductions over one dimension of at most `max_kept_dim_size_` elements
+  // become elementwise ops on the components, e.g. sum(d * d, axis=-1) over
+  // xyz becomes d0 * d0 + d1 * d1 + d2 * d2.
+  if (unroll_small_reductions_) {
+    for (HloComputation* computation :
+         module->MakeNonfusionComputations(execution_threads)) {
+      for (HloInstruction* reduce : computation->MakeInstructionPostOrder()) {
+        if (reduce->opcode() != HloOpcode::kReduce ||
+            reduce->operand_count() != 2 || !reduce->shape().IsArray() ||
+            reduce->dimensions().size() != 1) {
+          continue;
+        }
+        const int64_t dim = reduce->dimensions(0);
+        const int64_t size = reduce->operand(0)->shape().dimensions(dim);
+        std::optional<HloOpcode> opcode =
+            SimpleReducerOpcode(reduce->to_apply());
+        if (size < 1 || size > max_kept_dim_size_ || !opcode.has_value()) {
+          continue;
+        }
+        ComponentHoister hoister(computation);
+        HloInstruction* acc = nullptr;
+        for (int64_t i = 0; i < size; ++i) {
+          HloInstruction* component =
+              hoister.Component(reduce->mutable_operand(0), dim, i);
+          acc = acc == nullptr
+                    ? component
+                    : computation->AddInstruction(HloInstruction::CreateBinary(
+                          reduce->shape(), *opcode, acc, component));
+        }
+        // Include the init value, as the reduction does.
+        HloInstruction* init = computation->AddInstruction(
+            HloInstruction::CreateBroadcast(reduce->shape(),
+                                            reduce->mutable_operand(1), {}));
+        acc = computation->AddInstruction(HloInstruction::CreateBinary(
+            reduce->shape(), *opcode, init, acc));
+        ABSL_RETURN_IF_ERROR(computation->ReplaceInstruction(reduce, acc));
+        changed = true;
+      }
+    }
+  }
   for (HloComputation* computation :
        module->MakeNonfusionComputations(execution_threads)) {
     for (HloInstruction* reduce : computation->MakeInstructionPostOrder()) {
