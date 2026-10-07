@@ -28,6 +28,7 @@ limitations under the License.
 #include "absl/status/status_macros.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 #include "xla/hlo/ir/hlo_computation.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_module.h"
@@ -75,16 +76,16 @@ HloComputation* MakeVariadicReducer(HloModule* module, HloOpcode opcode,
   return module->AddEmbeddedComputation(builder.Build());
 }
 
-// Returns index `k` of dimension `dim` of an instruction (keeping the dimension
-// with size 1), pushing the slice up through the ops that produce it so that
-// each index becomes its own chain. Values that do not depend on `dim`, e.g.
-// the operand of a broadcast along `dim`, stay shared.
-class SliceHoister {
+// Returns index `k` of dimension `dim` of an instruction, without that
+// dimension, pushing the selection up through the ops that produce it so that
+// each index becomes its own chain of rank-reduced ops. Values that do not
+// depend on `dim`, e.g. the operand of a broadcast along `dim`, stay shared.
+class ComponentHoister {
  public:
-  explicit SliceHoister(HloComputation* computation)
+  explicit ComponentHoister(HloComputation* computation)
       : computation_(computation) {}
 
-  HloInstruction* SliceAt(HloInstruction* x, int64_t dim, int64_t k) {
+  HloInstruction* Component(HloInstruction* x, int64_t dim, int64_t k) {
     auto key = std::make_tuple(x, dim, k);
     if (auto it = memo_.find(key); it != memo_.end()) {
       return it->second;
@@ -95,9 +96,15 @@ class SliceHoister {
   }
 
  private:
-  static Shape Unit(const Shape& shape, int64_t dim) {
-    Shape out = shape;
-    out.set_dimensions(dim, 1);
+  // Drops `dim` from a list of dimension numbers, renumbering the rest.
+  static std::vector<int64_t> DropDim(absl::Span<const int64_t> dims,
+                                      int64_t dim) {
+    std::vector<int64_t> out;
+    for (int64_t d : dims) {
+      if (d != dim) {
+        out.push_back(d > dim ? d - 1 : d);
+      }
+    }
     return out;
   }
 
@@ -105,7 +112,7 @@ class SliceHoister {
     return computation_->AddInstruction(std::move(instr));
   }
 
-  HloInstruction* ExplicitSlice(HloInstruction* x, int64_t dim, int64_t k) {
+  HloInstruction* SliceAndSqueeze(HloInstruction* x, int64_t dim, int64_t k) {
     const int64_t rank = x->shape().dimensions().size();
     std::vector<int64_t> start(rank, 0);
     std::vector<int64_t> limit(x->shape().dimensions().begin(),
@@ -113,39 +120,51 @@ class SliceHoister {
     std::vector<int64_t> strides(rank, 1);
     start[dim] = k;
     limit[dim] = k + 1;
-    return Add(HloInstruction::CreateSlice(Unit(x->shape(), dim), x, start,
-                                           limit, strides));
+    Shape unit = x->shape();
+    unit.set_dimensions(dim, 1);
+    HloInstruction* slice = Add(
+        HloInstruction::CreateSlice(unit, x, start, limit, strides));
+    return Add(HloInstruction::CreateReshape(
+        ShapeUtil::DeleteDimension(dim, x->shape()), slice));
   }
 
   HloInstruction* Hoist(HloInstruction* x, int64_t dim, int64_t k) {
-    const Shape unit = Unit(x->shape(), dim);
+    const Shape squeezed = ShapeUtil::DeleteDimension(dim, x->shape());
     if (x->IsElementwise() && x->opcode() != HloOpcode::kConstant &&
         x->operand_count() > 0) {
       std::vector<HloInstruction*> operands;
       for (HloInstruction* operand : x->operands()) {
-        operands.push_back(SliceAt(operand, dim, k));
+        operands.push_back(Component(operand, dim, k));
       }
-      Shape shape = unit;
-      shape.set_element_type(x->shape().element_type());
-      return Add(x->CloneWithNewOperands(shape, operands));
+      return Add(x->CloneWithNewOperands(squeezed, operands));
     }
     switch (x->opcode()) {
       case HloOpcode::kBroadcast: {
         const auto& dims = x->dimensions();
         auto it = absl::c_find(dims, dim);
         HloInstruction* operand = x->mutable_operand(0);
+        std::vector<int64_t> new_dims;
         if (it != dims.end()) {
-          operand = SliceAt(operand, it - dims.begin(), k);
+          int64_t operand_dim = it - dims.begin();
+          operand = Component(operand, operand_dim, k);
+          for (int64_t i = 0; i < dims.size(); ++i) {
+            if (i != operand_dim) {
+              new_dims.push_back(dims[i] > dim ? dims[i] - 1 : dims[i]);
+            }
+          }
+        } else {
+          new_dims = DropDim(dims, dim);
         }
-        return Add(HloInstruction::CreateBroadcast(unit, operand, dims));
+        return Add(HloInstruction::CreateBroadcast(squeezed, operand, new_dims));
       }
       case HloOpcode::kConcatenate: {
-        if (x->concatenate_dimension() == dim) {
+        const int64_t concat_dim = x->concatenate_dimension();
+        if (concat_dim == dim) {
           int64_t offset = 0;
           for (HloInstruction* operand : x->operands()) {
             int64_t size = operand->shape().dimensions(dim);
             if (k < offset + size) {
-              return SliceAt(operand, dim, k - offset);
+              return Component(operand, dim, k - offset);
             }
             offset += size;
           }
@@ -153,36 +172,34 @@ class SliceHoister {
         }
         std::vector<HloInstruction*> operands;
         for (HloInstruction* operand : x->operands()) {
-          operands.push_back(SliceAt(operand, dim, k));
+          operands.push_back(Component(operand, dim, k));
         }
-        return Add(x->CloneWithNewOperands(unit, operands));
+        return Add(HloInstruction::CreateConcatenate(
+            squeezed, operands, concat_dim > dim ? concat_dim - 1 : concat_dim));
       }
       case HloOpcode::kSlice: {
         if (x->slice_strides(dim) <= 0) {
           break;
         }
-        int64_t index = x->slice_starts(dim) + k * x->slice_strides(dim);
-        HloInstruction* operand = x->mutable_operand(0);
-        // Slice the other dimensions as before, and this one at `index`.
-        std::vector<int64_t> start(x->slice_starts().begin(),
-                                   x->slice_starts().end());
-        std::vector<int64_t> limit(x->slice_limits().begin(),
-                                   x->slice_limits().end());
-        std::vector<int64_t> strides(x->slice_strides().begin(),
-                                     x->slice_strides().end());
-        HloInstruction* sliced = SliceAt(operand, dim, index);
-        start[dim] = 0;
-        limit[dim] = 1;
-        strides[dim] = 1;
+        HloInstruction* operand = Component(
+            x->mutable_operand(0), dim,
+            x->slice_starts(dim) + k * x->slice_strides(dim));
+        std::vector<int64_t> start, limit, strides;
         bool identity = true;
-        for (int64_t i = 0; i < unit.dimensions().size(); ++i) {
-          identity &= start[i] == 0 && strides[i] == 1 &&
-                      limit[i] == sliced->shape().dimensions(i);
+        for (int64_t i = 0; i < x->shape().dimensions().size(); ++i) {
+          if (i == dim) {
+            continue;
+          }
+          start.push_back(x->slice_starts(i));
+          limit.push_back(x->slice_limits(i));
+          strides.push_back(x->slice_strides(i));
+          identity &= x->slice_starts(i) == 0 && x->slice_strides(i) == 1 &&
+                      x->slice_limits(i) == x->operand(0)->shape().dimensions(i);
         }
         if (identity) {
-          return sliced;
+          return operand;
         }
-        return Add(HloInstruction::CreateSlice(unit, sliced, start, limit,
+        return Add(HloInstruction::CreateSlice(squeezed, operand, start, limit,
                                                strides));
       }
       case HloOpcode::kPad: {
@@ -193,23 +210,32 @@ class SliceHoister {
           break;
         }
         HloInstruction* operand = x->mutable_operand(0);
-        int64_t index = k - pad.edge_padding_low();
-        PaddingConfig config = x->padding_config();
-        config.mutable_dimensions(dim)->set_edge_padding_low(0);
-        config.mutable_dimensions(dim)->set_edge_padding_high(0);
+        const int64_t index = k - pad.edge_padding_low();
         if (index < 0 || index >= operand->shape().dimensions(dim)) {
-          // Only padding: a broadcast of the padding value.
           return Add(HloInstruction::CreateBroadcast(
-              unit, x->mutable_operand(1), {}));
+              squeezed, x->mutable_operand(1), {}));
         }
-        return Add(HloInstruction::CreatePad(unit, SliceAt(operand, dim, index),
-                                             x->mutable_operand(1), config));
+        PaddingConfig config;
+        for (int64_t i = 0; i < x->shape().dimensions().size(); ++i) {
+          if (i != dim) {
+            *config.add_dimensions() = x->padding_config().dimensions(i);
+          }
+        }
+        return Add(HloInstruction::CreatePad(
+            squeezed, Component(operand, dim, index), x->mutable_operand(1),
+            config));
       }
       case HloOpcode::kTranspose: {
-        int64_t operand_dim = x->dimensions(dim);
-        HloInstruction* operand = SliceAt(x->mutable_operand(0), operand_dim, k);
-        return Add(HloInstruction::CreateTranspose(unit, operand,
-                                                   x->dimensions()));
+        const int64_t operand_dim = x->dimensions(dim);
+        std::vector<int64_t> perm;
+        for (int64_t i = 0; i < x->dimensions().size(); ++i) {
+          if (i != dim) {
+            int64_t p = x->dimensions(i);
+            perm.push_back(p > operand_dim ? p - 1 : p);
+          }
+        }
+        return Add(HloInstruction::CreateTranspose(
+            squeezed, Component(x->mutable_operand(0), operand_dim, k), perm));
       }
       case HloOpcode::kReduce: {
         if (x->operand_count() != 2 || !x->shape().IsArray()) {
@@ -225,13 +251,15 @@ class SliceHoister {
             break;
           }
         }
-        HloInstruction* input = SliceAt(x->mutable_operand(0), input_dim, k);
-        return Add(x->CloneWithNewOperands(unit, {input, x->mutable_operand(1)}));
+        HloInstruction* input = Component(x->mutable_operand(0), input_dim, k);
+        return Add(HloInstruction::CreateReduce(
+            squeezed, input, x->mutable_operand(1),
+            DropDim(x->dimensions(), input_dim), x->to_apply()));
       }
       default:
         break;
     }
-    return ExplicitSlice(x, dim, k);
+    return SliceAndSqueeze(x, dim, k);
   }
 
   HloComputation* computation_;
@@ -280,14 +308,10 @@ absl::StatusOr<bool> ReductionKeptDimSplitter::RunImpl(
       }
 
       // Slices of the kept dimension, without that dimension.
-      Shape slice_shape_squeezed =
-          ShapeUtil::DeleteDimension(last, input_shape);
       std::vector<HloInstruction*> slices;
-      SliceHoister hoister(computation);
+      ComponentHoister hoister(computation);
       for (int64_t i = 0; i < k; ++i) {
-        slices.push_back(computation->AddInstruction(
-            HloInstruction::CreateReshape(slice_shape_squeezed,
-                                          hoister.SliceAt(input, last, i))));
+        slices.push_back(hoister.Component(input, last, i));
       }
 
       const Shape& out_shape = reduce->shape();
