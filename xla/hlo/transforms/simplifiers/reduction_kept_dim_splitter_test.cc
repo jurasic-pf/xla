@@ -187,6 +187,68 @@ ENTRY main {
   EXPECT_FALSE(changed);
 }
 
+TEST_F(ReductionKeptDimSplitterTest, DoesNotMergeMixedReducers) {
+  // A (sum, max) reduction shares work with the sum but must not be rebuilt as
+  // two sums.
+  std::string hlo = R"(
+HloModule m
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+sum_max {
+  a0 = f32[] parameter(0)
+  a1 = f32[] parameter(1)
+  b0 = f32[] parameter(2)
+  b1 = f32[] parameter(3)
+  s = f32[] add(a0, b0)
+  m = f32[] maximum(a1, b1)
+  ROOT t = (f32[], f32[]) tuple(s, m)
+}
+
+ENTRY main {
+  p = f32[64,2048] parameter(0)
+  e = f32[64,2048] exponential(p)
+  c = f32[] constant(0)
+  a = f32[64] reduce(e, c), dimensions={1}, to_apply=add
+  b = (f32[64], f32[64]) reduce(e, e, c, c), dimensions={1}, to_apply=sum_max
+  b0 = f32[64] get-tuple-element(b), index=0
+  ROOT t = (f32[64], f32[64]) tuple(a, b0)
+}
+)";
+  TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(hlo));
+  ReductionKeptDimSplitter pass(/*max_kept_dim_size=*/8,
+                                /*min_reduced_elements=*/1024,
+                                /*unroll_small_reductions=*/false,
+                                /*merge_sibling_reductions=*/true);
+  TF_ASSERT_OK_AND_ASSIGN(bool changed, RunHloPass(&pass, module.get()));
+  EXPECT_FALSE(changed);
+}
+
+TEST_F(ReductionKeptDimSplitterTest, SliceOfUnhoistableOpConverges) {
+  // A slice of a dot cannot be hoisted; the pass must not keep re-creating it.
+  std::string hlo = R"(
+HloModule m
+
+ENTRY main {
+  x = f32[64,32] parameter(0)
+  y = f32[32,2] parameter(1)
+  d = f32[64,2] dot(x, y), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  ROOT s = f32[64,1] slice(d), slice={[0:64], [1:2]}
+}
+)";
+  TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(hlo));
+  ReductionKeptDimSplitter pass(/*max_kept_dim_size=*/8,
+                                /*min_reduced_elements=*/1024,
+                                /*unroll_small_reductions=*/true,
+                                /*merge_sibling_reductions=*/true);
+  TF_ASSERT_OK_AND_ASSIGN(bool changed, RunHloPass(&pass, module.get()));
+  EXPECT_FALSE(changed);
+}
+
 TEST_F(ReductionKeptDimSplitterTest, DoesNotMergeDependentReductions) {
   std::string hlo = absl::StrCat("HloModule m\n", kAdd, R"(
 ENTRY main {

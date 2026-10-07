@@ -47,7 +47,7 @@ namespace {
 std::optional<HloOpcode> SimpleReducerOpcode(const HloComputation* reducer) {
   const HloInstruction* root = reducer->root_instruction();
   if (reducer->num_parameters() != 2 || reducer->instruction_count() != 3 ||
-      !root->IsElementwiseBinary()) {
+      !root->IsElementwiseBinary() || root->opcode() == HloOpcode::kCompare) {
     return std::nullopt;
   }
   const HloInstruction* lhs = root->operand(0);
@@ -58,6 +58,35 @@ std::optional<HloOpcode> SimpleReducerOpcode(const HloComputation* reducer) {
     return std::nullopt;
   }
   return root->opcode();
+}
+
+// Returns the opcode of a variadic reducer with `n` accumulators whose result i
+// is op(param i, param n + i) for one elementwise binary op, e.g. the reducer
+// of k independent sums.
+std::optional<HloOpcode> IndependentReducerOpcode(const HloComputation* reducer,
+                                                  int64_t n) {
+  const HloInstruction* root = reducer->root_instruction();
+  if (root->opcode() != HloOpcode::kTuple || root->operand_count() != n ||
+      reducer->num_parameters() != 2 * n) {
+    return std::nullopt;
+  }
+  std::optional<HloOpcode> opcode;
+  for (int64_t i = 0; i < n; ++i) {
+    const HloInstruction* op = root->operand(i);
+    if (!op->IsElementwiseBinary() || op->opcode() == HloOpcode::kCompare ||
+        (opcode.has_value() && op->opcode() != *opcode)) {
+      return std::nullopt;
+    }
+    const HloInstruction* lhs = op->operand(0);
+    const HloInstruction* rhs = op->operand(1);
+    if (lhs->opcode() != HloOpcode::kParameter ||
+        rhs->opcode() != HloOpcode::kParameter ||
+        lhs->parameter_number() != i || rhs->parameter_number() != n + i) {
+      return std::nullopt;
+    }
+    opcode = op->opcode();
+  }
+  return opcode;
 }
 
 // Builds a reducer with `k` accumulators that applies `opcode` to each pair.
@@ -333,16 +362,20 @@ absl::StatusOr<bool> MergeSiblingReductions(HloComputation* computation,
     if (instr->opcode() != HloOpcode::kReduce) {
       continue;
     }
-    std::optional<HloOpcode> opcode = SimpleReducerOpcode(instr->to_apply());
-    if (!opcode.has_value() && instr->operand_count() > 2) {
-      // A reducer we built: all ops share the opcode of its first result.
-      const HloInstruction* root = instr->to_apply()->root_instruction();
-      if (root->opcode() == HloOpcode::kTuple && root->operand_count() > 0) {
-        opcode = root->operand(0)->opcode();
-      }
-    }
     const int64_t n = instr->operand_count() / 2;
+    std::optional<HloOpcode> opcode =
+        n == 1 ? SimpleReducerOpcode(instr->to_apply())
+               : IndependentReducerOpcode(instr->to_apply(), n);
     if (!opcode.has_value() || n < 1) {
+      continue;
+    }
+    // All accumulators must have the element type of the first one.
+    bool same_type = true;
+    for (int64_t i = 1; i < n; ++i) {
+      same_type &= instr->operand(i)->shape().element_type() ==
+                   instr->operand(0)->shape().element_type();
+    }
+    if (!same_type) {
       continue;
     }
     // All inits must be the same instruction.
@@ -480,8 +513,22 @@ absl::StatusOr<bool> ReductionKeptDimSplitter::RunImpl(
           }
           dim = i;
         }
-        if (!simple || dim == -1 ||
-            slice->operand(0)->opcode() == HloOpcode::kParameter) {
+        const HloInstruction* operand = slice->operand(0);
+        const bool hoistable =
+            (operand->IsElementwise() &&
+             operand->opcode() != HloOpcode::kConstant &&
+             operand->operand_count() > 0) ||
+            operand->opcode() == HloOpcode::kBroadcast ||
+            operand->opcode() == HloOpcode::kConcatenate ||
+            operand->opcode() == HloOpcode::kTranspose ||
+            operand->opcode() == HloOpcode::kPad;
+        // Hoisting through an op that is used elsewhere would duplicate it;
+        // hoisting through an op the hoister cannot handle would only re-create
+        // the slice.
+        if (!simple || dim == -1 || !hoistable ||
+            !absl::c_all_of(operand->users(), [](const HloInstruction* user) {
+              return user->opcode() == HloOpcode::kSlice;
+            })) {
           continue;
         }
         HloInstruction* component = hoister.Component(
