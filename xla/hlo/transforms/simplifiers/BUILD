@@ -2026,6 +2026,23 @@ cc_library(
     ],
 )
 
+xla_cc_test(
+    name = "reduction_kept_dim_splitter_test",
+    srcs = ["reduction_kept_dim_splitter_test.cc"],
+    deps = [
+        ":hlo_dce",
+        ":reduction_kept_dim_splitter",
+        "//xla:shape_util",
+        "//xla/hlo/ir:hlo",
+        "//xla/hlo/testlib:hlo_hardware_independent_test_base",
+        "//xla/tsl/platform:statusor",
+        "@com_google_absl//absl/algorithm:container",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
 cc_library(
     name = "tree_reduction_rewriter",
     srcs = ["tree_reduction_rewriter.cc"],
