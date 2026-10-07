@@ -270,6 +270,37 @@ class ComponentHoister {
       memo_;
 };
 
+// Returns the computed (non-parameter, non-constant) instructions that the
+// inputs of `reduce` are produced from through cheap layout or elementwise
+// ops, up to a limit.
+absl::flat_hash_set<const HloInstruction*> ComputedAncestors(
+    const HloInstruction* reduce) {
+  absl::flat_hash_set<const HloInstruction*> seen;
+  std::vector<const HloInstruction*> worklist;
+  const int64_t n = reduce->operand_count() / 2;
+  for (int64_t i = 0; i < n; ++i) {
+    worklist.push_back(reduce->operand(i));
+  }
+  while (!worklist.empty() && seen.size() < 256) {
+    const HloInstruction* instr = worklist.back();
+    worklist.pop_back();
+    if (instr->opcode() == HloOpcode::kParameter ||
+        instr->opcode() == HloOpcode::kConstant || !seen.insert(instr).second) {
+      continue;
+    }
+    if (instr->IsElementwise() || instr->opcode() == HloOpcode::kBroadcast ||
+        instr->opcode() == HloOpcode::kReshape ||
+        instr->opcode() == HloOpcode::kBitcast ||
+        instr->opcode() == HloOpcode::kSlice ||
+        instr->opcode() == HloOpcode::kTranspose) {
+      for (const HloInstruction* operand : instr->operands()) {
+        worklist.push_back(operand);
+      }
+    }
+  }
+  return seen;
+}
+
 // Merges reductions that have the same input shape, dimensions, reducer
 // opcode and init value, and do not depend on each other, into one variadic
 // reduction, so that a loop emitter computes them in one pass over the input.
@@ -344,7 +375,18 @@ absl::StatusOr<bool> MergeSiblingReductions(HloComputation* computation,
       bool independent = absl::c_none_of(chosen, [&](HloInstruction* c) {
         return reachability->IsReachable(c, r) || reachability->IsReachable(r, c);
       });
-      if (independent) {
+      // Only merge reductions that recompute shared work; others gain nothing
+      // from one loop.
+      absl::flat_hash_set<const HloInstruction*> ancestors =
+          ComputedAncestors(r);
+      bool shares_work =
+          chosen.empty() || absl::c_any_of(chosen, [&](HloInstruction* c) {
+            return absl::c_any_of(ComputedAncestors(c),
+                                  [&](const HloInstruction* a) {
+                                    return ancestors.contains(a);
+                                  });
+          });
+      if (independent && shares_work) {
         chosen.push_back(r);
         operands += n;
       }
