@@ -702,6 +702,11 @@ absl::StatusOr<bool> CpuInstructionFusion::RunImpl(
     }
   }
   set_is_expensive([this](const HloInstruction& instruction) {
+    if (TinyReductionsAreCheap() &&
+        instruction.opcode() == HloOpcode::kReduce &&
+        ReducesAtMost8(instruction)) {
+      return false;
+    }
     if (cost_analysis_ == nullptr) {
       return IsExpensive(instruction);
     }
