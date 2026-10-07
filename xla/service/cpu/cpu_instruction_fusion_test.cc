@@ -1081,6 +1081,54 @@ ENTRY main {
               op::Fusion(op::Parameter(0)));
 }
 
+TEST_F(InstructionFusionTest, RecomputedChainEndsAtReduction) {
+  // `p` is read by reductions over different dimensions. Fusing it into both
+  // recomputes the pad, but not the reduction `r`, whose output is read.
+  absl::string_view module_string = R"(
+HloModule module
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  x = f32[1024,1024,64]{2,1,0} parameter(0)
+  s = f32[1024,1024,64]{2,1,0} sine(x)
+  e = f32[1024,1024,64]{2,1,0} exponential(s)
+  l = f32[1024,1024,64]{2,1,0} log(e)
+  c = f32[] constant(0)
+  r = f32[1024,1024]{1,0} reduce(l, c), dimensions={2}, to_apply=add
+  rb = f32[1024,1024,1]{2,1,0} bitcast(r)
+  p = f32[1024,1024,3]{2,1,0} pad(rb, c), padding=0_0x0_0x1_1
+  a = f32[1024,3]{1,0} reduce(p, c), dimensions={1}, to_apply=add
+  b = f32[1024,3]{1,0} reduce(p, c), dimensions={0}, to_apply=add
+  n = f32[1024,3]{1,0} negate(a)
+  ROOT t = (f32[1024,3]{1,0}, f32[1024,3]{1,0}, f32[1024,3]{1,0}) tuple(a, n, b)
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  int64_t fusions_with_pad = 0;
+  for (const HloInstruction* instr :
+       module->entry_computation()->instructions()) {
+    EXPECT_NE(instr->opcode(), HloOpcode::kPad);
+    if (instr->opcode() == HloOpcode::kFusion &&
+        absl::c_any_of(instr->fused_instructions(),
+                       [](const HloInstruction* fused) {
+                         return fused->opcode() == HloOpcode::kPad;
+                       })) {
+      ++fusions_with_pad;
+    }
+  }
+  EXPECT_EQ(fusions_with_pad, 2);
+}
+
 TEST_F(OpcodeFusionTest, BigConstantNotInFusion) {
   absl::string_view module_string = R"(
 HloModule module

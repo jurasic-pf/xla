@@ -768,7 +768,9 @@ bool CpuInstructionFusion::EstimateFusionIntoAllUsersIsFaster(
 absl::flat_hash_set<const HloInstruction*>
 CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) const {
   // Operands that do not fit into the cache are fused into each user together
-  // with the producer. Smaller operands are materialized and read instead.
+  // with the producer. Smaller operands are materialized and read instead, and
+  // so are reductions: each user would emit its own copy of the reduction loop,
+  // which CodeDuplicationTooHigh rejects unless it is cheap.
   absl::flat_hash_set<const HloInstruction*> chain = {&producer};
   std::vector<const HloInstruction*> worklist = {&producer};
   while (!worklist.empty()) {
@@ -776,6 +778,8 @@ CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) const {
     worklist.pop_back();
     for (const HloInstruction* operand : instr->operands()) {
       if (chain.contains(operand) || !CanBeLoopFused(*operand) ||
+          operand->opcode() == HloOpcode::kReduce ||
+          operand->opcode() == HloOpcode::kReduceWindow ||
           !operand->shape().IsArray() ||
           ShapeUtil::ByteSizeOfElements(operand->shape()) <
               performance_model_.device_info().l2_cache_size()) {
