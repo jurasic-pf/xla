@@ -93,6 +93,17 @@ bool CopiesAboveCapAllowed() {
   return on;
 }
 
+bool ChainIncludesSmall() {
+  static const bool on = [] {
+    const char* env = std::getenv("XLA_CPU_CHAIN_INCLUDE_SMALL");
+    return env != nullptr && env[0] == '1';
+  }();
+  return on;
+}
+
+// A producer whose recomputed chain reaches this size is not recomputed.
+constexpr size_t kMaxRecomputedChain = 512;
+
 // Limits the copies of a producer in one fusion, which grow code size and
 // compile time.
 constexpr int64_t kMaxEmittedCopies = 64;
@@ -879,6 +890,9 @@ bool CpuInstructionFusion::RecomputeInEachUserIsFaster(
   // it and these operands in each user, `copies` times in `consumer`. The work
   // of the users themselves is the same in both cases.
   absl::flat_hash_set<const HloInstruction*> chain = RecomputedChain(producer);
+  if (chain.size() >= kMaxRecomputedChain) {
+    return false;
+  }
   int64_t flops = 0;
   int64_t input_bytes = 0;
   absl::flat_hash_set<const HloInstruction*> inputs;
@@ -941,11 +955,17 @@ CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) {
           // materialized anyway is read, not recomputed.
           (ChainStopsAtMaterialized() && operand->user_count() > 1 &&
            !FusionIntoAllUsersIsFaster(*operand)) ||
-          ShapeUtil::ByteSizeOfElements(operand->shape()) <
-              performance_model_.device_info().l2_cache_size()) {
+          (ShapeUtil::ByteSizeOfElements(operand->shape()) <
+               performance_model_.device_info().l2_cache_size() &&
+           // Experiment only: cheap small operands are fused into the users
+           // as well, so they are recomputed with the producer.
+           !(ChainIncludesSmall() && !IsExpensive(*operand)))) {
         continue;
       }
       chain.insert(operand);
+      if (chain.size() >= kMaxRecomputedChain) {
+        return chain;
+      }
       worklist.push_back(operand);
     }
   }
