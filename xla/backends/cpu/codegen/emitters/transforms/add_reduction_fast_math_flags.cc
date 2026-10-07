@@ -15,6 +15,7 @@ limitations under the License.
 
 #include <cassert>
 #include <memory>
+#include <cstdlib>
 #include <utility>
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
@@ -58,7 +59,7 @@ struct RewriteCallPattern
     // Adding reassoc flags to reductions with more than one fast math op
     // can result in unexpected behaviour as they can reassociate between
     // themselves.
-    if (FastMathOpCount(callee) > 1) {
+    if (FastMathOpCount(callee) > 1 && !IndependentAccumulators(callee)) {
       return rewriter.notifyMatchFailure(call_op, "Too many fast math ops.");
     }
 
@@ -83,6 +84,36 @@ struct RewriteCallPattern
   }
 
  private:
+  // Experiment only (XLA_CPU_REASSOC_VARIADIC=1): returns true if every fast
+  // math op is an add or a multiply of two function arguments and each argument
+  // is used once, e.g. the reducer of a variadic sum. Such ops accumulate
+  // independent values and cannot be reassociated with each other.
+  static bool IndependentAccumulators(mlir::func::FuncOp callee) {
+    static const bool enabled = [] {
+      const char* env = std::getenv("XLA_CPU_REASSOC_VARIADIC");
+      return env != nullptr && env[0] == '1';
+    }();
+    if (!enabled) {
+      return false;
+    }
+    bool independent = true;
+    callee.walk([&](mlir::arith::ArithFastMathInterface op) {
+      mlir::Operation* operation = op.getOperation();
+      if (!mlir::isa<ma::AddFOp, ma::MulFOp>(operation)) {
+        independent = false;
+        return;
+      }
+      for (mlir::Value operand : operation->getOperands()) {
+        auto arg = mlir::dyn_cast<mlir::BlockArgument>(operand);
+        if (!arg || arg.getOwner() != &callee.getBody().front() ||
+            !arg.hasOneUse()) {
+          independent = false;
+        }
+      }
+    });
+    return independent;
+  }
+
   static int FastMathOpCount(mlir::func::FuncOp callee) {
     int count = 0;
     callee.walk([&](mlir::arith::ArithFastMathInterface op) { count++; });
