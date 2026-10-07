@@ -69,7 +69,7 @@ add {
 TEST_F(ReductionKeptDimSplitterTest, SplitsReductionKeepingSmallLastDim) {
   std::string hlo = absl::StrCat("HloModule m\n", kAdd, R"(
 ENTRY main {
-  x = f32[64,128,3] parameter(0)
+  x = f32[64,2048,3] parameter(0)
   c = f32[] constant(0)
   ROOT r = f32[64,3] reduce(x, c), dimensions={1}, to_apply=add
 }
