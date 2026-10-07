@@ -85,16 +85,16 @@ ENTRY main {
 }
 
 TEST_F(ReductionKeptDimSplitterTest, ComponentsAreComputedWithoutTheXyzArray) {
-  // d = y_j - x_i is [64,128,3]; after the split each component is computed
+  // d = y_j - x_i is [64,2048,3]; after the split each component is computed
   // from slices of x and y, so no [64,128,3] value remains.
   std::string hlo = absl::StrCat("HloModule m\n", kAdd, R"(
 ENTRY main {
   x = f32[64,3] parameter(0)
-  y = f32[128,3] parameter(1)
-  bx = f32[64,128,3] broadcast(x), dimensions={0,2}
-  by = f32[64,128,3] broadcast(y), dimensions={1,2}
-  d = f32[64,128,3] subtract(by, bx)
-  dd = f32[64,128,3] multiply(d, d)
+  y = f32[2048,3] parameter(1)
+  bx = f32[64,2048,3] broadcast(x), dimensions={0,2}
+  by = f32[64,2048,3] broadcast(y), dimensions={1,2}
+  d = f32[64,2048,3] subtract(by, bx)
+  dd = f32[64,2048,3] multiply(d, d)
   c = f32[] constant(0)
   ROOT r = f32[64,3] reduce(dd, c), dimensions={1}, to_apply=add
 }
@@ -104,8 +104,8 @@ ENTRY main {
   TF_ASSERT_OK_AND_ASSIGN(bool changed, RunHloPass(&pass, module.get()));
   EXPECT_TRUE(changed);
   RunHloPass(HloDCE(), module.get()).IgnoreError();
-  EXPECT_FALSE(HasShape(*module, "f32[64,128,3]"));
-  EXPECT_TRUE(HasShape(*module, "f32[64,128]"));
+  EXPECT_FALSE(HasShape(*module, "f32[64,2048,3]"));
+  EXPECT_TRUE(HasShape(*module, "f32[64,2048]"));
 }
 
 TEST_F(ReductionKeptDimSplitterTest, KeepsSmallReductions) {
