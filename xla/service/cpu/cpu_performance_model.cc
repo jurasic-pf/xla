@@ -75,28 +75,6 @@ std::string EstimateRunTimeData::ToString() const {
       absl::FormatDuration(exec_time));
 }
 
-namespace {
-
-// Experiment only: XLA_CPU_MODEL_LLC_MIB / XLA_CPU_MODEL_LLC_GBPS describe a
-// last-level cache between L2 and DRAM. Unset: no such tier.
-int64_t LastLevelCacheBytes() {
-  static const int64_t bytes = [] {
-    const char* env = std::getenv("XLA_CPU_MODEL_LLC_MIB");
-    return env ? static_cast<int64_t>(std::atof(env) * (1 << 20)) : 0;
-  }();
-  return bytes;
-}
-
-float LastLevelCacheBandwidth() {
-  static const float bandwidth = [] {
-    const char* env = std::getenv("XLA_CPU_MODEL_LLC_GBPS");
-    return env ? static_cast<float>(std::atof(env) * 1e9) : 100e9f;
-  }();
-  return bandwidth;
-}
-
-}  // namespace
-
 /*static*/
 se::DeviceDescription CpuPerformanceModel::DefaultDeviceInfo() {
   se::DeviceDescription device_info;
@@ -335,8 +313,6 @@ absl::Duration CpuPerformanceModel::ReadTimeWithDRAMHeuristic(
   float cache_bandwidth = dram_bandwidth * kCacheSpeedup;
   if (n_bytes_net < device_info.l2_cache_size()) {
     dram_bandwidth = cache_bandwidth;
-  } else if (n_bytes_net < LastLevelCacheBytes()) {
-    dram_bandwidth = std::max(dram_bandwidth, LastLevelCacheBandwidth());
   }
   float rest_bandwidth = cache_bandwidth;
   int64_t n_bytes_read_dram = std::min(n_bytes_net, n_bytes_total);
@@ -348,11 +324,7 @@ absl::Duration CpuPerformanceModel::ReadTimeWithDRAMHeuristic(
 /*static*/
 absl::Duration CpuPerformanceModel::WriteTime(
     const se::DeviceDescription& device_info, int64_t bytes_written) {
-  float bandwidth = device_info.memory_bandwidth();
-  if (bytes_written < LastLevelCacheBytes()) {
-    bandwidth = std::max(bandwidth, LastLevelCacheBandwidth());
-  }
-  return absl::Seconds(1.0f * bytes_written / bandwidth);
+  return absl::Seconds(1.0f * bytes_written / device_info.memory_bandwidth());
 }
 
 /*static*/
