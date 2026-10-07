@@ -1129,6 +1129,130 @@ ENTRY main {
   EXPECT_EQ(fusions_with_pad, 2);
 }
 
+TEST_F(InstructionFusionTest, FuseCheapProducerEmittedManyTimes) {
+  // `p` is emitted once per slice, 20 times, more than
+  // kAllowedCodeDuplication. Recomputing an add is cheaper than writing and
+  // reading `p`.
+  absl::string_view module_string = R"(
+HloModule cheap
+
+ENTRY main {
+  x = f32[512,512,20]{2,1,0} parameter(0)
+  y = f32[512,512,20]{2,1,0} parameter(1)
+  p = f32[512,512,20]{2,1,0} add(x, y)
+  sl0 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [0:1]}
+  sl1 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [1:2]}
+  sl2 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [2:3]}
+  sl3 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [3:4]}
+  sl4 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [4:5]}
+  sl5 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [5:6]}
+  sl6 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [6:7]}
+  sl7 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [7:8]}
+  sl8 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [8:9]}
+  sl9 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [9:10]}
+  sl10 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [10:11]}
+  sl11 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [11:12]}
+  sl12 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [12:13]}
+  sl13 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [13:14]}
+  sl14 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [14:15]}
+  sl15 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [15:16]}
+  sl16 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [16:17]}
+  sl17 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [17:18]}
+  sl18 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [18:19]}
+  sl19 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [19:20]}
+  a1 = f32[512,512,1]{2,1,0} add(sl0, sl1)
+  a2 = f32[512,512,1]{2,1,0} add(a1, sl2)
+  a3 = f32[512,512,1]{2,1,0} add(a2, sl3)
+  a4 = f32[512,512,1]{2,1,0} add(a3, sl4)
+  a5 = f32[512,512,1]{2,1,0} add(a4, sl5)
+  a6 = f32[512,512,1]{2,1,0} add(a5, sl6)
+  a7 = f32[512,512,1]{2,1,0} add(a6, sl7)
+  a8 = f32[512,512,1]{2,1,0} add(a7, sl8)
+  a9 = f32[512,512,1]{2,1,0} add(a8, sl9)
+  a10 = f32[512,512,1]{2,1,0} add(a9, sl10)
+  a11 = f32[512,512,1]{2,1,0} add(a10, sl11)
+  a12 = f32[512,512,1]{2,1,0} add(a11, sl12)
+  a13 = f32[512,512,1]{2,1,0} add(a12, sl13)
+  a14 = f32[512,512,1]{2,1,0} add(a13, sl14)
+  a15 = f32[512,512,1]{2,1,0} add(a14, sl15)
+  a16 = f32[512,512,1]{2,1,0} add(a15, sl16)
+  a17 = f32[512,512,1]{2,1,0} add(a16, sl17)
+  a18 = f32[512,512,1]{2,1,0} add(a17, sl18)
+  ROOT a19 = f32[512,512,1]{2,1,0} add(a18, sl19)
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  EXPECT_THAT(module->entry_computation()->root_instruction(),
+              op::Fusion(op::Parameter(), op::Parameter()));
+}
+
+TEST_F(InstructionFusionTest, DoNotFuseExpensiveProducerEmittedManyTimes) {
+  absl::string_view module_string = R"(
+HloModule expensive
+
+ENTRY main {
+  x = f32[512,512,20]{2,1,0} parameter(0)
+  e0 = f32[512,512,20]{2,1,0} sine(x)
+  e1 = f32[512,512,20]{2,1,0} exponential(e0)
+  e2 = f32[512,512,20]{2,1,0} log(e1)
+  e3 = f32[512,512,20]{2,1,0} tanh(e2)
+  p = f32[512,512,20]{2,1,0} exponential(e3)
+  sl0 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [0:1]}
+  sl1 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [1:2]}
+  sl2 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [2:3]}
+  sl3 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [3:4]}
+  sl4 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [4:5]}
+  sl5 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [5:6]}
+  sl6 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [6:7]}
+  sl7 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [7:8]}
+  sl8 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [8:9]}
+  sl9 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [9:10]}
+  sl10 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [10:11]}
+  sl11 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [11:12]}
+  sl12 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [12:13]}
+  sl13 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [13:14]}
+  sl14 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [14:15]}
+  sl15 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [15:16]}
+  sl16 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [16:17]}
+  sl17 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [17:18]}
+  sl18 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [18:19]}
+  sl19 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [19:20]}
+  a1 = f32[512,512,1]{2,1,0} add(sl0, sl1)
+  a2 = f32[512,512,1]{2,1,0} add(a1, sl2)
+  a3 = f32[512,512,1]{2,1,0} add(a2, sl3)
+  a4 = f32[512,512,1]{2,1,0} add(a3, sl4)
+  a5 = f32[512,512,1]{2,1,0} add(a4, sl5)
+  a6 = f32[512,512,1]{2,1,0} add(a5, sl6)
+  a7 = f32[512,512,1]{2,1,0} add(a6, sl7)
+  a8 = f32[512,512,1]{2,1,0} add(a7, sl8)
+  a9 = f32[512,512,1]{2,1,0} add(a8, sl9)
+  a10 = f32[512,512,1]{2,1,0} add(a9, sl10)
+  a11 = f32[512,512,1]{2,1,0} add(a10, sl11)
+  a12 = f32[512,512,1]{2,1,0} add(a11, sl12)
+  a13 = f32[512,512,1]{2,1,0} add(a12, sl13)
+  a14 = f32[512,512,1]{2,1,0} add(a13, sl14)
+  a15 = f32[512,512,1]{2,1,0} add(a14, sl15)
+  a16 = f32[512,512,1]{2,1,0} add(a15, sl16)
+  a17 = f32[512,512,1]{2,1,0} add(a16, sl17)
+  a18 = f32[512,512,1]{2,1,0} add(a17, sl18)
+  ROOT a19 = f32[512,512,1]{2,1,0} add(a18, sl19)
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  EXPECT_THAT(module->entry_computation()->root_instruction(),
+              op::Fusion(op::Fusion(op::Parameter())));
+}
+
 TEST_F(OpcodeFusionTest, BigConstantNotInFusion) {
   absl::string_view module_string = R"(
 HloModule module
