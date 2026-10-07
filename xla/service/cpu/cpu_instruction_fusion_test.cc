@@ -1253,6 +1253,53 @@ ENTRY main {
               op::Fusion(op::Fusion(op::Parameter())));
 }
 
+TEST_F(InstructionFusionTest, RecomputedChainContinuesThroughSmallReduction) {
+  // `n` is read by reductions over different dimensions. Recomputing it would
+  // recompute the 3-element reduction `r` and the exponential behind it, so
+  // the exponential must stay in a single fusion.
+  absl::string_view module_string = R"(
+HloModule module
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  x = f32[1024,1024,3]{2,1,0} parameter(0)
+  s = f32[1024,1024,3]{2,1,0} sine(x)
+  e = f32[1024,1024,3]{2,1,0} exponential(s)
+  l = f32[1024,1024,3]{2,1,0} log(e)
+  c = f32[] constant(0)
+  r = f32[1024,1024]{1,0} reduce(l, c), dimensions={2}, to_apply=add
+  n = f32[1024,1024]{1,0} sqrt(r)
+  a = f32[1024]{0} reduce(n, c), dimensions={1}, to_apply=add
+  b = f32[1024]{0} reduce(n, c), dimensions={0}, to_apply=add
+  na = f32[1024]{0} negate(a)
+  ROOT t = (f32[1024]{0}, f32[1024]{0}, f32[1024]{0}) tuple(a, na, b)
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  int64_t fusions_with_exp = 0;
+  for (const HloInstruction* instr :
+       module->entry_computation()->instructions()) {
+    if (instr->opcode() == HloOpcode::kFusion &&
+        absl::c_any_of(instr->fused_instructions(),
+                       [](const HloInstruction* fused) {
+                         return fused->opcode() == HloOpcode::kExp;
+                       })) {
+      ++fusions_with_exp;
+    }
+  }
+  EXPECT_EQ(fusions_with_exp, 1);
+}
+
 TEST_F(OpcodeFusionTest, BigConstantNotInFusion) {
   absl::string_view module_string = R"(
 HloModule module

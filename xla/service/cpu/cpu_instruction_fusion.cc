@@ -55,6 +55,17 @@ namespace cpu {
 
 namespace {
 
+// Reductions over at most this many elements are unrolled by LLVM.
+constexpr int64_t kMaxUnrolledReduction = 8;
+
+int64_t ReducedElements(const HloInstruction& reduce) {
+  int64_t elements = 1;
+  for (int64_t dim : reduce.dimensions()) {
+    elements *= reduce.operand(0)->shape().dimensions(dim);
+  }
+  return elements;
+}
+
 // Limits the copies of a producer in one fusion, which grow code size and
 // compile time.
 constexpr int64_t kMaxEmittedCopies = 64;
@@ -788,7 +799,9 @@ CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) const {
   // Operands that do not fit into the cache are fused into each user together
   // with the producer. Smaller operands are materialized and read instead, and
   // so are reductions: each user would emit its own copy of the reduction loop,
-  // which CodeDuplicationTooHigh rejects unless it is cheap.
+  // which CodeDuplicationTooHigh rejects unless it is cheap. A reduction over a
+  // few elements, e.g. a norm over xyz, is cheap and is recomputed like any
+  // other op.
   absl::flat_hash_set<const HloInstruction*> chain = {&producer};
   std::vector<const HloInstruction*> worklist = {&producer};
   while (!worklist.empty()) {
@@ -796,7 +809,8 @@ CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) const {
     worklist.pop_back();
     for (const HloInstruction* operand : instr->operands()) {
       if (chain.contains(operand) || !CanBeLoopFused(*operand) ||
-          operand->opcode() == HloOpcode::kReduce ||
+          (operand->opcode() == HloOpcode::kReduce &&
+           ReducedElements(*operand) > kMaxUnrolledReduction) ||
           operand->opcode() == HloOpcode::kReduceWindow ||
           !operand->shape().IsArray() ||
           ShapeUtil::ByteSizeOfElements(operand->shape()) <
