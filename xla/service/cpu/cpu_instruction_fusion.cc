@@ -923,7 +923,9 @@ CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) {
   // Operands that do not fit into the cache are fused into each user together
   // with the producer. Smaller operands are materialized and read instead, and
   // so are reductions: each user would emit its own copy of the reduction loop,
-  // which CodeDuplicationTooHigh rejects unless it is cheap.
+  // which CodeDuplicationTooHigh rejects unless it is cheap. A reduction over a
+  // few elements, e.g. a norm over xyz, is cheap and is recomputed like any
+  // other op.
   absl::flat_hash_set<const HloInstruction*> chain = {&producer};
   std::vector<const HloInstruction*> worklist = {&producer};
   while (!worklist.empty()) {
@@ -932,7 +934,7 @@ CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) {
     for (const HloInstruction* operand : instr->operands()) {
       if (chain.contains(operand) || !CanBeLoopFused(*operand) ||
           ((operand->opcode() == HloOpcode::kReduce &&
-            !(TinyReductionsAreCheap() && ReducesAtMost8(*operand))) ||
+            !ReducesAtMost8(*operand)) ||
            operand->opcode() == HloOpcode::kReduceWindow) ||
           !operand->shape().IsArray() ||
           // Experiment only: an operand with several users that is
