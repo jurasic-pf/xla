@@ -34,6 +34,7 @@ limitations under the License.
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_module.h"
 #include "xla/hlo/ir/hlo_opcode.h"
+#include "xla/literal.h"
 #include "xla/shape.h"
 #include "xla/shape_util.h"
 #include "xla/xla_data.pb.h"
@@ -281,7 +282,10 @@ absl::StatusOr<bool> MergeSiblingReductions(HloComputation* computation,
     const HloInstruction* init;
     bool operator==(const Key& o) const {
       return ShapeUtil::Equal(shape, o.shape) && dims == o.dims &&
-             opcode == o.opcode && init == o.init;
+             opcode == o.opcode &&
+             (init == o.init ||
+              (init->IsConstant() && o.init->IsConstant() &&
+               init->literal() == o.init->literal()));
     }
   };
   std::vector<std::pair<Key, std::vector<HloInstruction*>>> groups;
@@ -304,7 +308,10 @@ absl::StatusOr<bool> MergeSiblingReductions(HloComputation* computation,
     // All inits must be the same instruction.
     bool same_init = true;
     for (int64_t i = 1; i < n; ++i) {
-      same_init &= instr->operand(n + i) == instr->operand(n);
+      const HloInstruction* a = instr->operand(n + i);
+      const HloInstruction* b = instr->operand(n);
+      same_init &= a == b || (a->IsConstant() && b->IsConstant() &&
+                              a->literal() == b->literal());
     }
     if (!same_init) {
       continue;
@@ -356,7 +363,13 @@ absl::StatusOr<bool> MergeSiblingReductions(HloComputation* computation,
       }
     }
     const int64_t k = inputs.size();
-    std::vector<HloInstruction*> inits(k, const_cast<HloInstruction*>(key.init));
+    std::vector<HloInstruction*> inits;
+    for (HloInstruction* r : chosen) {
+      const int64_t n = r->operand_count() / 2;
+      for (int64_t i = 0; i < n; ++i) {
+        inits.push_back(r->mutable_operand(n + i));
+      }
+    }
     HloComputation* reducer = MakeVariadicReducer(
         computation->parent(), key.opcode,
         ShapeUtil::MakeScalarShape(shapes[0].element_type()), k);
