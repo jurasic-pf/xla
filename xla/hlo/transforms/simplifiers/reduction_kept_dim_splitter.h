@@ -45,10 +45,12 @@ class ReductionKeptDimSplitter : public HloModulePass {
  public:
   explicit ReductionKeptDimSplitter(int64_t max_kept_dim_size = 8,
                                     int64_t min_reduced_elements = 1024,
-                                    bool unroll_small_reductions = false)
+                                    bool unroll_small_reductions = false,
+                                    bool merge_sibling_reductions = false)
       : max_kept_dim_size_(max_kept_dim_size),
         min_reduced_elements_(min_reduced_elements),
-        unroll_small_reductions_(unroll_small_reductions) {}
+        unroll_small_reductions_(unroll_small_reductions),
+        merge_sibling_reductions_(merge_sibling_reductions) {}
   absl::string_view name() const override {
     return "reduction-kept-dim-splitter";
   }
@@ -62,6 +64,7 @@ class ReductionKeptDimSplitter : public HloModulePass {
   int64_t max_kept_dim_size_;
   int64_t min_reduced_elements_;
   bool unroll_small_reductions_;
+  bool merge_sibling_reductions_;
 };
 
 }  // namespace xla

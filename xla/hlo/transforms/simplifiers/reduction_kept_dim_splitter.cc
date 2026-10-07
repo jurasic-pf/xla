@@ -29,6 +29,7 @@ limitations under the License.
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+#include "xla/hlo/analysis/hlo_reachability.h"
 #include "xla/hlo/ir/hlo_computation.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_module.h"
@@ -268,6 +269,120 @@ class ComponentHoister {
       memo_;
 };
 
+// Merges reductions that have the same input shape, dimensions, reducer
+// opcode and init value, and do not depend on each other, into one variadic
+// reduction, so that a loop emitter computes them in one pass over the input.
+absl::StatusOr<bool> MergeSiblingReductions(HloComputation* computation,
+                                            int64_t max_operands) {
+  struct Key {
+    Shape shape;
+    std::vector<int64_t> dims;
+    HloOpcode opcode;
+    const HloInstruction* init;
+    bool operator==(const Key& o) const {
+      return ShapeUtil::Equal(shape, o.shape) && dims == o.dims &&
+             opcode == o.opcode && init == o.init;
+    }
+  };
+  std::vector<std::pair<Key, std::vector<HloInstruction*>>> groups;
+  for (HloInstruction* instr : computation->MakeInstructionPostOrder()) {
+    if (instr->opcode() != HloOpcode::kReduce) {
+      continue;
+    }
+    std::optional<HloOpcode> opcode = SimpleReducerOpcode(instr->to_apply());
+    if (!opcode.has_value() && instr->operand_count() > 2) {
+      // A reducer we built: all ops share the opcode of its first result.
+      const HloInstruction* root = instr->to_apply()->root_instruction();
+      if (root->opcode() == HloOpcode::kTuple && root->operand_count() > 0) {
+        opcode = root->operand(0)->opcode();
+      }
+    }
+    const int64_t n = instr->operand_count() / 2;
+    if (!opcode.has_value() || n < 1) {
+      continue;
+    }
+    // All inits must be the same instruction.
+    bool same_init = true;
+    for (int64_t i = 1; i < n; ++i) {
+      same_init &= instr->operand(n + i) == instr->operand(n);
+    }
+    if (!same_init) {
+      continue;
+    }
+    Key key{instr->operand(0)->shape(),
+            std::vector<int64_t>(instr->dimensions().begin(),
+                                 instr->dimensions().end()),
+            *opcode, instr->operand(n)};
+    auto it = absl::c_find_if(groups, [&](const auto& g) { return g.first == key; });
+    if (it == groups.end()) {
+      groups.push_back({key, {instr}});
+    } else {
+      it->second.push_back(instr);
+    }
+  }
+  bool changed = false;
+  for (auto& [key, members] : groups) {
+    if (members.size() < 2) {
+      continue;
+    }
+    std::unique_ptr<HloReachabilityMap> reachability =
+        HloReachabilityMap::Build(computation);
+    std::vector<HloInstruction*> chosen;
+    int64_t operands = 0;
+    for (HloInstruction* r : members) {
+      const int64_t n = r->operand_count() / 2;
+      if (operands + n > max_operands) {
+        break;
+      }
+      bool independent = absl::c_none_of(chosen, [&](HloInstruction* c) {
+        return reachability->IsReachable(c, r) || reachability->IsReachable(r, c);
+      });
+      if (independent) {
+        chosen.push_back(r);
+        operands += n;
+      }
+    }
+    if (chosen.size() < 2) {
+      continue;
+    }
+    std::vector<HloInstruction*> inputs;
+    std::vector<Shape> shapes;
+    for (HloInstruction* r : chosen) {
+      const int64_t n = r->operand_count() / 2;
+      for (int64_t i = 0; i < n; ++i) {
+        inputs.push_back(r->mutable_operand(i));
+        shapes.push_back(r->shape().IsTuple() ? r->shape().tuple_shapes(i)
+                                              : r->shape());
+      }
+    }
+    const int64_t k = inputs.size();
+    std::vector<HloInstruction*> inits(k, const_cast<HloInstruction*>(key.init));
+    HloComputation* reducer = MakeVariadicReducer(
+        computation->parent(), key.opcode,
+        ShapeUtil::MakeScalarShape(shapes[0].element_type()), k);
+    HloInstruction* merged = computation->AddInstruction(
+        HloInstruction::CreateReduce(ShapeUtil::MakeTupleShape(shapes), inputs,
+                                     inits, key.dims, reducer));
+    int64_t index = 0;
+    for (HloInstruction* r : chosen) {
+      const int64_t n = r->operand_count() / 2;
+      std::vector<HloInstruction*> parts;
+      for (int64_t i = 0; i < n; ++i) {
+        parts.push_back(computation->AddInstruction(
+            HloInstruction::CreateGetTupleElement(shapes[index], merged, index)));
+        ++index;
+      }
+      HloInstruction* replacement =
+          r->shape().IsTuple()
+              ? computation->AddInstruction(HloInstruction::CreateTuple(parts))
+              : parts[0];
+      ABSL_RETURN_IF_ERROR(computation->ReplaceInstruction(r, replacement));
+    }
+    changed = true;
+  }
+  return changed;
+}
+
 }  // namespace
 
 absl::StatusOr<bool> ReductionKeptDimSplitter::RunImpl(
@@ -380,6 +495,13 @@ absl::StatusOr<bool> ReductionKeptDimSplitter::RunImpl(
           HloInstruction::CreateConcatenate(out_shape, parts, out_last));
       ABSL_RETURN_IF_ERROR(computation->ReplaceInstruction(reduce, concat));
       changed = true;
+    }
+  }
+  if (merge_sibling_reductions_) {
+    for (HloComputation* computation :
+         module->MakeNonfusionComputations(execution_threads)) {
+      ABSL_ASSIGN_OR_RETURN(bool merged, MergeSiblingReductions(computation, 16));
+      changed |= merged;
     }
   }
   return changed;
