@@ -413,7 +413,11 @@ absl::StatusOr<bool> MergeSiblingReductions(HloComputation* computation,
     }
     return it->second;
   };
-  for (auto& [key, members] : groups) {
+  // Dependent reductions, e.g. the stages of an ODE step, cannot share one
+  // loop, so the members a merge leaves out are tried again as a new group.
+  for (size_t g = 0; g < groups.size(); ++g) {
+    const Key key = groups[g].first;
+    const std::vector<HloInstruction*> members = groups[g].second;
     if (members.size() < 2) {
       continue;
     }
@@ -446,6 +450,15 @@ absl::StatusOr<bool> MergeSiblingReductions(HloComputation* computation,
         chosen.push_back(r);
         operands += n;
       }
+    }
+    std::vector<HloInstruction*> rest;
+    for (HloInstruction* r : members) {
+      if (r != members.front() && !absl::c_linear_search(chosen, r)) {
+        rest.push_back(r);
+      }
+    }
+    if (rest.size() >= 2) {
+      groups.push_back({key, std::move(rest)});
     }
     if (chosen.size() < 2) {
       continue;

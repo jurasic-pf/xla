@@ -167,6 +167,36 @@ ENTRY main {
   EXPECT_EQ(CountReduces(*module, /*operand_rank=*/2), 1);
 }
 
+TEST_F(ReductionKeptDimSplitterTest, MergesSiblingsOfEachDependentStage) {
+  std::string hlo = absl::StrCat("HloModule m\n", kAdd, R"(
+ENTRY main {
+  p = f32[64,128] parameter(0)
+  q = f32[64,128] parameter(1)
+  c = f32[] constant(0)
+  e1 = f32[64,128] exponential(p)
+  x1 = f32[64,128] multiply(e1, q)
+  y1 = f32[64,128] add(e1, q)
+  a1 = f32[64] reduce(x1, c), dimensions={1}, to_apply=add
+  b1 = f32[64] reduce(y1, c), dimensions={1}, to_apply=add
+  s = f32[64,128] broadcast(a1), dimensions={0}
+  e2 = f32[64,128] exponential(s)
+  x2 = f32[64,128] multiply(e2, q)
+  y2 = f32[64,128] add(e2, q)
+  a2 = f32[64] reduce(x2, c), dimensions={1}, to_apply=add
+  b2 = f32[64] reduce(y2, c), dimensions={1}, to_apply=add
+  ROOT t = (f32[64], f32[64], f32[64]) tuple(b1, a2, b2)
+}
+)");
+  TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(hlo));
+  ReductionKeptDimSplitter pass(/*max_kept_dim_size=*/8,
+                                /*min_reduced_elements=*/1024,
+                                /*unroll_small_reductions=*/false,
+                                /*merge_sibling_reductions=*/true);
+  TF_ASSERT_OK_AND_ASSIGN(bool changed, RunHloPass(&pass, module.get()));
+  EXPECT_TRUE(changed);
+  EXPECT_EQ(CountReduces(*module, /*operand_rank=*/2), 2);
+}
+
 TEST_F(ReductionKeptDimSplitterTest, DoesNotMergeReductionsWithoutSharedWork) {
   std::string hlo = absl::StrCat("HloModule m\n", kAdd, R"(
 ENTRY main {
