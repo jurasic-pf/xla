@@ -410,12 +410,77 @@ bool CpuInstructionFusion::IsExpensive(const HloInstruction& instruction) {
   return false;
 }
 
+namespace {
+
+// Returns true if `producer` is computed by elementwise ops and broadcasts from
+// inputs whose total size is at most 1/8 of its own, e.g. a pairwise term
+// x_i - y_j built from two vectors. Duplicating such a producer re-reads only
+// the small inputs.
+bool RecomputableFromSmallInputs(const HloInstruction* producer) {
+  if (!producer->shape().IsArray()) {
+    return false;
+  }
+  const int64_t bytes = ShapeUtil::ByteSizeOfElements(producer->shape());
+  int64_t input_bytes = 0;
+  absl::flat_hash_set<const HloInstruction*> visited;
+  std::vector<const HloInstruction*> worklist = {producer};
+  while (!worklist.empty()) {
+    const HloInstruction* instr = worklist.back();
+    worklist.pop_back();
+    if (!visited.insert(instr).second) {
+      continue;
+    }
+    if (visited.size() > 256) {
+      return false;
+    }
+    const bool walk = instr == producer ||
+                      (instr->IsElementwise() &&
+                       instr->opcode() != HloOpcode::kConstant) ||
+                      instr->opcode() == HloOpcode::kBitcast ||
+                      instr->opcode() == HloOpcode::kReshape;
+    if (instr->opcode() == HloOpcode::kBroadcast ||
+        instr->opcode() == HloOpcode::kIota ||
+        (instr->opcode() == HloOpcode::kConstant &&
+         ShapeUtil::IsEffectiveScalar(instr->shape()))) {
+      // A broadcast reads only its operand.
+      if (instr->opcode() == HloOpcode::kBroadcast &&
+          !visited.contains(instr->operand(0))) {
+        input_bytes += ShapeUtil::ByteSizeOfElements(instr->operand(0)->shape());
+        visited.insert(instr->operand(0));
+      }
+      continue;
+    }
+    if (!walk) {
+      if (instr->shape().IsArray()) {
+        input_bytes += ShapeUtil::ByteSizeOfElements(instr->shape());
+      }
+      continue;
+    }
+    for (const HloInstruction* operand : instr->operands()) {
+      worklist.push_back(operand);
+    }
+  }
+  return input_bytes * 8 <= bytes;
+}
+
+}  // namespace
+
 InstructionFusion::HloInstructionSet
 CpuInstructionFusion::ComputeGloballyUnfusible(
     absl::Span<HloInstruction* const> post_order,
     const HloReachabilityMap& reachability) {
   HloInstructionSet do_not_duplicate =
       InstructionFusion::ComputeGloballyUnfusible(post_order, reachability);
+  // Experiment only: XLA_CPU_SMALL_INPUT_DUP=1.
+  static const bool small_input_dup = [] {
+    const char* env = std::getenv("XLA_CPU_SMALL_INPUT_DUP");
+    return env != nullptr && env[0] == '1';
+  }();
+  if (small_input_dup) {
+    absl::erase_if(do_not_duplicate, [](HloInstruction* instr) {
+      return RecomputableFromSmallInputs(instr);
+    });
+  }
   for (HloInstruction* producer : post_order) {
     if (IsCoupledReductionShiftExpProducer(producer)) {
       // The base implementation treats effectively-unary elementwise ops as
