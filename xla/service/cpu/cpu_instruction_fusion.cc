@@ -75,6 +75,14 @@ bool ReducesAtMost8(const HloInstruction& reduce) {
   return reduced <= 8;
 }
 
+bool ChainStopsAtMaterialized() {
+  static const bool on = [] {
+    const char* env = std::getenv("XLA_CPU_CHAIN_STOP_MATERIALIZED");
+    return env != nullptr && env[0] == '1';
+  }();
+  return on;
+}
+
 // Limits the copies of a producer in one fusion, which grow code size and
 // compile time.
 constexpr int64_t kMaxEmittedCopies = 64;
@@ -897,7 +905,7 @@ bool CpuInstructionFusion::RecomputeInEachUserIsFaster(
 }
 
 absl::flat_hash_set<const HloInstruction*>
-CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) const {
+CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) {
   // Operands that do not fit into the cache are fused into each user together
   // with the producer. Smaller operands are materialized and read instead, and
   // so are reductions: each user would emit its own copy of the reduction loop,
@@ -913,6 +921,10 @@ CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) const {
             !(TinyReductionsAreCheap() && ReducesAtMost8(*operand))) ||
            operand->opcode() == HloOpcode::kReduceWindow) ||
           !operand->shape().IsArray() ||
+          // Experiment only: an operand with several users that is
+          // materialized anyway is read, not recomputed.
+          (ChainStopsAtMaterialized() && operand->user_count() > 1 &&
+           !FusionIntoAllUsersIsFaster(*operand)) ||
           ShapeUtil::ByteSizeOfElements(operand->shape()) <
               performance_model_.device_info().l2_cache_size()) {
         continue;

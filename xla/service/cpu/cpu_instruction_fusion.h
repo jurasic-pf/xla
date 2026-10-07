@@ -79,7 +79,7 @@ class CpuInstructionFusion : public InstructionFusion {
   // Returns `producer` and its operands, direct or indirect, that are
   // recomputed in each user if `producer` is fused into its users.
   absl::flat_hash_set<const HloInstruction*> RecomputedChain(
-      const HloInstruction& producer) const;
+      const HloInstruction& producer);
 
   HloInstruction* FuseInstruction(HloInstruction* fusion_instruction,
                                   HloInstruction* producer) override;
