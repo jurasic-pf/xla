@@ -617,7 +617,13 @@ FusionDecision CpuInstructionFusion::ShouldFuse(HloInstruction* consumer,
     // once. Each copy recomputes the op, which the performance model accounts
     // for. Above the limit, every copy is charged. That is an upper bound:
     // LLVM merges copies that compute the same element.
-    if (evaluation.CodeDuplicationTooHigh(producer)) {
+    // Experiment only: copies of a tiny reduction are unrolled and merged by
+    // LLVM.
+    const bool tiny_reduction =
+        TinyReductionsAreCheap() && producer->opcode() == HloOpcode::kReduce &&
+        ReducesAtMost8(*producer) &&
+        evaluation.EvaluateEmittedInstructions(producer) <= kMaxEmittedCopies;
+    if (!tiny_reduction && evaluation.CodeDuplicationTooHigh(producer)) {
       int64_t copies = evaluation.EvaluateEmittedInstructions(producer);
       bool fuse =
           copies <= FusionNodeIndexingEvaluation::kAllowedCodeDuplication
