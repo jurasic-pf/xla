@@ -191,6 +191,20 @@ TEST(CpuPerformanceModelReduceTest, LoopFusionIsFasterIfSineIsMaterialized) {
   EXPECT_LT(times.loop_fusion, times.library);
 }
 
+TEST(CpuPerformanceModelReduceTest, MaterializedAnywayIsOnlyRead) {
+  // If sin and cos are written for other users anyway, the library fusion
+  // only reads them, like the loop fusion.
+  CpuPerformanceModel model(CpuPerformanceModel::DefaultDeviceInfo());
+  CpuPerformanceModel::ReduceWork work =
+      TrigWork(int64_t{1} << 20, /*outputs=*/1, /*materialized_ops=*/2);
+  CpuPerformanceModel::ReduceRunTimes written = model.EstimateReduce(work);
+  work.materialized_anyway = true;
+  work.chain.flops = work.chain.library_flops = 2;
+  work.chain.transcendental_flops = 0;
+  CpuPerformanceModel::ReduceRunTimes read = model.EstimateReduce(work);
+  EXPECT_LT(read.library, written.library);
+}
+
 TEST(CpuPerformanceModelReduceTest, LoopFusionIsFasterForTinyReduction) {
   // A tiny reduction of cheap ops is dominated by the fixed costs of the
   // second kernel and the library call.

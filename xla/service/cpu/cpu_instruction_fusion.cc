@@ -16,6 +16,7 @@ limitations under the License.
 #include "xla/service/cpu/cpu_instruction_fusion.h"
 
 #include <algorithm>
+#include <limits>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -647,6 +648,23 @@ FusionDecision CpuInstructionFusion::ShouldFuse(HloInstruction* consumer,
 
   RETURN_IF_NOT_FUSIBLE(InstructionFusion::ShouldFuse(consumer, operand_index));
 
+  // The loop emitter only partitions the output of a kernel. Fusing a producer
+  // into a consumer with fewer outputs than threads, e.g. the reduce-window
+  // of a tree reduction into the final reduction, can serialize its work.
+  if (cost_analysis_ != nullptr && producer->user_count() == 1 &&
+      producer->shape().IsArray() && consumer->shape().IsArray() &&
+      ShapeUtil::ElementsIn(consumer->shape()) <
+          performance_model_.Threads() &&
+      ShapeUtil::ElementsIn(producer->shape()) >
+          ShapeUtil::ElementsIn(consumer->shape())) {
+    CpuPerformanceModel::RunTimes run_times =
+        performance_model_.EstimateRunTimes(producer, cost_analysis_.get(),
+                                            {consumer});
+    if (run_times.time_fused > run_times.time_unfused) {
+      return FusionDecision::Forbid("Fusion would serialize the producer.");
+    }
+  }
+
   // Fusing too many reductions together can lead to a giant LLVM modules after
   // loop unrolling. We prefer to split such fusions into multiple kernels to
   // avoid excessive compilation times. X86TargetLowering::PerformDAGCombine
@@ -792,6 +810,32 @@ HloInstruction::FusionKind CpuInstructionFusion::ChooseKind(
              : HloInstruction::FusionKind::kLoop;
 }
 
+/*static*/
+int64_t CpuInstructionFusion::EstimateEntryTempBytes(const HloModule& module) {
+  // Values of the entry computation that are likely materialized: those with
+  // several users, or read by an instruction that a loop fusion cannot
+  // absorb. Buffer assignment shares memory between values that are not live
+  // at the same time, so this is an upper bound.
+  int64_t bytes = 0;
+  for (const HloInstruction* instr :
+       module.entry_computation()->instructions()) {
+    if (!instr->shape().IsArray() ||
+        instr->opcode() == HloOpcode::kParameter ||
+        instr->opcode() == HloOpcode::kConstant ||
+        instr->opcode() == HloOpcode::kBitcast ||
+        instr->opcode() == HloOpcode::kGetTupleElement) {
+      continue;
+    }
+    if (instr->user_count() > 1 ||
+        absl::c_any_of(instr->users(), [](const HloInstruction* user) {
+          return !CanBeLoopFused(*user);
+        })) {
+      bytes += ShapeUtil::ByteSizeOfElements(instr->shape());
+    }
+  }
+  return bytes;
+}
+
 absl::StatusOr<bool> CpuInstructionFusion::RunImpl(
     HloModule* module,
     const absl::flat_hash_set<absl::string_view>& execution_threads) {
@@ -812,6 +856,9 @@ absl::StatusOr<bool> CpuInstructionFusion::RunImpl(
       break;
     }
   }
+  performance_model_.set_temp_is_fresh(
+      EstimateEntryTempBytes(*module) >
+      CpuPerformanceModel::kFreshAllocationBytes);
   set_is_expensive([this](const HloInstruction& instruction) {
     if (TinyReductionsAreCheap() &&
         instruction.opcode() == HloOpcode::kReduce &&
@@ -841,12 +888,7 @@ bool CpuInstructionFusion::FusionIntoAllUsersIsFaster(
       ShapeUtil::IsEffectiveScalar(producer.shape())) {
     return true;
   }
-  // A producer that fits into the cache is cheap to materialize, and the
-  // estimate is dominated by the per-opcode flop counts, which do not account
-  // for code generation costs.
-  if (!producer.shape().IsArray() ||
-      ShapeUtil::ByteSizeOfElements(producer.shape()) <
-          performance_model_.device_info().l2_cache_size()) {
+  if (!producer.shape().IsArray()) {
     return !IsExpensive(producer);
   }
   auto [it, inserted] =
@@ -892,23 +934,33 @@ bool CpuInstructionFusion::EstimateFusionIntoAllUsersIsFaster(
                                      /*copies=*/1);
 }
 
-int64_t CpuInstructionFusion::DestinationReadFactor(
+CpuInstructionFusion::Destinations CpuInstructionFusion::FindDestinations(
     const HloInstruction& producer, const HloInstruction& user) {
   // Follows fusible elementwise users to the reductions and fusions they end
-  // up in, and returns the largest read factor among them.
+  // up in.
   static constexpr int64_t kMaxVisited = 64;
-  int64_t factor = 1;
+  Destinations destinations{/*read_factor=*/1,
+                            /*outputs=*/std::numeric_limits<int64_t>::max()};
   absl::flat_hash_set<const HloInstruction*> visited = {&user};
   std::vector<const HloInstruction*> worklist = {&user};
   while (!worklist.empty() && visited.size() < kMaxVisited) {
     const HloInstruction* instr = worklist.back();
     worklist.pop_back();
     if (instr->opcode() == HloOpcode::kFusion ||
-        instr->opcode() == HloOpcode::kReduce) {
-      factor = std::max(factor, CpuPerformanceModel::ReadFactor(instr, &producer));
-      continue;
-    }
-    if (!instr->IsElementwise()) {
+        instr->opcode() == HloOpcode::kReduce || !instr->IsElementwise() ||
+        instr->user_count() == 0) {
+      destinations.read_factor =
+          std::max(destinations.read_factor,
+                   CpuPerformanceModel::ReadFactor(instr, &producer));
+      const Shape& shape = instr->shape().IsTuple() &&
+                                   instr->shape().tuple_shapes_size() > 0
+                               ? instr->shape().tuple_shapes(0)
+                               : instr->shape();
+      if (shape.IsArray()) {
+        destinations.outputs = std::min(
+            destinations.outputs,
+            std::max<int64_t>(1, ShapeUtil::ElementsIn(shape)));
+      }
       continue;
     }
     for (const HloInstruction* next : instr->users()) {
@@ -918,8 +970,9 @@ int64_t CpuInstructionFusion::DestinationReadFactor(
     }
   }
   VLOG(3) << "Producer: " << producer.name() << ", user: " << user.name()
-          << ", read factor: " << factor;
-  return factor;
+          << ", read factor: " << destinations.read_factor
+          << ", outputs: " << destinations.outputs;
+  return destinations;
 }
 
 bool CpuInstructionFusion::RecomputedChainHasCompute(
@@ -970,24 +1023,33 @@ bool CpuInstructionFusion::RecomputeInEachUserIsFaster(
           read_inputs + CpuPerformanceModel::WriteTime(device_info, bytes)) +
       CpuPerformanceModel::KernelOverhead(performance_model_.LoopFusionTasks(
           flops, transcendental_flops, input_bytes + bytes)) +
-      (CpuPerformanceModel::RunsOncePerExecution(producer)
-           ? CpuPerformanceModel::FreshAllocationTime(bytes)
-           : absl::ZeroDuration());
+      performance_model_.MaterializeFaultTime(producer, bytes);
   absl::Duration time_fused;
   for (const HloInstruction* user : producer.users()) {
     float utilization = CpuPerformanceModel::GetOperandUtilization(
         cost_analysis_.get(), user, &producer);
     // The kernels that `user` is fused into, e.g. reductions, may read the
-    // materialized producer strided.
-    const int64_t read_factor = DestinationReadFactor(producer, *user);
+    // materialized producer strided, and partition only their outputs.
+    const Destinations destinations = FindDestinations(producer, *user);
+    const int64_t read_factor = destinations.read_factor;
     time_unfused += CpuPerformanceModel::ReadTimeWithDRAMHeuristic(
         device_info, bytes * read_factor,
         std::llround(bytes * utilization * read_factor));
     int64_t user_copies = user == consumer ? copies : 1;
+    const int64_t user_flops = std::llround(flops * utilization * user_copies);
+    absl::Duration read_time = read_inputs;
+    absl::Duration unused_write_time;
+    const absl::Duration compute_time = performance_model_.ScaleToCores(
+        CpuPerformanceModel::ComputeTime(device_info, user_flops),
+        performance_model_.Cores(std::min(
+            destinations.outputs,
+            performance_model_.LoopFusionTasks(
+                user_flops,
+                std::llround(transcendental_flops * utilization * user_copies),
+                input_bytes))),
+        &read_time, &unused_write_time);
     time_fused += CpuPerformanceModel::CombineComputeAndMemoryAccessTime(
-        CpuPerformanceModel::ComputeTime(
-            device_info, std::llround(flops * utilization * user_copies)),
-        read_inputs);
+        compute_time, read_time);
   }
   VLOG(3) << "Producer: " << producer.name() << ", chain size: " << chain.size()
           << ", unfused time: " << time_unfused

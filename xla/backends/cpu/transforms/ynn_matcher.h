@@ -31,6 +31,7 @@ limitations under the License.
 #include "xla/backends/cpu/custom_fusion_configs.h"
 #include "xla/backends/cpu/transforms/library_matcher.h"
 #include "xla/backends/cpu/ynn_support.h"
+#include "xla/hlo/ir/hlo_computation.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_opcode.h"
 #include "xla/service/cpu/cpu_performance_model.h"
@@ -147,8 +148,52 @@ class YnnMatcher : public LibraryMatcher {
   // Returns the largest computed input of `reduce` that a fusion started at
   // `reduce` cannot absorb, e.g. because it has other users or is not
   // supported, or null. The fusion reads that input from memory, whereas loop
+  // The largest computed input of a reduction that a library fusion cannot
+  // absorb, and whether it is in memory regardless of the fusion: a tuple
+  // element, the root, or read by a user that a loop fusion cannot absorb.
+  struct Materialized {
+    const HloInstruction* instr = nullptr;
+    bool anyway = false;
+  };
+
+  static bool IsMaterializedAnyway(
+      const HloInstruction& instr,
+      const absl::flat_hash_set<const HloInstruction*>& absorbed) {
+    if (instr.opcode() == HloOpcode::kGetTupleElement ||
+        instr.opcode() == HloOpcode::kParameter ||
+        instr.opcode() == HloOpcode::kConstant ||
+        (instr.parent() != nullptr &&
+         instr.parent()->root_instruction() == &instr)) {
+      return true;
+    }
+    return absl::c_any_of(instr.users(), [&](const HloInstruction* user) {
+      if (absorbed.contains(user)) {
+        return false;
+      }
+      switch (user->opcode()) {
+        case HloOpcode::kBroadcast:
+        case HloOpcode::kBitcast:
+        case HloOpcode::kConcatenate:
+        case HloOpcode::kDynamicSlice:
+        case HloOpcode::kDynamicUpdateSlice:
+        case HloOpcode::kPad:
+        case HloOpcode::kReduce:
+        case HloOpcode::kReduceWindow:
+        case HloOpcode::kReshape:
+        case HloOpcode::kReverse:
+        case HloOpcode::kSlice:
+        case HloOpcode::kTranspose:
+          return false;
+        case HloOpcode::kFusion:
+          return !user->IsLoopFusion();
+        default:
+          return !user->IsElementwise();
+      }
+    });
+  }
+
   // fusion can recompute it.
-  const HloInstruction* MaterializedInput(const HloInstruction* reduce) {
+  Materialized MaterializedInput(const HloInstruction* reduce) {
     // Follows the upward growth in LibraryRewriter::FuseNeighbors: an operand is
     // absorbed if it is supported and all of its users are absorbed.
     absl::flat_hash_set<const HloInstruction*> absorbed = {reduce};
@@ -183,7 +228,10 @@ class YnnMatcher : public LibraryMatcher {
         }
       }
     }
-    return largest;
+    if (largest == nullptr) {
+      return {};
+    }
+    return {largest, IsMaterializedAnyway(*largest, absorbed)};
   }
 
   // Returns true if a loop fusion with `outputs` outputs (default: those of
@@ -210,19 +258,21 @@ class YnnMatcher : public LibraryMatcher {
   };
 
   Decision Decide(const HloInstruction* reduce, int64_t outputs) {
-    const HloInstruction* materialized = MaterializedInput(reduce);
-    if (materialized == nullptr) {
+    const Materialized materialized = MaterializedInput(reduce);
+    if (materialized.instr == nullptr) {
       return {};
     }
     static const absl::NoDestructor<CpuPerformanceModel> model(
         CpuPerformanceModel::DefaultDeviceInfo());
-    CpuPerformanceModel::ReduceWork work =
-        CpuPerformanceModel::AnalyzeReduce(*reduce, materialized);
+    CpuPerformanceModel::ReduceWork work = CpuPerformanceModel::AnalyzeReduce(
+        *reduce, materialized.instr, materialized.anyway);
     if (outputs > 0) {
       work.outputs = outputs;
     }
     CpuPerformanceModel::ReduceRunTimes times = model->EstimateReduce(work);
-    VLOG(2) << reduce->name() << " materializing " << materialized->name()
+    VLOG(2) << reduce->name() << " materializing "
+            << materialized.instr->name()
+            << (materialized.anyway ? " (anyway)" : "")
             << ": " << work.ToString() << " loop fusion "
             << times.loop_fusion << " library " << times.library;
     return {times.loop_fusion < times.library,

@@ -135,6 +135,10 @@ EstimateRunTimeData CpuPerformanceModel::EstimateRunTimeForInstruction(
   }
 
   absl::Duration write_time = WriteTime(device_info_, bytes_written);
+  const int64_t cores =
+      KernelCores(*instr, flops, cost_analysis->transcendental_flop_count(*instr),
+                  bytes_read + bytes_written);
+  compute_time = ScaleToCores(compute_time, cores, &read_time, &write_time);
   absl::Duration exec_time =
       CombineComputeAndMemoryAccessTime(compute_time, read_time + write_time);
 
@@ -193,8 +197,18 @@ absl::Duration CpuPerformanceModel::EstimateRunTimeForFusion(
         ReadTimeWithDRAMHeuristic(device_info_, n_bytes_net, n_bytes_total);
   }
 
-  absl::Duration exec_time = CombineComputeAndMemoryAccessTime(
-      compute_time, read_time + consumer_runtime.write_time);
+  // The fused kernel computes the consumer's output.
+  absl::Duration write_time = WriteTime(device_info_,
+                                        consumer_runtime.bytes_written);
+  const int64_t cores = KernelCores(
+      *consumer, flops,
+      std::llround(cost_analysis->transcendental_flop_count(*producer) *
+                   utilization_by_this_consumer) +
+          cost_analysis->transcendental_flop_count(*consumer),
+      bytes_read + consumer_runtime.bytes_written);
+  compute_time = ScaleToCores(compute_time, cores, &read_time, &write_time);
+  absl::Duration exec_time =
+      CombineComputeAndMemoryAccessTime(compute_time, read_time + write_time);
 
   VLOG(3) << "Runtime data for producer-consumer fusion:\n"
           << " producer: " << producer->name() << "\n"
@@ -203,7 +217,7 @@ absl::Duration CpuPerformanceModel::EstimateRunTimeForFusion(
                                  bytes_read,
                                  consumer_runtime.bytes_written,
                                  read_time,
-                                 consumer_runtime.write_time,
+                                 write_time,
                                  compute_time,
                                  exec_time}
                  .ToString();
@@ -223,9 +237,8 @@ CpuPerformanceModel::RunTimes CpuPerformanceModel::EstimateRunTimes(
         producer_runtime.flops,
         cost_analysis->transcendental_flop_count(*producer),
         producer_runtime.bytes_read + producer_runtime.bytes_written));
-    if (RunsOncePerExecution(*producer)) {
-      time_unfused += FreshAllocationTime(producer_runtime.bytes_written);
-    }
+    time_unfused +=
+        MaterializeFaultTime(*producer, producer_runtime.bytes_written);
   }
   absl::Duration time_fused;
 
@@ -441,10 +454,30 @@ absl::Duration CpuPerformanceModel::FreshAllocationTime(int64_t bytes) {
              : absl::ZeroDuration();
 }
 
+absl::Duration CpuPerformanceModel::MaterializeFaultTime(
+    const HloInstruction& producer, int64_t bytes) const {
+  if (!RunsOncePerExecution(producer)) {
+    return absl::ZeroDuration();
+  }
+  return temp_is_fresh_
+             ? kPageFaultTime * ((bytes + kPageFaultBytes - 1) / kPageFaultBytes)
+             : FreshAllocationTime(bytes);
+}
+
 /*static*/
 bool CpuPerformanceModel::RunsOncePerExecution(const HloInstruction& instr) {
   const HloComputation* computation = instr.parent();
   return computation != nullptr && computation->IsEntryComputation();
+}
+
+absl::Duration CpuPerformanceModel::ReduceReadTime(int64_t bytes,
+                                                   double cores) const {
+  cores = std::max(1.0, cores);
+  const double bandwidth =
+      bytes <= cores * device_info_.l2_cache_size()
+          ? cores * kCoreCacheBandwidth
+          : std::min(kReduceReadBandwidth, cores * kCoreReduceReadBandwidth);
+  return absl::Seconds(bytes / bandwidth);
 }
 
 /*static*/
@@ -466,6 +499,36 @@ int64_t CpuPerformanceModel::LoopFusionTasks(int64_t flops,
 int64_t CpuPerformanceModel::Threads() const {
   return device_info_.core_count() *
          std::max<int64_t>(1, device_info_.threads_per_core_limit());
+}
+
+int64_t CpuPerformanceModel::KernelCores(const HloInstruction& kernel,
+                                         int64_t flops,
+                                         int64_t transcendental_flops,
+                                         int64_t bytes) const {
+  // The loop emitter partitions the outer dimensions of the kernel's output,
+  // e.g. the outputs of a reduction.
+  const Shape& shape = kernel.shape().IsTuple() &&
+                               kernel.shape().tuple_shapes_size() > 0
+                           ? kernel.shape().tuple_shapes(0)
+                           : kernel.shape();
+  const int64_t outputs =
+      shape.IsArray() ? std::max<int64_t>(1, ShapeUtil::ElementsIn(shape)) : 1;
+  return Cores(
+      std::min(outputs, LoopFusionTasks(flops, transcendental_flops, bytes)));
+}
+
+absl::Duration CpuPerformanceModel::ScaleToCores(
+    absl::Duration compute_time, int64_t cores, absl::Duration* read_time,
+    absl::Duration* write_time) const {
+  // ComputeTime, ReadTimeWithDRAMHeuristic and WriteTime assume all cores.
+  const double all = device_info_.core_count();
+  const double memory_scale =
+      device_info_.memory_bandwidth() /
+      std::min<double>(device_info_.memory_bandwidth(),
+                       cores * kCoreMemoryBandwidth);
+  *read_time = *read_time * memory_scale;
+  *write_time = *write_time * memory_scale;
+  return compute_time * (all / cores);
 }
 
 int64_t CpuPerformanceModel::Cores(int64_t tasks) const {
@@ -586,7 +649,8 @@ std::string CpuPerformanceModel::ReduceWork::ToString() const {
 
 /*static*/
 CpuPerformanceModel::ReduceWork CpuPerformanceModel::AnalyzeReduce(
-    const HloInstruction& reduce, const HloInstruction* materialized) {
+    const HloInstruction& reduce, const HloInstruction* materialized,
+    bool materialized_anyway) {
   ReduceWork work;
   const Shape& input = reduce.operand(0)->shape();
   const Shape& output = reduce.shape().IsTuple()
@@ -598,7 +662,9 @@ CpuPerformanceModel::ReduceWork CpuPerformanceModel::AnalyzeReduce(
   const int64_t num_inputs = reduce.operand_count() / 2;
   absl::Span<const HloInstruction* const> inputs =
       absl::MakeConstSpan(reduce.operands()).subspan(0, num_inputs);
-  work.chain = WalkChain(inputs, /*stop=*/nullptr);
+  work.materialized_anyway = materialized != nullptr && materialized_anyway;
+  work.chain = WalkChain(
+      inputs, /*stop=*/work.materialized_anyway ? materialized : nullptr);
   // The library fusion computes the chain above `materialized`.
   work.chain.library_flops = WalkChain(inputs, materialized).library_flops;
   // One reducer op per input element and operand.
@@ -657,7 +723,7 @@ CpuPerformanceModel::ReduceRunTimes CpuPerformanceModel::EstimateReduce(
             ComputeTime(device_info_,
                         std::llround(work.chain.flops * work.input_elements),
                         work.type, cores),
-            MemoryTime(device_info_, read_bytes, cores)) +
+            ReduceReadTime(read_bytes, cores)) +
         KernelOverhead(tasks);
     if (split) {
       times.loop_fusion += kKernelLaunchTime;
@@ -666,7 +732,7 @@ CpuPerformanceModel::ReduceRunTimes CpuPerformanceModel::EstimateReduce(
 
   // Library fusion, after a loop fusion writes the materialized input.
   absl::Duration materialize = absl::ZeroDuration();
-  if (work.materialized_bytes > 0) {
+  if (work.materialized_bytes > 0 && !work.materialized_anyway) {
     const int64_t flops =
         std::llround(work.materialized.flops * work.materialized_elements);
     const int64_t tasks = LoopFusionTasks(
@@ -705,9 +771,11 @@ CpuPerformanceModel::ReduceRunTimes CpuPerformanceModel::EstimateReduce(
       tasks = (work.input_elements + tile - 1) / tile;
       cores = std::min<double>(max_cores, tasks);
     }
-    const int64_t threads = static_cast<int64_t>(std::ceil(cores));
+    // If it is materialized anyway, the loop fusion's leaves include it.
     const int64_t library_bytes =
-        work.chain.leaf_bytes + work.materialized_bytes;
+        work.materialized_anyway
+            ? work.chain.leaf_bytes
+            : work.chain.leaf_bytes + work.materialized_bytes;
     const absl::Duration compute =
         ComputeTime(device_info_,
                     std::llround(work.chain.library_flops * work.input_elements),
@@ -716,7 +784,7 @@ CpuPerformanceModel::ReduceRunTimes CpuPerformanceModel::EstimateReduce(
     times.library =
         materialize +
         CombineComputeAndMemoryAccessTime(
-            compute, MemoryTime(device_info_, library_bytes, threads)) +
+            compute, ReduceReadTime(library_bytes, cores)) +
         kLibraryCallTime + ForkJoinTime(std::min(tasks, Threads()));
   }
   return times;

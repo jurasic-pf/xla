@@ -141,10 +141,23 @@ class CpuPerformanceModel {
   static absl::Duration FreshAllocationTime(int64_t bytes);
   // Returns true if `instr` runs once per execution, not in a loop body.
   static bool RunsOncePerExecution(const HloInstruction& instr);
+  // Whether the module's temp buffer is larger than kFreshAllocationBytes, so
+  // every byte materialized once per execution is faulted in, and the cost of
+  // these page faults for materializing `bytes` of `producer`.
+  void set_temp_is_fresh(bool fresh) { temp_is_fresh_ = fresh; }
+  absl::Duration MaterializeFaultTime(const HloInstruction& producer,
+                                      int64_t bytes) const;
 
   // Bandwidth of one core streaming from memory, and from its L2 cache.
   static constexpr double kCoreMemoryBandwidth = 20e9;
   static constexpr double kCoreCacheBandwidth = 170e9;
+  // A reduction streaming its input from memory reads less per core, measured
+  // with loop and library reductions of 2^24 elements: 28 GB/s on 4 cores,
+  // 40-51 GB/s on 7.
+  static constexpr double kCoreReduceReadBandwidth = 7e9;
+  static constexpr double kReduceReadBandwidth = 51e9;
+  // Time for a reduction on `cores` cores to read `bytes`.
+  absl::Duration ReduceReadTime(int64_t bytes, double cores) const;
   // A library reduction computes tiles of this many input bytes as parallel
   // tasks. If one output reduces more than a tile, it splits the reduced
   // dimensions into partial reductions, and needs this many tiles per thread
@@ -190,6 +203,15 @@ class CpuPerformanceModel {
   int64_t LoopFusionTasks(int64_t flops, int64_t transcendental_flops,
                           int64_t bytes) const;
   int64_t Cores(int64_t tasks) const;
+  // Cores that run `kernel`, a loop fusion with the given work. The loop
+  // emitter only partitions the kernel's output.
+  int64_t KernelCores(const HloInstruction& kernel, int64_t flops,
+                      int64_t transcendental_flops, int64_t bytes) const;
+  // Scales `compute_time`, `*read_time` and `*write_time`, estimated for all
+  // cores, to `cores`. Returns the compute time.
+  absl::Duration ScaleToCores(absl::Duration compute_time, int64_t cores,
+                              absl::Duration* read_time,
+                              absl::Duration* write_time) const;
   // Hardware threads of the intra-op thread pool.
   int64_t Threads() const;
 
@@ -222,6 +244,7 @@ class CpuPerformanceModel {
     // compute it. The library fusion computes the rest of the chain.
     int64_t materialized_bytes = 0;
     int64_t materialized_elements = 0;
+    bool materialized_anyway = false;
     // Whether the reduction runs once per execution, not in a loop body.
     bool once_per_execution = false;
     ChainWork materialized;
@@ -231,9 +254,12 @@ class CpuPerformanceModel {
   };
 
   // Returns the work of `reduce`, computing its input in a loop fusion. A
-  // library fusion of `reduce` reads `materialized`, if not null.
+  // library fusion of `reduce` reads `materialized`, if not null. If it is
+  // `materialized_anyway`, e.g. for other users, the loop fusion reads it as
+  // well and neither fusion pays for writing it.
   static ReduceWork AnalyzeReduce(const HloInstruction& reduce,
-                                  const HloInstruction* materialized);
+                                  const HloInstruction* materialized,
+                                  bool materialized_anyway = false);
 
   // Number of parallel tasks of `work` as a loop fusion, and whether the loop
   // fusion needs TreeReductionRewriter to split it into a reduce-window and a
@@ -253,6 +279,7 @@ class CpuPerformanceModel {
 
  private:
   se::DeviceDescription device_info_;
+  bool temp_is_fresh_ = false;
 };
 
 }  // namespace xla::cpu
