@@ -181,7 +181,8 @@ class YnnMatcher : public LibraryMatcher {
     const int64_t minor_dim = input.has_layout()
                                   ? LayoutUtil::Minor(input.layout(), 0)
                                   : input.dimensions().size() - 1;
-    if (!absl::c_linear_search(reduce->dimensions(), minor_dim)) {
+    if (reduce->opcode() == HloOpcode::kReduce &&
+        !absl::c_linear_search(reduce->dimensions(), minor_dim)) {
       return false;
     }
     const int64_t reduce_input_bytes =

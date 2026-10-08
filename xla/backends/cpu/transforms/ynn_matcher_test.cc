@@ -332,6 +332,37 @@ TEST_F(YnnReduceTest, DoNotFuseReduceOfProducerWithOtherUsers) {
   )");
 }
 
+TEST_F(YnnReduceTest, ReduceWindowOfProducerWithOtherUsers) {
+  // Exercises the materialization check on a reduce-window, which has no
+  // reduction dimensions.
+  const char* hlo_text = R"(
+  HloModule reduce_window_shared_producer
+
+  add {
+    lhs = f32[] parameter(0)
+    rhs = f32[] parameter(1)
+    ROOT add = f32[] add(lhs, rhs)
+  }
+
+  ENTRY main {
+    input = f32[1024,1024] parameter(0)
+    input2 = f32[1024,1024] parameter(1)
+    init = f32[] constant(0)
+    multiplied = f32[1024,1024] multiply(input, input2)
+    squared = f32[1024,1024] multiply(multiplied, multiplied)
+    r0 = f32[1024,256] reduce-window(multiplied, init),
+        window={size=1x4 stride=1x4}, to_apply=add
+    r1 = f32[1024,256] reduce-window(squared, init),
+        window={size=1x4 stride=1x4}, to_apply=add
+    ROOT t = (f32[1024,256], f32[1024,256]) tuple(r0, r1)
+  }
+  )";
+
+  MatchOptimizedHlo(hlo_text, R"(
+    CHECK: ENTRY
+  )");
+}
+
 TEST_F(YnnReduceTest, FuseMajorDimReduceOfProducerWithOtherUsers) {
   // Column reductions read strided in loop fusion; YNN handles them.
   const char* hlo_text = R"(
