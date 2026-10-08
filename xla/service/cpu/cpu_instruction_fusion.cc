@@ -621,12 +621,19 @@ FusionDecision CpuInstructionFusion::ShouldFuse(HloInstruction* consumer,
            concat_dim_bytes >= 64 && total_bytes >= 2048;
   };
 
-  if ((producer->opcode() == HloOpcode::kConcatenate &&
-       (producer->operand_count() > kMaxConcatenateArguments ||
-        is_minor_dim_concatenate(producer))) ||
-      (consumer->opcode() == HloOpcode::kConcatenate &&
-       (consumer->operand_count() > kMaxConcatenateArguments ||
-        is_minor_dim_concatenate(consumer)))) {
+  auto is_inefficient_concatenate = [&](const HloInstruction* hlo) {
+    return hlo->opcode() == HloOpcode::kConcatenate &&
+           (hlo->operand_count() > kMaxConcatenateArguments ||
+            is_minor_dim_concatenate(hlo));
+  };
+  // A fusion whose root is such a concatenate, e.g. a roll, has the same
+  // branches when fused into its consumer.
+  const HloInstruction* producer_root =
+      producer->opcode() == HloOpcode::kFusion
+          ? producer->fused_expression_root()
+          : producer;
+  if (is_inefficient_concatenate(producer_root) ||
+      is_inefficient_concatenate(consumer)) {
     return FusionDecision::Forbid("Concatenate fusion is inefficient.");
   }
 

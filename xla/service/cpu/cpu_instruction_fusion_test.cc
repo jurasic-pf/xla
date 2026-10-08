@@ -1692,6 +1692,33 @@ ENTRY main {
   EXPECT_TRUE(EntryHasStandaloneOp(*module, HloOpcode::kNegate));
 }
 
+TEST_F(InstructionFusionTest,
+       DoNotFuseFusionWithMinorDimensionConcatenateRoot) {
+  absl::string_view module_string = R"(
+HloModule module
+
+%roll {
+  %x = f32[16,64]{1,0} parameter(0)
+  %lo = f32[16,8]{1,0} slice(%x), slice={[0:16], [56:64]}
+  %hi = f32[16,56]{1,0} slice(%x), slice={[0:16], [0:56]}
+  ROOT %concat = f32[16,64]{1,0} concatenate(%lo, %hi), dimensions={1}
+}
+
+ENTRY main {
+  %p0 = f32[16,64]{1,0} parameter(0)
+  %rolled = f32[16,64]{1,0} fusion(%p0), kind=kLoop, calls=%roll
+  ROOT %negate = f32[16,64]{1,0} negate(%rolled)
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool changed,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_FALSE(changed);
+  EXPECT_TRUE(EntryHasStandaloneOp(*module, HloOpcode::kNegate));
+}
+
 TEST_F(InstructionFusionTest, FuseMinorDimensionConcatenateWithTinyBytes) {
   absl::string_view module_string = R"(
 HloModule module
