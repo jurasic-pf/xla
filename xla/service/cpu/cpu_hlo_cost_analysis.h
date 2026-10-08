@@ -42,6 +42,11 @@ class CpuHloCostAnalysis : public HloCostAnalysis {
   int64_t GetFlopsForElementwiseOp(HloOpcode op_code, const Shape& shape) const;
   int64_t GetFlopsForElementwiseOp(const HloInstruction* instr) const;
 
+  // Returns the number of iterations of the unrolled loops over minor
+  // dimensions that `broadcast` adds, which share one computation of its
+  // operand, or 1.
+  static int64_t UnrolledBroadcastElements(const HloInstruction& broadcast);
+
   // Flops of `hlo` spent in transcendental ops.
   int64_t transcendental_flop_count(const HloInstruction& hlo) const;
 

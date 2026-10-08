@@ -558,7 +558,7 @@ std::unique_ptr<HloPassFix<HloPassPipeline>> CreateSimplificationPipeline(
     // - Improving performance by allowing parallelism.
     // YNNPACK doesn't need TreeReductionRewriter to do either of these.
     // Reductions that the performance model leaves to loop fusion are split
-    // like without YNNPACK.
+    // if the loop fusion needs the split to use the thread pool.
     auto matcher = std::make_shared<YnnMatcher>(
         /*target_machine_features=*/nullptr,
         &module->config().debug_options().xla_cpu_experimental_ynn_fusion_type());
@@ -567,7 +567,7 @@ std::unique_ptr<HloPassFix<HloPassPipeline>> CreateSimplificationPipeline(
           return !(IsInstructionPreferredByYnn(hlo) &&
                    IsReduceLikeOpSupportedByYnn(hlo)) ||
                  (hlo->opcode() == HloOpcode::kReduce &&
-                  matcher->LoopFusionIsFaster(hlo));
+                  matcher->LoopFusionNeedsTreeReduction(hlo));
         });
   } else {
     pipeline->AddPass<TreeReductionRewriter>();

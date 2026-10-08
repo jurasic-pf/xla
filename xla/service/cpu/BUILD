@@ -1123,6 +1123,7 @@ xla_cc_test(
         "//xla/hlo/ir:hlo",
         "//xla/hlo/testlib:hlo_hardware_independent_test_base",
         "//xla/hlo/testlib:test_helpers",
+        "//xla:shape_util",
         "//xla:xla_data_proto_cc",
         "//xla/service:hlo_cost_analysis",
         "//xla/stream_executor:device_description",

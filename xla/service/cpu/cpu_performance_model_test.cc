@@ -16,6 +16,8 @@
 #include "xla/hlo/testlib/test_helpers.h"
 #include "xla/service/cpu/cpu_hlo_cost_analysis.h"
 #include "xla/service/hlo_cost_analysis.h"
+#include "xla/shape.h"
+#include "xla/shape_util.h"
 #include "xla/stream_executor/device_description.h"
 #include "xla/xla_data.pb.h"
 
@@ -101,6 +103,34 @@ ENTRY e {
   EXPECT_GT(run_times.time_fused, run_times.time_unfused);
 }
 
+TEST_F(CpuPerformanceModelTest, FusingIntoColumnReductionsAvoidsStridedReads) {
+  // Both users reduce the producer; one reads it along dimension 0 with a
+  // stride of 8 KiB. Recomputing the producer in both is faster.
+  absl::string_view hlo_string = R"(
+HloModule m
+
+add {
+  a = f32[] parameter(0)
+  b = f32[] parameter(1)
+  ROOT r = f32[] add(a, b)
+}
+
+ENTRY e {
+  x = f32[2048] parameter(0)
+  y = f32[2048] parameter(1)
+  bx = f32[2048,2048] broadcast(x), dimensions={0}
+  by = f32[2048,2048] broadcast(y), dimensions={1}
+  d = f32[2048,2048] subtract(bx, by)
+  s = f32[2048,2048] sqrt(d)
+  c = f32[] constant(0)
+  rows = f32[2048] reduce(s, c), dimensions={1}, to_apply=add
+  cols = f32[2048] reduce(s, c), dimensions={0}, to_apply=add
+  ROOT t = (f32[2048], f32[2048]) tuple(rows, cols)
+})";
+  CpuPerformanceModel::RunTimes run_times = EstimateRunTimes(hlo_string, "s");
+  EXPECT_LT(run_times.time_fused, run_times.time_unfused);
+}
+
 TEST_F(CpuPerformanceModelTest, CustomCallIsNeverFused) {
   absl::string_view hlo_string = R"(
 HloModule m
@@ -133,6 +163,7 @@ CpuPerformanceModel::ReduceWork TrigWork(int64_t n, int64_t outputs,
   work.chain.library_flops =
       (2 - materialized_ops) * vectorized + materialized_ops + 1;
   work.chain.leaf_bytes = 8 * n;
+  work.chain.streamed_bytes = 8 * n;
   if (materialized_ops > 0) {
     work.materialized_bytes = 8 * n;
     work.materialized_elements = n;
@@ -181,7 +212,7 @@ TEST(CpuPerformanceModelReduceTest, ColumnReductionIsSlowerInLoopFusion) {
   rows.chain.flops = 2;
   rows.chain.transcendental_flops = 0;
   CpuPerformanceModel::ReduceWork columns = rows;
-  columns.reduces_minor_dim = false;
+  columns.strided_read_factor = 8;
   EXPECT_LT(model.EstimateReduce(rows).loop_fusion,
             model.EstimateReduce(columns).loop_fusion);
 }
@@ -192,6 +223,14 @@ TEST(CpuPerformanceModelReduceTest, DefaultDeviceInfoCountsPhysicalCores) {
             << ", threads per core: " << info.threads_per_core_limit();
   EXPECT_GE(info.core_count(), 1);
   EXPECT_GE(info.threads_per_core_limit(), 1);
+}
+
+TEST(CpuPerformanceModelReduceTest, OnlyPageStridesLoadACacheLinePerElement) {
+  Shape rows = ShapeUtil::MakeShapeWithDescendingLayout(F32, {4096, 4096});
+  Shape narrow = ShapeUtil::MakeShapeWithDescendingLayout(F32, {4096, 64});
+  EXPECT_EQ(CpuPerformanceModel::StridedReadFactor(rows, {1}), 1);
+  EXPECT_EQ(CpuPerformanceModel::StridedReadFactor(rows, {0}), 16);
+  EXPECT_EQ(CpuPerformanceModel::StridedReadFactor(narrow, {0}), 1);
 }
 
 TEST(CpuPerformanceModelReduceTest, ParallelKernelsPayForkJoin) {
@@ -238,7 +277,81 @@ ENTRY e {
   EXPECT_EQ(work.materialized_bytes, 4 * 64 * 1024);
   EXPECT_EQ(work.materialized.flops, sine_flops);
   EXPECT_EQ(work.materialized.leaf_bytes, 4 * 64 * 1024);
-  EXPECT_TRUE(work.reduces_minor_dim);
+  EXPECT_EQ(work.strided_read_factor, 1);
+}
+
+TEST_F(CpuPerformanceModelTest, AnalyzeReduceCountsSharedWorkOnce) {
+  // Both inputs of the variadic reduction share the sqrt, which a loop fusion
+  // computes once per element. x is read through a broadcast, y is streamed.
+  absl::string_view hlo_string = R"(
+HloModule m
+
+add2 {
+  a0 = f32[] parameter(0)
+  a1 = f32[] parameter(1)
+  b0 = f32[] parameter(2)
+  b1 = f32[] parameter(3)
+  sum0 = f32[] add(a0, b0)
+  sum1 = f32[] add(a1, b1)
+  ROOT t = (f32[], f32[]) tuple(sum0, sum1)
+}
+
+ENTRY e {
+  x = f32[1024] parameter(0)
+  y = f32[64,1024] parameter(1)
+  b = f32[64,1024] broadcast(x), dimensions={1}
+  d = f32[64,1024] subtract(b, y)
+  s = f32[64,1024] sqrt(d)
+  m = f32[64,1024] multiply(s, y)
+  c = f32[] constant(0)
+  ROOT r = (f32[1024], f32[1024]) reduce(s, m, c, c), dimensions={0},
+      to_apply=add2
+})";
+  ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(hlo_string));
+  CpuPerformanceModel::ReduceWork work = CpuPerformanceModel::AnalyzeReduce(
+      *module->entry_computation()->root_instruction(),
+      /*materialized=*/nullptr);
+  const int64_t sqrt_flops =
+      CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(F32,
+                                                          HloOpcode::kSqrt);
+  // subtract + sqrt + multiply, and two reducer adds.
+  EXPECT_EQ(work.chain.flops, sqrt_flops + 4);
+  EXPECT_EQ(work.chain.leaf_bytes, 4 * 1024 + 4 * 64 * 1024);
+  EXPECT_EQ(work.chain.streamed_bytes, 4 * 64 * 1024);
+  // Reducing dimension 0 reads with a stride of 4 KiB.
+  EXPECT_EQ(work.strided_read_factor, 16);
+}
+
+TEST_F(CpuPerformanceModelTest, AnalyzeReduceSharesUnrolledBroadcasts) {
+  // The exponential is computed once for the 3 unrolled iterations of the
+  // minor dimension that the broadcast adds.
+  absl::string_view hlo_string = R"(
+HloModule m
+
+add {
+  a = f32[] parameter(0)
+  b = f32[] parameter(1)
+  ROOT r = f32[] add(a, b)
+}
+
+ENTRY e {
+  x = f32[1024,1024] parameter(0)
+  y = f32[1024,1024,3] parameter(1)
+  ex = f32[1024,1024] exponential(x)
+  b = f32[1024,1024,3] broadcast(ex), dimensions={0,1}
+  m = f32[1024,1024,3] multiply(b, y)
+  c = f32[] constant(0)
+  ROOT r = f32[1024,3] reduce(m, c), dimensions={0}, to_apply=add
+})";
+  ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(hlo_string));
+  CpuPerformanceModel::ReduceWork work = CpuPerformanceModel::AnalyzeReduce(
+      *module->entry_computation()->root_instruction(),
+      /*materialized=*/nullptr);
+  const int64_t exp_flops =
+      CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(F32,
+                                                          HloOpcode::kExp);
+  // multiply and the reducer's add per element, a third of the exponential.
+  EXPECT_DOUBLE_EQ(work.chain.flops, exp_flops / 3.0 + 2);
 }
 
 }  // namespace

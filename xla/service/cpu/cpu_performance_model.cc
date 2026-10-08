@@ -20,6 +20,7 @@ limitations under the License.
 #include <cstdint>
 #include <limits>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "absl/algorithm/container.h"
@@ -29,6 +30,7 @@ limitations under the License.
 #include "absl/time/time.h"
 #include "absl/types/span.h"
 #include "tsl/platform/cpu_info.h"
+#include "xla/hlo/ir/hlo_computation.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_opcode.h"
 #include "xla/layout_util.h"
@@ -124,6 +126,9 @@ EstimateRunTimeData CpuPerformanceModel::EstimateRunTimeForInstruction(
       return EstimateRunTimeData::Infinite();
     }
     int64_t n_bytes_net = std::min(operand_size, n_bytes_total);
+    const int64_t read_factor = ReadFactor(instr, operand);
+    n_bytes_total *= read_factor;
+    n_bytes_net *= read_factor;
     bytes_read += n_bytes_total;
     read_time +=
         ReadTimeWithDRAMHeuristic(device_info_, n_bytes_net, n_bytes_total);
@@ -180,6 +185,9 @@ absl::Duration CpuPerformanceModel::EstimateRunTimeForFusion(
       return absl::InfiniteDuration();
     }
     int64_t n_bytes_net = std::min(operand_size, n_bytes_total);
+    const int64_t read_factor = ReadFactor(consumer, operand);
+    n_bytes_total *= read_factor;
+    n_bytes_net *= read_factor;
     bytes_read += n_bytes_total;
     read_time +=
         ReadTimeWithDRAMHeuristic(device_info_, n_bytes_net, n_bytes_total);
@@ -215,6 +223,9 @@ CpuPerformanceModel::RunTimes CpuPerformanceModel::EstimateRunTimes(
         producer_runtime.flops,
         cost_analysis->transcendental_flop_count(*producer),
         producer_runtime.bytes_read + producer_runtime.bytes_written));
+    if (RunsOncePerExecution(*producer)) {
+      time_unfused += FreshAllocationTime(producer_runtime.bytes_written);
+    }
   }
   absl::Duration time_fused;
 
@@ -367,6 +378,44 @@ absl::Duration CpuPerformanceModel::ComputeTime(
 }
 
 /*static*/
+int64_t CpuPerformanceModel::ReadFactor(const HloInstruction* consumer,
+                                        const HloInstruction* operand) {
+  const HloInstruction* root = consumer->opcode() == HloOpcode::kFusion
+                                   ? consumer->fused_expression_root()
+                                   : consumer;
+  if (root->opcode() != HloOpcode::kReduce || !operand->shape().IsArray()) {
+    return 1;
+  }
+  const Shape& input = root->operand(0)->shape();
+  if (ShapeUtil::ElementsIn(operand->shape()) != ShapeUtil::ElementsIn(input)) {
+    return 1;
+  }
+  return StridedReadFactor(input, root->dimensions());
+}
+
+
+/*static*/
+int64_t CpuPerformanceModel::StridedReadFactor(
+    const Shape& input, absl::Span<const int64_t> reduced_dims) {
+  if (!input.has_layout() || reduced_dims.empty()) {
+    return 1;
+  }
+  const int64_t elem_bytes =
+      std::max<int64_t>(1, primitive_util::ByteWidth(input.element_type()));
+  // Bytes between consecutive elements of the innermost reduced dimension.
+  int64_t stride = elem_bytes;
+  for (int64_t dim : input.layout().minor_to_major()) {
+    if (absl::c_linear_search(reduced_dims, dim)) {
+      break;
+    }
+    stride *= input.dimensions(dim);
+  }
+  // Hardware prefetchers do not cross pages.
+  return stride >= kPageBytes ? std::max<int64_t>(1, kCacheLineBytes / elem_bytes)
+                              : 1;
+}
+
+/*static*/
 absl::Duration CpuPerformanceModel::MemoryTime(
     const se::DeviceDescription& device_info, int64_t bytes,
     int64_t threads) {
@@ -383,6 +432,19 @@ absl::Duration CpuPerformanceModel::MemoryTime(
 absl::Duration CpuPerformanceModel::ForkJoinTime(int64_t tasks) {
   return tasks > 1 ? kForkJoinTime + tasks * kForkJoinTaskTime
                    : absl::ZeroDuration();
+}
+
+/*static*/
+absl::Duration CpuPerformanceModel::FreshAllocationTime(int64_t bytes) {
+  return bytes > kFreshAllocationBytes
+             ? kPageFaultTime * ((bytes + kPageFaultBytes - 1) / kPageFaultBytes)
+             : absl::ZeroDuration();
+}
+
+/*static*/
+bool CpuPerformanceModel::RunsOncePerExecution(const HloInstruction& instr) {
+  const HloComputation* computation = instr.parent();
+  return computation != nullptr && computation->IsEntryComputation();
 }
 
 /*static*/
@@ -427,7 +489,7 @@ bool IsLoopFusible(const HloInstruction& instr) {
 
 // Adds the time of one element of `instr` in elemental code to `work`.
 // Concatenates and pads select their source per element.
-void AddElementWork(const HloInstruction& instr,
+void AddElementWork(const HloInstruction& instr, double weight,
                     CpuPerformanceModel::ChainWork* work) {
   int64_t flops = 0;
   if (instr.opcode() == HloOpcode::kConcatenate) {
@@ -440,50 +502,87 @@ void AddElementWork(const HloInstruction& instr,
     flops = CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(
         type, instr.opcode());
     if (HloCostAnalysis::IsTranscendental(instr.opcode())) {
-      work->transcendental_flops += flops;
+      work->transcendental_flops += weight * flops;
       // A library fusion evaluates the transcendentals it supports with
       // vectorized polynomials, which cost about as much as an exp.
-      work->library_flops += std::min(
-          flops, CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(
-                     type, HloOpcode::kExp));
-      work->flops += flops;
+      work->library_flops +=
+          weight * std::min(flops,
+                            CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(
+                                type, HloOpcode::kExp));
+      work->flops += weight * flops;
       return;
     }
   }
-  work->flops += flops;
-  work->library_flops += flops;
+  work->flops += weight * flops;
+  work->library_flops += weight * flops;
 }
 
-// Sums the per-element work of the loop-fusible chain rooted at `root`,
-// stopping at `stop`, and the bytes of the chain's leaves.
-CpuPerformanceModel::ChainWork WalkChain(const HloInstruction* root,
-                                         const HloInstruction* stop) {
+// Sums the per-element work of the loop-fusible chain rooted at `roots`,
+// stopping at `stop`, and the bytes of the chain's leaves. A fused loop
+// computes instructions shared by several roots once per element, and the
+// operand of a broadcast once for the unrolled minor loops it adds. Leaves
+// read only through broadcasts are reused from the cache; the others are
+// streamed.
+CpuPerformanceModel::ChainWork WalkChain(
+    absl::Span<const HloInstruction* const> roots,
+    const HloInstruction* stop) {
   CpuPerformanceModel::ChainWork work;
+  // Instructions visited at all, and visited other than through a broadcast.
   absl::flat_hash_set<const HloInstruction*> seen;
-  std::vector<const HloInstruction*> stack = {root};
+  absl::flat_hash_set<const HloInstruction*> seen_streamed;
+  // Instruction, whether it is reached through a broadcast, and the share of
+  // its elements computed per element of the roots.
+  std::vector<std::tuple<const HloInstruction*, bool, double>> stack;
+  for (const HloInstruction* root : roots) {
+    stack.push_back({root, /*via_broadcast=*/false, /*weight=*/1.0});
+  }
   while (!stack.empty()) {
-    const HloInstruction* instr = stack.back();
+    auto [instr, via_broadcast, weight] = stack.back();
     stack.pop_back();
-    if (!seen.insert(instr).second) {
+    if (via_broadcast ? seen.contains(instr)
+                      : !seen_streamed.insert(instr).second) {
       continue;
     }
-    if (instr == stop || !instr->shape().IsArray() || !IsLoopFusible(*instr) ||
+    const bool first = seen.insert(instr).second;
+    const bool leaf =
+        instr == stop || !instr->shape().IsArray() || !IsLoopFusible(*instr) ||
         (instr->opcode() == HloOpcode::kConstant &&
-         !ShapeUtil::IsEffectiveScalar(instr->shape()))) {
+         !ShapeUtil::IsEffectiveScalar(instr->shape()));
+    if (leaf) {
       if (instr->shape().IsArray()) {
-        work.leaf_bytes += ShapeUtil::ByteSizeOfElements(instr->shape());
+        const int64_t bytes = ShapeUtil::ByteSizeOfElements(instr->shape());
+        work.leaf_bytes += first ? bytes : 0;
+        work.streamed_bytes += via_broadcast ? 0 : bytes;
       }
       continue;
     }
-    AddElementWork(*instr, &work);
+    if (first) {
+      AddElementWork(*instr, weight, &work);
+    }
+    const bool broadcast = instr->opcode() == HloOpcode::kBroadcast;
+    const double operand_weight =
+        broadcast ? weight / CpuHloCostAnalysis::UnrolledBroadcastElements(*instr)
+                  : weight;
     for (const HloInstruction* operand : instr->operands()) {
-      stack.push_back(operand);
+      stack.push_back({operand, via_broadcast || broadcast, operand_weight});
     }
   }
   return work;
 }
 
 }  // namespace
+
+std::string CpuPerformanceModel::ReduceWork::ToString() const {
+  return absl::StrFormat(
+      "ReduceWork{elements: %d, outputs: %d, flops/elem: %g, library "
+      "flops/elem: %g, transcendental flops/elem: %g, leaf bytes: %d, "
+      "streamed bytes: %d, materialized bytes: %d, materialized flops/elem: "
+      "%g, strided read factor: %d, type: %s}",
+      input_elements, outputs, chain.flops, chain.library_flops,
+      chain.transcendental_flops, chain.leaf_bytes, chain.streamed_bytes,
+      materialized_bytes, materialized.flops, strided_read_factor,
+      primitive_util::LowercasePrimitiveTypeName(type));
+}
 
 /*static*/
 CpuPerformanceModel::ReduceWork CpuPerformanceModel::AnalyzeReduce(
@@ -497,66 +596,66 @@ CpuPerformanceModel::ReduceWork CpuPerformanceModel::AnalyzeReduce(
   work.outputs = ShapeUtil::ElementsIn(output);
   work.type = input.element_type();
   const int64_t num_inputs = reduce.operand_count() / 2;
-  for (int64_t i = 0; i < num_inputs; ++i) {
-    // The library fusion computes the chain above `materialized`.
-    ChainWork loop = WalkChain(reduce.operand(i), /*stop=*/nullptr);
-    ChainWork library = WalkChain(reduce.operand(i), materialized);
-    work.chain.flops += loop.flops;
-    work.chain.transcendental_flops += loop.transcendental_flops;
-    work.chain.leaf_bytes += loop.leaf_bytes;
-    work.chain.library_flops += library.library_flops;
-  }
+  absl::Span<const HloInstruction* const> inputs =
+      absl::MakeConstSpan(reduce.operands()).subspan(0, num_inputs);
+  work.chain = WalkChain(inputs, /*stop=*/nullptr);
+  // The library fusion computes the chain above `materialized`.
+  work.chain.library_flops = WalkChain(inputs, materialized).library_flops;
   // One reducer op per input element and operand.
   work.chain.flops += num_inputs;
   work.chain.library_flops += num_inputs;
   if (materialized != nullptr) {
-    work.materialized = WalkChain(materialized, /*stop=*/nullptr);
+    work.materialized = WalkChain({materialized}, /*stop=*/nullptr);
     work.materialized_bytes =
         ShapeUtil::ByteSizeOfElements(materialized->shape());
     work.materialized_elements = ShapeUtil::ElementsIn(materialized->shape());
   }
   if (reduce.opcode() == HloOpcode::kReduce) {
-    const int64_t minor_dim = input.has_layout()
-                                  ? LayoutUtil::Minor(input.layout(), 0)
-                                  : input.dimensions().size() - 1;
-    work.reduces_minor_dim =
-        absl::c_linear_search(reduce.dimensions(), minor_dim);
+    work.strided_read_factor = StridedReadFactor(input, reduce.dimensions());
   }
+  work.once_per_execution = RunsOncePerExecution(reduce);
   return work;
+}
+
+int64_t CpuPerformanceModel::LoopFusionTasks(const ReduceWork& work) const {
+  const int64_t elem_bytes =
+      std::max<int64_t>(1, primitive_util::ByteWidth(work.type));
+  return LoopFusionTasks(
+      std::llround(work.chain.flops * work.input_elements),
+      std::llround(work.chain.transcendental_flops * work.input_elements),
+      work.chain.leaf_bytes + work.outputs * elem_bytes);
+}
+
+bool CpuPerformanceModel::LoopFusionSplitsReduce(const ReduceWork& work) const {
+  // TreeReductionRewriter's window: shorter reductions are not split.
+  constexpr int64_t kTreeReductionWindow = 32;
+  return work.outputs < LoopFusionTasks(work) &&
+         work.input_elements >= kTreeReductionWindow * work.outputs;
 }
 
 CpuPerformanceModel::ReduceRunTimes CpuPerformanceModel::EstimateReduce(
     const ReduceWork& work) const {
   const int64_t elem_bytes =
       std::max<int64_t>(1, primitive_util::ByteWidth(work.type));
-  const int64_t output_bytes = work.outputs * elem_bytes;
   ReduceRunTimes times;
 
   // Loop fusion. It is partitioned across outputs; TreeReductionRewriter
   // splits reductions to fewer outputs than tasks into a partitioned
-  // reduce-window and a small reduction. Reading strided over a major
-  // dimension loads a cache line per element.
+  // reduce-window and a small reduction.
   {
-    int64_t tasks = LoopFusionTasks(
-        work.chain.flops * work.input_elements,
-        work.chain.transcendental_flops * work.input_elements,
-        work.chain.leaf_bytes + output_bytes);
-    // TreeReductionRewriter's window: shorter reductions are not split.
-    constexpr int64_t kTreeReductionWindow = 32;
-    const bool split = work.outputs < tasks &&
-                       work.input_elements >=
-                           kTreeReductionWindow * work.outputs;
+    int64_t tasks = LoopFusionTasks(work);
+    const bool split = LoopFusionSplitsReduce(work);
     if (!split) {
       tasks = std::min(tasks, std::max<int64_t>(1, work.outputs));
     }
     const int64_t cores = Cores(tasks);
     const int64_t read_bytes =
-        work.reduces_minor_dim
-            ? work.chain.leaf_bytes
-            : work.chain.leaf_bytes * std::max<int64_t>(1, 64 / elem_bytes);
+        work.chain.leaf_bytes +
+        work.chain.streamed_bytes * (work.strided_read_factor - 1);
     times.loop_fusion =
         CombineComputeAndMemoryAccessTime(
-            ComputeTime(device_info_, work.chain.flops * work.input_elements,
+            ComputeTime(device_info_,
+                        std::llround(work.chain.flops * work.input_elements),
                         work.type, cores),
             MemoryTime(device_info_, read_bytes, cores)) +
         KernelOverhead(tasks);
@@ -569,10 +668,11 @@ CpuPerformanceModel::ReduceRunTimes CpuPerformanceModel::EstimateReduce(
   absl::Duration materialize = absl::ZeroDuration();
   if (work.materialized_bytes > 0) {
     const int64_t flops =
-        work.materialized.flops * work.materialized_elements;
+        std::llround(work.materialized.flops * work.materialized_elements);
     const int64_t tasks = LoopFusionTasks(
-        flops, work.materialized.transcendental_flops *
-                   work.materialized_elements,
+        flops,
+        std::llround(work.materialized.transcendental_flops *
+                     work.materialized_elements),
         work.materialized.leaf_bytes + work.materialized_bytes);
     const int64_t cores = Cores(tasks);
     materialize =
@@ -581,7 +681,9 @@ CpuPerformanceModel::ReduceRunTimes CpuPerformanceModel::EstimateReduce(
             MemoryTime(device_info_,
                        work.materialized.leaf_bytes + work.materialized_bytes,
                        cores)) +
-        KernelOverhead(tasks);
+        KernelOverhead(tasks) +
+        (work.once_per_execution ? FreshAllocationTime(work.materialized_bytes)
+                                 : absl::ZeroDuration());
   }
   {
     const int64_t reduced = std::max<int64_t>(
@@ -607,7 +709,8 @@ CpuPerformanceModel::ReduceRunTimes CpuPerformanceModel::EstimateReduce(
     const int64_t library_bytes =
         work.chain.leaf_bytes + work.materialized_bytes;
     const absl::Duration compute =
-        ComputeTime(device_info_, work.chain.library_flops * work.input_elements,
+        ComputeTime(device_info_,
+                    std::llround(work.chain.library_flops * work.input_elements),
                     work.type, /*threads=*/1) /
         cores;
     times.library =

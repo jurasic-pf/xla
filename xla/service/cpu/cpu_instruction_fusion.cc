@@ -892,6 +892,36 @@ bool CpuInstructionFusion::EstimateFusionIntoAllUsersIsFaster(
                                      /*copies=*/1);
 }
 
+int64_t CpuInstructionFusion::DestinationReadFactor(
+    const HloInstruction& producer, const HloInstruction& user) {
+  // Follows fusible elementwise users to the reductions and fusions they end
+  // up in, and returns the largest read factor among them.
+  static constexpr int64_t kMaxVisited = 64;
+  int64_t factor = 1;
+  absl::flat_hash_set<const HloInstruction*> visited = {&user};
+  std::vector<const HloInstruction*> worklist = {&user};
+  while (!worklist.empty() && visited.size() < kMaxVisited) {
+    const HloInstruction* instr = worklist.back();
+    worklist.pop_back();
+    if (instr->opcode() == HloOpcode::kFusion ||
+        instr->opcode() == HloOpcode::kReduce) {
+      factor = std::max(factor, CpuPerformanceModel::ReadFactor(instr, &producer));
+      continue;
+    }
+    if (!instr->IsElementwise()) {
+      continue;
+    }
+    for (const HloInstruction* next : instr->users()) {
+      if (visited.insert(next).second) {
+        worklist.push_back(next);
+      }
+    }
+  }
+  VLOG(3) << "Producer: " << producer.name() << ", user: " << user.name()
+          << ", read factor: " << factor;
+  return factor;
+}
+
 bool CpuInstructionFusion::RecomputedChainHasCompute(
     const HloInstruction& producer) {
   if (cost_analysis_ == nullptr) {
@@ -915,10 +945,12 @@ bool CpuInstructionFusion::RecomputeInEachUserIsFaster(
     return false;
   }
   int64_t flops = 0;
+  int64_t transcendental_flops = 0;
   int64_t input_bytes = 0;
   absl::flat_hash_set<const HloInstruction*> inputs;
   for (const HloInstruction* instr : chain) {
     flops += std::max<int64_t>(0, cost_analysis_->flop_count(*instr));
+    transcendental_flops += cost_analysis_->transcendental_flop_count(*instr);
     for (const HloInstruction* operand : instr->operands()) {
       if (!chain.contains(operand) && operand->shape().IsArray() &&
           inputs.insert(operand).second) {
@@ -931,16 +963,26 @@ bool CpuInstructionFusion::RecomputeInEachUserIsFaster(
   absl::Duration read_inputs = CpuPerformanceModel::ReadTimeWithDRAMHeuristic(
       device_info, input_bytes, input_bytes);
 
+  // Materializing the producer takes a kernel of its own.
   absl::Duration time_unfused =
       CpuPerformanceModel::CombineComputeAndMemoryAccessTime(
           CpuPerformanceModel::ComputeTime(device_info, flops),
-          read_inputs + CpuPerformanceModel::WriteTime(device_info, bytes));
+          read_inputs + CpuPerformanceModel::WriteTime(device_info, bytes)) +
+      CpuPerformanceModel::KernelOverhead(performance_model_.LoopFusionTasks(
+          flops, transcendental_flops, input_bytes + bytes)) +
+      (CpuPerformanceModel::RunsOncePerExecution(producer)
+           ? CpuPerformanceModel::FreshAllocationTime(bytes)
+           : absl::ZeroDuration());
   absl::Duration time_fused;
   for (const HloInstruction* user : producer.users()) {
     float utilization = CpuPerformanceModel::GetOperandUtilization(
         cost_analysis_.get(), user, &producer);
+    // The kernels that `user` is fused into, e.g. reductions, may read the
+    // materialized producer strided.
+    const int64_t read_factor = DestinationReadFactor(producer, *user);
     time_unfused += CpuPerformanceModel::ReadTimeWithDRAMHeuristic(
-        device_info, bytes, std::llround(bytes * utilization));
+        device_info, bytes * read_factor,
+        std::llround(bytes * utilization * read_factor));
     int64_t user_copies = user == consumer ? copies : 1;
     time_fused += CpuPerformanceModel::CombineComputeAndMemoryAccessTime(
         CpuPerformanceModel::ComputeTime(

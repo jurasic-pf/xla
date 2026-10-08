@@ -74,6 +74,10 @@ class CpuInstructionFusion : public InstructionFusion {
   bool EstimateFusionIntoAllUsersIsFaster(const HloInstruction& producer);
   // Returns true if recomputing `producer` and its recomputed operand chain
   // involves arithmetic, not only data movement.
+  // Returns how many bytes the kernels that `user` is fused into load per
+  // byte of a materialized `producer`.
+  int64_t DestinationReadFactor(const HloInstruction& producer,
+                                const HloInstruction& user);
   bool RecomputedChainHasCompute(const HloInstruction& producer);
   bool RecomputeInEachUserIsFaster(const HloInstruction& producer,
                                    const HloInstruction* consumer,

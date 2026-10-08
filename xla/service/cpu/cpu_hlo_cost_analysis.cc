@@ -37,22 +37,32 @@ absl::Status CpuHloCostAnalysis::HandleBroadcast(
       !broadcast->shape().has_layout()) {
     return absl::OkStatus();
   }
-  // Loops over small dimensions that are minor to all operand dimensions are
-  // unrolled, and the operand is computed once for all of their iterations.
-  static constexpr int64_t kMaxUnrolledElements = 8;
-  const Shape& shape = broadcast->shape();
-  int64_t minor_elements = 1;
-  for (int64_t dim : shape.layout().minor_to_major()) {
-    if (absl::c_linear_search(broadcast->dimensions(), dim)) {
-      break;
-    }
-    minor_elements *= shape.dimensions(dim);
-  }
-  if (minor_elements > 1 && minor_elements <= kMaxUnrolledElements) {
+  const int64_t minor_elements = UnrolledBroadcastElements(*broadcast);
+  if (minor_elements > 1) {
     current_properties_.set_operand_utilization(
         0, current_properties_.operand_utilization(0) / minor_elements);
   }
   return absl::OkStatus();
+}
+
+/*static*/
+int64_t CpuHloCostAnalysis::UnrolledBroadcastElements(
+    const HloInstruction& broadcast) {
+  // Loops over small dimensions that are minor to all operand dimensions are
+  // unrolled, and the operand is computed once for all of their iterations.
+  static constexpr int64_t kMaxUnrolledElements = 8;
+  const Shape& shape = broadcast.shape();
+  if (!shape.has_layout()) {
+    return 1;
+  }
+  int64_t minor_elements = 1;
+  for (int64_t dim : shape.layout().minor_to_major()) {
+    if (absl::c_linear_search(broadcast.dimensions(), dim)) {
+      break;
+    }
+    minor_elements *= shape.dimensions(dim);
+  }
+  return minor_elements <= kMaxUnrolledElements ? minor_elements : 1;
 }
 
 /*static*/

@@ -23,6 +23,7 @@ limitations under the License.
 #include "absl/algorithm/container.h"
 #include "absl/base/no_destructor.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "tsl/platform/protobuf.h"
@@ -190,9 +191,28 @@ class YnnMatcher : public LibraryMatcher {
   // materialized input. Without such an input, the library fusion is kept.
   bool LoopFusionIsFaster(const HloInstruction* reduce,
                           int64_t outputs = -1) {
+    return Decide(reduce, outputs).loop_fusion_is_faster;
+  }
+
+  // Returns true if `reduce` is left to a loop fusion that needs
+  // TreeReductionRewriter to split it across threads.
+  bool LoopFusionNeedsTreeReduction(const HloInstruction* reduce) {
+    Decision decision = Decide(reduce, /*outputs=*/-1);
+    return decision.loop_fusion_is_faster && decision.splits;
+  }
+
+
+
+ private:
+  struct Decision {
+    bool loop_fusion_is_faster = false;
+    bool splits = false;
+  };
+
+  Decision Decide(const HloInstruction* reduce, int64_t outputs) {
     const HloInstruction* materialized = MaterializedInput(reduce);
     if (materialized == nullptr) {
-      return false;
+      return {};
     }
     static const absl::NoDestructor<CpuPerformanceModel> model(
         CpuPerformanceModel::DefaultDeviceInfo());
@@ -202,11 +222,13 @@ class YnnMatcher : public LibraryMatcher {
       work.outputs = outputs;
     }
     CpuPerformanceModel::ReduceRunTimes times = model->EstimateReduce(work);
-    return times.loop_fusion < times.library;
+    VLOG(2) << reduce->name() << " materializing " << materialized->name()
+            << ": " << work.ToString() << " loop fusion "
+            << times.loop_fusion << " library " << times.library;
+    return {times.loop_fusion < times.library,
+            model->LoopFusionSplitsReduce(work)};
   }
 
-
- private:
   absl::flat_hash_set<DebugOptions::LibraryFusionType> fusion_types_;
 };
 
