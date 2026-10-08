@@ -17,6 +17,7 @@ limitations under the License.
 #define XLA_BACKENDS_CPU_TRANSFORMS_YNN_MATCHER_H_
 
 #include <cstdint>
+#include <cstdlib>
 #include <queue>
 #include <string>
 
@@ -149,6 +150,14 @@ class YnnMatcher : public LibraryMatcher {
   // supported. The fusion would read that input from memory, whereas loop
   // fusion can recompute it.
   bool MaterializesComputedInput(const HloInstruction* reduce) {
+    // Experiment only: XLA_CPU_YNN_KEEP_COMPUTED=1 leaves all reductions to YNN.
+    static const bool keep_computed = [] {
+      const char* env = std::getenv("XLA_CPU_YNN_KEEP_COMPUTED");
+      return env != nullptr && env[0] == '1';
+    }();
+    if (keep_computed) {
+      return false;
+    }
     static constexpr int64_t kCacheBytes = int64_t{1} << 20;
     // Loop fusion parallelizes a reduction only across its outputs, while YNN
     // also splits the reduced dimensions. Keep reductions to few outputs, e.g.

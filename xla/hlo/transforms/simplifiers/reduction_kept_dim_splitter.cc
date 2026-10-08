@@ -299,6 +299,12 @@ class ComponentHoister {
       memo_;
 };
 
+// Loop emitters parallelize a reduction only across its outputs. Variadic
+// reductions are also not taken by library fusions (e.g. YNN), which split the
+// reduced dimensions instead. Rewriting a reduction to few outputs into a
+// variadic one can therefore leave it on a single thread.
+constexpr int64_t kMinOutputsForVariadic = 64;
+
 // Returns the computed (non-parameter, non-constant) instructions that the
 // inputs of `reduce` are produced from through cheap layout or elementwise
 // ops, up to a limit. Only arrays of at least 1/8 of the size of the inputs
@@ -367,6 +373,12 @@ absl::StatusOr<bool> MergeSiblingReductions(HloComputation* computation,
         n == 1 ? SimpleReducerOpcode(instr->to_apply())
                : IndependentReducerOpcode(instr->to_apply(), n);
     if (!opcode.has_value() || n < 1) {
+      continue;
+    }
+    const Shape& first_output = instr->shape().IsTuple()
+                                    ? instr->shape().tuple_shapes(0)
+                                    : instr->shape();
+    if (ShapeUtil::ElementsIn(first_output) < kMinOutputsForVariadic) {
       continue;
     }
     // All accumulators must have the element type of the first one.
@@ -633,7 +645,9 @@ absl::StatusOr<bool> ReductionKeptDimSplitter::RunImpl(
       for (int64_t dim : reduce->dimensions()) {
         reduced_elements *= input_shape.dimensions(dim);
       }
-      if (reduced_elements < min_reduced_elements_) {
+      if (reduced_elements < min_reduced_elements_ ||
+          ShapeUtil::ElementsIn(reduce->shape()) / k <
+              kMinOutputsForVariadic) {
         continue;
       }
       std::optional<HloOpcode> opcode =

@@ -197,6 +197,29 @@ ENTRY main {
   EXPECT_EQ(CountReduces(*module, /*operand_rank=*/2), 2);
 }
 
+TEST_F(ReductionKeptDimSplitterTest, DoesNotMergeReductionsToFewOutputs) {
+  std::string hlo = absl::StrCat("HloModule m\n", kAdd, R"(
+ENTRY main {
+  p = f32[8,4096] parameter(0)
+  q = f32[8,4096] parameter(1)
+  e = f32[8,4096] exponential(p)
+  x = f32[8,4096] multiply(e, q)
+  y = f32[8,4096] add(e, q)
+  c = f32[] constant(0)
+  a = f32[8] reduce(x, c), dimensions={1}, to_apply=add
+  b = f32[8] reduce(y, c), dimensions={1}, to_apply=add
+  ROOT t = (f32[8], f32[8]) tuple(a, b)
+}
+)");
+  TF_ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(hlo));
+  ReductionKeptDimSplitter pass(/*max_kept_dim_size=*/8,
+                                /*min_reduced_elements=*/1024,
+                                /*unroll_small_reductions=*/false,
+                                /*merge_sibling_reductions=*/true);
+  TF_ASSERT_OK_AND_ASSIGN(bool changed, RunHloPass(&pass, module.get()));
+  EXPECT_FALSE(changed);
+}
+
 TEST_F(ReductionKeptDimSplitterTest, DoesNotMergeReductionsWithoutSharedWork) {
   std::string hlo = absl::StrCat("HloModule m\n", kAdd, R"(
 ENTRY main {
