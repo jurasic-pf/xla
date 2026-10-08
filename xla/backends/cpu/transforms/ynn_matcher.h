@@ -33,6 +33,7 @@ limitations under the License.
 #include "xla/backends/cpu/ynn_support.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_opcode.h"
+#include "xla/layout_util.h"
 #include "xla/shape.h"
 #include "xla/shape_util.h"
 
@@ -167,6 +168,16 @@ class YnnMatcher : public LibraryMatcher {
                               ? reduce->shape().tuple_shapes(0)
                               : reduce->shape();
     if (ShapeUtil::ElementsIn(output) < kMinOutputsForLoopFusion) {
+      return false;
+    }
+    // Loop fusion vectorizes reductions over the minor dimension. Reductions
+    // over major dimensions only, e.g. column sums, read strided and are left
+    // to YNN.
+    const Shape& input = reduce->operand(0)->shape();
+    const int64_t minor_dim = input.has_layout()
+                                  ? LayoutUtil::Minor(input.layout(), 0)
+                                  : input.dimensions().size() - 1;
+    if (!absl::c_linear_search(reduce->dimensions(), minor_dim)) {
       return false;
     }
     const int64_t reduce_input_bytes =

@@ -332,6 +332,34 @@ TEST_F(YnnReduceTest, DoNotFuseReduceOfProducerWithOtherUsers) {
   )");
 }
 
+TEST_F(YnnReduceTest, FuseMajorDimReduceOfProducerWithOtherUsers) {
+  // Column reductions read strided in loop fusion; YNN handles them.
+  const char* hlo_text = R"(
+  HloModule column_reduce_shared_producer
+
+  add {
+    lhs = f32[] parameter(0)
+    rhs = f32[] parameter(1)
+    ROOT add = f32[] add(lhs, rhs)
+  }
+
+  ENTRY main {
+    input = f32[1024,1024] parameter(0)
+    input2 = f32[1024,1024] parameter(1)
+    init = f32[] constant(0)
+    multiplied = f32[1024,1024] multiply(input, input2)
+    squared = f32[1024,1024] multiply(multiplied, multiplied)
+    r0 = f32[1024] reduce(multiplied, init), dimensions={0}, to_apply=add
+    r1 = f32[1024] reduce(squared, init), dimensions={0}, to_apply=add
+    ROOT t = (f32[1024], f32[1024]) tuple(r0, r1)
+  }
+  )";
+
+  MatchOptimizedHlo(hlo_text, R"(
+    CHECK: __ynn_fusion
+  )");
+}
+
 TEST_F(YnnReduceTest, FuseFullReduceOfProducerWithOtherUsers) {
   // Loop fusion would compute these scalar reductions on one thread; YNN
   // parallelizes over the reduced dimension.
