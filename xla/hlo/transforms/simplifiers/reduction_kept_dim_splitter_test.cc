@@ -200,11 +200,11 @@ ENTRY main {
 TEST_F(ReductionKeptDimSplitterTest, DoesNotMergeReductionsToFewOutputs) {
   std::string hlo = absl::StrCat("HloModule m\n", kAdd, R"(
 ENTRY main {
-  p = f32[8,4096] parameter(0)
-  q = f32[8,4096] parameter(1)
-  e = f32[8,4096] exponential(p)
-  x = f32[8,4096] multiply(e, q)
-  y = f32[8,4096] add(e, q)
+  p = f32[8,16384] parameter(0)
+  q = f32[8,16384] parameter(1)
+  e = f32[8,16384] exponential(p)
+  x = f32[8,16384] multiply(e, q)
+  y = f32[8,16384] add(e, q)
   c = f32[] constant(0)
   a = f32[8] reduce(x, c), dimensions={1}, to_apply=add
   b = f32[8] reduce(y, c), dimensions={1}, to_apply=add

@@ -301,9 +301,18 @@ class ComponentHoister {
 
 // Loop emitters parallelize a reduction only across its outputs. Variadic
 // reductions are also not taken by library fusions (e.g. YNN), which split the
-// reduced dimensions instead. Rewriting a reduction to few outputs into a
-// variadic one can therefore leave it on a single thread.
+// reduced dimensions instead. Rewriting a large reduction to few outputs into a
+// variadic one can therefore leave it on too few threads. Small reductions take
+// less time than splitting them across threads.
 constexpr int64_t kMinOutputsForVariadic = 64;
+constexpr int64_t kMaxSerialReduceElements = int64_t{1} << 16;
+
+bool TooFewOutputsForVariadic(const HloInstruction* reduce,
+                              int64_t output_elements) {
+  return output_elements < kMinOutputsForVariadic &&
+         ShapeUtil::ElementsIn(reduce->operand(0)->shape()) >
+             kMaxSerialReduceElements;
+}
 
 // Returns the computed (non-parameter, non-constant) instructions that the
 // inputs of `reduce` are produced from through cheap layout or elementwise
@@ -378,7 +387,7 @@ absl::StatusOr<bool> MergeSiblingReductions(HloComputation* computation,
     const Shape& first_output = instr->shape().IsTuple()
                                     ? instr->shape().tuple_shapes(0)
                                     : instr->shape();
-    if (ShapeUtil::ElementsIn(first_output) < kMinOutputsForVariadic) {
+    if (TooFewOutputsForVariadic(instr, ShapeUtil::ElementsIn(first_output))) {
       continue;
     }
     // All accumulators must have the element type of the first one.
@@ -646,8 +655,8 @@ absl::StatusOr<bool> ReductionKeptDimSplitter::RunImpl(
         reduced_elements *= input_shape.dimensions(dim);
       }
       if (reduced_elements < min_reduced_elements_ ||
-          ShapeUtil::ElementsIn(reduce->shape()) / k <
-              kMinOutputsForVariadic) {
+          TooFewOutputsForVariadic(reduce,
+                                   ShapeUtil::ElementsIn(reduce->shape()) / k)) {
         continue;
       }
       std::optional<HloOpcode> opcode =

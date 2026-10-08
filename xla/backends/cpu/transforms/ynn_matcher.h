@@ -161,13 +161,17 @@ class YnnMatcher : public LibraryMatcher {
     }
     static constexpr int64_t kCacheBytes = int64_t{1} << 20;
     // Loop fusion parallelizes a reduction only across its outputs, while YNN
-    // also splits the reduced dimensions. Keep reductions to few outputs, e.g.
-    // dot products, in YNN even if it reads a materialized input.
+    // also splits the reduced dimensions. Keep large reductions to few
+    // outputs, e.g. dot products, in YNN even if it reads a materialized input.
+    // Small ones take less time than splitting them across threads.
     static constexpr int64_t kMinOutputsForLoopFusion = 64;
+    static constexpr int64_t kMaxSerialReduceElements = int64_t{1} << 16;
     const Shape& output = reduce->shape().IsTuple()
                               ? reduce->shape().tuple_shapes(0)
                               : reduce->shape();
-    if (ShapeUtil::ElementsIn(output) < kMinOutputsForLoopFusion) {
+    if (ShapeUtil::ElementsIn(output) < kMinOutputsForLoopFusion &&
+        ShapeUtil::ElementsIn(reduce->operand(0)->shape()) >
+            kMaxSerialReduceElements) {
       return false;
     }
     // Loop fusion vectorizes reductions over the minor dimension. Reductions
