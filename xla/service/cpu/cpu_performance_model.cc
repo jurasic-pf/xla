@@ -21,16 +21,25 @@ limitations under the License.
 #include <cstdint>
 #include <limits>
 #include <string>
+#include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/time.h"
 #include "absl/types/span.h"
+#include "tsl/platform/cpu_info.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_opcode.h"
+#include "xla/layout_util.h"
+#include "xla/primitive_util.h"
 #include "xla/service/cpu/cpu_hlo_cost_analysis.h"
+#include "xla/service/hlo_cost_analysis.h"
+#include "xla/shape.h"
+#include "xla/shape_util.h"
 #include "xla/stream_executor/device_description.h"
+#include "xla/xla_data.pb.h"
 
 namespace xla::cpu {
 namespace {
@@ -78,7 +87,7 @@ std::string EstimateRunTimeData::ToString() const {
 /*static*/
 se::DeviceDescription CpuPerformanceModel::DefaultDeviceInfo() {
   se::DeviceDescription device_info;
-  device_info.set_core_count(8);
+  device_info.set_core_count(tsl::port::MaxParallelism());
   // 16 f32 FMA lanes per core: two 256-bit FMA units.
   device_info.set_fpus_per_core(16);
   device_info.set_clock_rate_ghz(3.0);
@@ -340,6 +349,163 @@ absl::Duration CpuPerformanceModel::CombineComputeAndMemoryAccessTime(
     absl::Duration compute_time, absl::Duration memory_access_time) {
   return compute_time + memory_access_time -
          std::min(compute_time, memory_access_time) * kMemoryComputeParallelism;
+}
+
+/*static*/
+absl::Duration CpuPerformanceModel::ComputeTime(
+    const se::DeviceDescription& device_info, int64_t flops,
+    PrimitiveType type, int64_t threads) {
+  // fpus_per_core counts f32 lanes.
+  const int64_t bytes = primitive_util::ByteWidth(type);
+  const double lanes = std::max(
+      1.0, device_info.fpus_per_core() * 4.0 / std::max<int64_t>(4, bytes));
+  const double flops_per_ns = device_info.clock_rate_ghz() * /*fma:*/ 2 *
+                              lanes * std::max<int64_t>(1, threads);
+  return absl::Nanoseconds(1.0 * flops / flops_per_ns);
+}
+
+namespace {
+
+// Ops that a loop fusion computes element by element from its operands.
+bool IsLoopFusible(const HloInstruction& instr) {
+  return instr.IsElementwise() || instr.opcode() == HloOpcode::kBroadcast ||
+         instr.opcode() == HloOpcode::kReshape ||
+         instr.opcode() == HloOpcode::kBitcast ||
+         instr.opcode() == HloOpcode::kTranspose ||
+         instr.opcode() == HloOpcode::kSlice ||
+         instr.opcode() == HloOpcode::kConcatenate ||
+         instr.opcode() == HloOpcode::kPad ||
+         instr.opcode() == HloOpcode::kReverse ||
+         instr.opcode() == HloOpcode::kIota;
+}
+
+// Flops per element of `instr` in elemental code. Concatenates and pads
+// select their source per element.
+int64_t FlopsPerElement(const CpuHloCostAnalysis& costs,
+                        const HloInstruction& instr) {
+  if (instr.opcode() == HloOpcode::kConcatenate) {
+    return instr.operand_count() - 1;
+  }
+  if (instr.opcode() == HloOpcode::kPad) {
+    return 1;
+  }
+  if (!instr.IsElementwise() || instr.opcode() == HloOpcode::kConvert ||
+      instr.opcode() == HloOpcode::kCopy) {
+    return 0;
+  }
+  return costs.GetFlopsPerElementwiseOpElement(instr.shape().element_type(),
+                                                instr.opcode());
+}
+
+// Sums the per-element flops of the loop-fusible chain rooted at `root`,
+// stopping at `stop`, and the bytes of the chain's leaves.
+void WalkChain(const CpuHloCostAnalysis& costs, const HloInstruction* root,
+               const HloInstruction* stop, int64_t* flops_per_element,
+               int64_t* leaf_bytes) {
+  absl::flat_hash_set<const HloInstruction*> seen;
+  std::vector<const HloInstruction*> stack = {root};
+  while (!stack.empty()) {
+    const HloInstruction* instr = stack.back();
+    stack.pop_back();
+    if (!seen.insert(instr).second) {
+      continue;
+    }
+    if (instr == stop || !instr->shape().IsArray() || !IsLoopFusible(*instr) ||
+        (instr->opcode() == HloOpcode::kConstant &&
+         !ShapeUtil::IsEffectiveScalar(instr->shape()))) {
+      if (instr->shape().IsArray()) {
+        *leaf_bytes += ShapeUtil::ByteSizeOfElements(instr->shape());
+      }
+      continue;
+    }
+    *flops_per_element += FlopsPerElement(costs, *instr);
+    for (const HloInstruction* operand : instr->operands()) {
+      stack.push_back(operand);
+    }
+  }
+}
+
+}  // namespace
+
+/*static*/
+CpuPerformanceModel::ReduceWork CpuPerformanceModel::AnalyzeReduce(
+    const HloInstruction& reduce, const HloInstruction* materialized) {
+  CpuHloCostAnalysis costs(HloCostAnalysis::Options{});
+  ReduceWork work;
+  const Shape& input = reduce.operand(0)->shape();
+  const Shape& output = reduce.shape().IsTuple()
+                            ? reduce.shape().tuple_shapes(0)
+                            : reduce.shape();
+  work.input_elements = ShapeUtil::ElementsIn(input);
+  work.outputs = ShapeUtil::ElementsIn(output);
+  work.type = input.element_type();
+  const int64_t num_inputs = reduce.operand_count() / 2;
+  // One reducer op per input element and operand.
+  int64_t flops_per_element = num_inputs;
+  for (int64_t i = 0; i < num_inputs; ++i) {
+    WalkChain(costs, reduce.operand(i), /*stop=*/nullptr, &flops_per_element,
+              &work.leaf_bytes);
+  }
+  work.flops = flops_per_element * work.input_elements;
+  if (materialized != nullptr) {
+    int64_t materialized_flops_per_element = 0;
+    int64_t unused_bytes = 0;
+    WalkChain(costs, materialized, /*stop=*/nullptr,
+              &materialized_flops_per_element, &unused_bytes);
+    work.materialized_bytes =
+        ShapeUtil::ByteSizeOfElements(materialized->shape());
+    work.materialized_flops = materialized_flops_per_element *
+                              ShapeUtil::ElementsIn(materialized->shape());
+  }
+  if (reduce.opcode() == HloOpcode::kReduce) {
+    const int64_t minor_dim = input.has_layout()
+                                  ? LayoutUtil::Minor(input.layout(), 0)
+                                  : input.dimensions().size() - 1;
+    work.reduces_minor_dim =
+        absl::c_linear_search(reduce.dimensions(), minor_dim);
+  }
+  return work;
+}
+
+CpuPerformanceModel::ReduceRunTimes CpuPerformanceModel::EstimateReduce(
+    const ReduceWork& work) const {
+  const int64_t threads = std::max<int64_t>(1, device_info_.core_count());
+  // Loop fusion: partitioned across outputs only; reading strided over a
+  // major dimension forfeits vectorization.
+  const int64_t loop_threads =
+      std::min(threads, std::max<int64_t>(1, work.outputs));
+  const int64_t loop_flops =
+      work.reduces_minor_dim ? work.flops : work.flops * kStridedReducePenalty;
+  ReduceRunTimes times;
+  times.loop_fusion =
+      CombineComputeAndMemoryAccessTime(
+          ComputeTime(device_info_, loop_flops, work.type, loop_threads),
+          ReadTimeWithDRAMHeuristic(device_info_, work.leaf_bytes,
+                                    work.leaf_bytes)) +
+      kKernelLaunchTime +
+      (loop_threads > 1 ? kParallelTaskTime : absl::ZeroDuration());
+  // Library fusion: a separate kernel writes the materialized input, the
+  // library reads it and computes the rest on all threads.
+  absl::Duration materialize = absl::ZeroDuration();
+  if (work.materialized_bytes > 0) {
+    materialize =
+        CombineComputeAndMemoryAccessTime(
+            ComputeTime(device_info_, work.materialized_flops, work.type,
+                        threads),
+            WriteTime(device_info_, work.materialized_bytes)) +
+        kKernelLaunchTime + kParallelTaskTime;
+  }
+  const int64_t library_flops =
+      std::max<int64_t>(0, work.flops - work.materialized_flops);
+  times.library =
+      materialize +
+      CombineComputeAndMemoryAccessTime(
+          ComputeTime(device_info_, library_flops, work.type, threads),
+          ReadTimeWithDRAMHeuristic(
+              device_info_, work.leaf_bytes + work.materialized_bytes,
+              work.leaf_bytes + work.materialized_bytes)) +
+      kLibraryCallTime;
+  return times;
 }
 
 }  // namespace xla::cpu

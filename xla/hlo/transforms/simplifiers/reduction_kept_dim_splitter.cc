@@ -299,21 +299,6 @@ class ComponentHoister {
       memo_;
 };
 
-// Loop emitters parallelize a reduction only across its outputs. Variadic
-// reductions are also not taken by library fusions (e.g. YNN), which split the
-// reduced dimensions instead. Rewriting a large reduction to few outputs into a
-// variadic one can therefore leave it on too few threads. Small reductions take
-// less time than splitting them across threads.
-constexpr int64_t kMinOutputsForVariadic = 64;
-constexpr int64_t kMaxSerialReduceElements = int64_t{1} << 16;
-
-bool TooFewOutputsForVariadic(const HloInstruction* reduce,
-                              int64_t output_elements) {
-  return output_elements < kMinOutputsForVariadic &&
-         ShapeUtil::ElementsIn(reduce->operand(0)->shape()) >
-             kMaxSerialReduceElements;
-}
-
 // Returns the computed (non-parameter, non-constant) instructions that the
 // inputs of `reduce` are produced from through cheap layout or elementwise
 // ops, up to a limit. Only arrays of at least 1/8 of the size of the inputs
@@ -357,8 +342,9 @@ absl::flat_hash_set<const HloInstruction*> ComputedAncestors(
 // Merges reductions that have the same input shape, dimensions, reducer
 // opcode and init value, and do not depend on each other, into one variadic
 // reduction, so that a loop emitter computes them in one pass over the input.
-absl::StatusOr<bool> MergeSiblingReductions(HloComputation* computation,
-                                            int64_t max_operands) {
+absl::StatusOr<bool> MergeSiblingReductions(
+    HloComputation* computation, int64_t max_operands,
+    const ReductionKeptDimSplitter::VariadicIsFaster& variadic_is_faster) {
   struct Key {
     Shape shape;
     std::vector<int64_t> dims;
@@ -387,9 +373,8 @@ absl::StatusOr<bool> MergeSiblingReductions(HloComputation* computation,
     const Shape& first_output = instr->shape().IsTuple()
                                     ? instr->shape().tuple_shapes(0)
                                     : instr->shape();
-    // Unlike a split of a kept dimension, a merge replaces reductions that
-    // library fusions can take as they are.
-    if (ShapeUtil::ElementsIn(first_output) < kMinOutputsForVariadic) {
+    if (variadic_is_faster &&
+        !variadic_is_faster(*instr, ShapeUtil::ElementsIn(first_output))) {
       continue;
     }
     // All accumulators must have the element type of the first one.
@@ -657,8 +642,9 @@ absl::StatusOr<bool> ReductionKeptDimSplitter::RunImpl(
         reduced_elements *= input_shape.dimensions(dim);
       }
       if (reduced_elements < min_reduced_elements_ ||
-          TooFewOutputsForVariadic(reduce,
-                                   ShapeUtil::ElementsIn(reduce->shape()) / k)) {
+          (variadic_is_faster_ &&
+           !variadic_is_faster_(*reduce,
+                                ShapeUtil::ElementsIn(reduce->shape()) / k))) {
         continue;
       }
       std::optional<HloOpcode> opcode =
@@ -705,7 +691,9 @@ absl::StatusOr<bool> ReductionKeptDimSplitter::RunImpl(
   if (merge_sibling_reductions_) {
     for (HloComputation* computation :
          module->MakeNonfusionComputations(execution_threads)) {
-      ABSL_ASSIGN_OR_RETURN(bool merged, MergeSiblingReductions(computation, 16));
+      ABSL_ASSIGN_OR_RETURN(
+          bool merged,
+          MergeSiblingReductions(computation, 16, variadic_is_faster_));
       changed |= merged;
     }
   }

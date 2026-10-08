@@ -104,6 +104,7 @@ limitations under the License.
 #include "xla/backends/cpu/target_machine_options.h"
 #include "xla/backends/cpu/transforms/collectives/all_reduce_combiner.h"
 #include "xla/backends/cpu/transforms/library_rewriter.h"
+#include "xla/backends/cpu/transforms/ynn_matcher.h"
 #include "xla/backends/cpu/ynn_support.h"
 #include "xla/comparison_util.h"
 #include "xla/hlo/analysis/alias_info.h"
@@ -524,13 +525,28 @@ std::unique_ptr<HloPassFix<HloPassPipeline>> CreateSimplificationPipeline(
   if (const char* env = std::getenv("XLA_CPU_SPLIT_KEPT_DIM");
       env != nullptr && env[0] == '1') {
     const char* unroll = std::getenv("XLA_CPU_UNROLL_TINY_REDUCE");
+    // YNN does not take variadic reductions. Make a reduction variadic only if
+    // the performance model prefers a loop fusion over the YNN fusion.
+    ReductionKeptDimSplitter::VariadicIsFaster variadic_is_faster;
+    const auto& ynn_types =
+        module->config().debug_options().xla_cpu_experimental_ynn_fusion_type();
+    if (absl::c_contains(ynn_types, DebugOptions::LIBRARY_FUSION_TYPE_REDUCE)) {
+      auto matcher = std::make_shared<YnnMatcher>(
+          /*target_machine_features=*/nullptr, &ynn_types);
+      variadic_is_faster = [matcher](const HloInstruction& reduce,
+                                     int64_t outputs) {
+        return matcher->LoopFusionIsFaster(&reduce, outputs);
+      };
+    }
     pipeline->AddPass<ReductionKeptDimSplitter>(
         /*max_kept_dim_size=*/8, /*min_reduced_elements=*/1024,
         /*unroll_small_reductions=*/unroll != nullptr && unroll[0] == '1',
-        /*merge_sibling_reductions=*/[] {
+        /*merge_sibling_reductions=*/
+        [] {
           const char* env = std::getenv("XLA_CPU_MERGE_SIBLING_REDUCE");
           return env != nullptr && env[0] == '1';
-        }());
+        }(),
+        std::move(variadic_is_faster));
   }
   if (!IsHostOffload(module) &&
       absl::c_contains(module->config()

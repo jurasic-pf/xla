@@ -197,7 +197,7 @@ ENTRY main {
   EXPECT_EQ(CountReduces(*module, /*operand_rank=*/2), 2);
 }
 
-TEST_F(ReductionKeptDimSplitterTest, DoesNotMergeReductionsToFewOutputs) {
+TEST_F(ReductionKeptDimSplitterTest, DoesNotMergeWhenVariadicIsNotFaster) {
   std::string hlo = absl::StrCat("HloModule m\n", kAdd, R"(
 ENTRY main {
   p = f32[8,4096] parameter(0)
@@ -215,7 +215,11 @@ ENTRY main {
   ReductionKeptDimSplitter pass(/*max_kept_dim_size=*/8,
                                 /*min_reduced_elements=*/1024,
                                 /*unroll_small_reductions=*/false,
-                                /*merge_sibling_reductions=*/true);
+                                /*merge_sibling_reductions=*/true,
+                                /*variadic_is_faster=*/
+                                [](const HloInstruction&, int64_t outputs) {
+                                  return outputs >= 64;
+                                });
   TF_ASSERT_OK_AND_ASSIGN(bool changed, RunHloPass(&pass, module.get()));
   EXPECT_FALSE(changed);
 }

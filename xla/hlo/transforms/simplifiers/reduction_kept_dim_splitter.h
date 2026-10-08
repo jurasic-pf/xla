@@ -17,6 +17,8 @@ limitations under the License.
 #define XLA_HLO_TRANSFORMS_SIMPLIFIERS_REDUCTION_KEPT_DIM_SPLITTER_H_
 
 #include <cstdint>
+#include <functional>
+#include <utility>
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/status/statusor.h"
@@ -43,14 +45,22 @@ namespace xla {
 // pass with one accumulator each, and the slice index is a constant in each.
 class ReductionKeptDimSplitter : public HloModulePass {
  public:
-  explicit ReductionKeptDimSplitter(int64_t max_kept_dim_size = 8,
-                                    int64_t min_reduced_elements = 1024,
-                                    bool unroll_small_reductions = false,
-                                    bool merge_sibling_reductions = false)
+  // Returns true if computing `reduce` in a loop with `outputs` outputs, as
+  // the variadic reductions do, is faster than the backend's alternative,
+  // e.g. a library fusion that does not take variadic reductions.
+  using VariadicIsFaster =
+      std::function<bool(const HloInstruction& reduce, int64_t outputs)>;
+
+  explicit ReductionKeptDimSplitter(
+      int64_t max_kept_dim_size = 8, int64_t min_reduced_elements = 1024,
+      bool unroll_small_reductions = false,
+      bool merge_sibling_reductions = false,
+      VariadicIsFaster variadic_is_faster = nullptr)
       : max_kept_dim_size_(max_kept_dim_size),
         min_reduced_elements_(min_reduced_elements),
         unroll_small_reductions_(unroll_small_reductions),
-        merge_sibling_reductions_(merge_sibling_reductions) {}
+        merge_sibling_reductions_(merge_sibling_reductions),
+        variadic_is_faster_(std::move(variadic_is_faster)) {}
   absl::string_view name() const override {
     return "reduction-kept-dim-splitter";
   }
@@ -65,6 +75,7 @@ class ReductionKeptDimSplitter : public HloModulePass {
   int64_t min_reduced_elements_;
   bool unroll_small_reductions_;
   bool merge_sibling_reductions_;
+  VariadicIsFaster variadic_is_faster_;
 };
 
 }  // namespace xla

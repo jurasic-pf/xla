@@ -17,7 +17,6 @@ limitations under the License.
 #define XLA_BACKENDS_CPU_TRANSFORMS_YNN_MATCHER_H_
 
 #include <cstdint>
-#include <cstdlib>
 #include <queue>
 #include <string>
 
@@ -33,7 +32,7 @@ limitations under the License.
 #include "xla/backends/cpu/ynn_support.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_opcode.h"
-#include "xla/layout_util.h"
+#include "xla/service/cpu/cpu_performance_model.h"
 #include "xla/shape.h"
 #include "xla/shape_util.h"
 
@@ -133,7 +132,7 @@ class YnnMatcher : public LibraryMatcher {
     }
     if (fuse_reduce_ && (instr->opcode() == HloOpcode::kReduce ||
                          instr->opcode() == HloOpcode::kReduceWindow)) {
-      return !MaterializesComputedInput(instr);
+      return !LoopFusionIsFaster(instr);
     }
     return fuse_eltwise_ && instr->IsElementwise();
   }
@@ -144,57 +143,17 @@ class YnnMatcher : public LibraryMatcher {
   // Returns a string for FusionBackendConfig's fusion kind.
   absl::string_view fusion_kind() const override { return kYnnFusionKind; }
 
- private:
-  // Returns true if a fusion started at `reduce` cannot absorb a computed
-  // input of `reduce` that is at least as large as the input of `reduce` and
-  // does not fit into the cache, e.g. because it has other users or is not
-  // supported. The fusion would read that input from memory, whereas loop
+  // Returns the largest computed input of `reduce` that a fusion started at
+  // `reduce` cannot absorb, e.g. because it has other users or is not
+  // supported, or null. The fusion reads that input from memory, whereas loop
   // fusion can recompute it.
-  bool MaterializesComputedInput(const HloInstruction* reduce) {
-    // Experiment only: XLA_CPU_YNN_KEEP_COMPUTED=1 leaves all reductions to YNN.
-    static const bool keep_computed = [] {
-      const char* env = std::getenv("XLA_CPU_YNN_KEEP_COMPUTED");
-      return env != nullptr && env[0] == '1';
-    }();
-    if (keep_computed) {
-      return false;
-    }
-    static constexpr int64_t kCacheBytes = int64_t{1} << 20;
-    // Loop fusion parallelizes a reduction only across its outputs, while YNN
-    // also splits the reduced dimensions. Keep large reductions to few
-    // outputs, e.g. dot products, in YNN even if it reads a materialized input.
-    // Small ones take less time than splitting them across threads.
-    static constexpr int64_t kMinOutputsForLoopFusion = 64;
-    static constexpr int64_t kMaxSerialReduceElements = int64_t{1} << 16;
-    const Shape& output = reduce->shape().IsTuple()
-                              ? reduce->shape().tuple_shapes(0)
-                              : reduce->shape();
-    if (ShapeUtil::ElementsIn(output) < kMinOutputsForLoopFusion &&
-        ShapeUtil::ElementsIn(reduce->operand(0)->shape()) >
-            kMaxSerialReduceElements) {
-      return false;
-    }
-    // Loop fusion vectorizes reductions over the minor dimension. Reductions
-    // over major dimensions only, e.g. column sums, read strided and are left
-    // to YNN.
-    const Shape& input = reduce->operand(0)->shape();
-    const int64_t minor_dim = input.has_layout()
-                                  ? LayoutUtil::Minor(input.layout(), 0)
-                                  : input.dimensions().size() - 1;
-    if (reduce->opcode() == HloOpcode::kReduce &&
-        !absl::c_linear_search(reduce->dimensions(), minor_dim)) {
-      return false;
-    }
-    const int64_t reduce_input_bytes =
-        ShapeUtil::ByteSizeOfElements(reduce->operand(0)->shape());
-    if (reduce_input_bytes < kCacheBytes) {
-      return false;
-    }
+  const HloInstruction* MaterializedInput(const HloInstruction* reduce) {
     // Follows the upward growth in LibraryRewriter::FuseNeighbors: an operand is
     // absorbed if it is supported and all of its users are absorbed.
     absl::flat_hash_set<const HloInstruction*> absorbed = {reduce};
     std::queue<const HloInstruction*> queue;
     queue.push(reduce);
+    const HloInstruction* largest = nullptr;
     while (!queue.empty() &&
            static_cast<int64_t>(absorbed.size()) < MaxFusionSize()) {
       const HloInstruction* instr = queue.front();
@@ -216,15 +175,38 @@ class YnnMatcher : public LibraryMatcher {
           queue.push(operand);
           continue;
         }
-        if (ShapeUtil::ByteSizeOfElements(operand->shape()) >=
-            reduce_input_bytes) {
-          return true;
+        if (largest == nullptr ||
+            ShapeUtil::ByteSizeOfElements(operand->shape()) >
+                ShapeUtil::ByteSizeOfElements(largest->shape())) {
+          largest = operand;
         }
       }
     }
-    return false;
+    return largest;
   }
 
+  // Returns true if a loop fusion with `outputs` outputs (default: those of
+  // `reduce`) computes `reduce` faster than a library fusion that reads a
+  // materialized input. Without such an input, the library fusion is kept.
+  bool LoopFusionIsFaster(const HloInstruction* reduce,
+                          int64_t outputs = -1) {
+    const HloInstruction* materialized = MaterializedInput(reduce);
+    if (materialized == nullptr) {
+      return false;
+    }
+    static const absl::NoDestructor<CpuPerformanceModel> model(
+        CpuPerformanceModel::DefaultDeviceInfo());
+    CpuPerformanceModel::ReduceWork work =
+        CpuPerformanceModel::AnalyzeReduce(*reduce, materialized);
+    if (outputs > 0) {
+      work.outputs = outputs;
+    }
+    CpuPerformanceModel::ReduceRunTimes times = model->EstimateReduce(work);
+    return times.loop_fusion < times.library;
+  }
+
+
+ private:
   absl::flat_hash_set<DebugOptions::LibraryFusionType> fusion_types_;
 };
 

@@ -24,6 +24,7 @@ limitations under the License.
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/service/cpu/cpu_hlo_cost_analysis.h"
 #include "xla/stream_executor/device_description.h"
+#include "xla/xla_data.pb.h"
 
 namespace xla::cpu {
 
@@ -120,6 +121,57 @@ class CpuPerformanceModel {
 
   static absl::Duration CombineComputeAndMemoryAccessTime(
       absl::Duration compute_time, absl::Duration memory_access_time);
+
+  // Fixed costs of running a kernel, measured with microbenchmarks of single
+  // operations: launching one kernel thunk, splitting a kernel across the
+  // intra-op thread pool, and calling into a library fusion (YNN).
+  static constexpr absl::Duration kKernelLaunchTime = absl::Nanoseconds(500);
+  static constexpr absl::Duration kParallelTaskTime = absl::Microseconds(5);
+  static constexpr absl::Duration kLibraryCallTime = absl::Microseconds(10);
+  // Slowdown of a loop fusion that reduces only major dimensions, reading its
+  // input strided, relative to one reducing the minor dimension.
+  static constexpr int64_t kStridedReducePenalty = 4;
+
+  // Time to compute `flops` of `type` on `threads` threads. Unlike
+  // ComputeTime, counts the vector width of `type`.
+  static absl::Duration ComputeTime(const se::DeviceDescription& device_info,
+                                    int64_t flops, PrimitiveType type,
+                                    int64_t threads);
+
+  // Work of a reduction whose input is computed by a chain of loop-fusible
+  // instructions.
+  struct ReduceWork {
+    int64_t input_elements = 0;
+    int64_t outputs = 0;
+    // Flops to compute the reduction input from the chain's leaves, and to
+    // reduce it.
+    int64_t flops = 0;
+    // Bytes of the chain's leaves, e.g. parameters, read by a loop fusion.
+    int64_t leaf_bytes = 0;
+    // An input that a library fusion cannot absorb, which another kernel
+    // writes and the library fusion reads, and the flops to compute it.
+    int64_t materialized_bytes = 0;
+    int64_t materialized_flops = 0;
+    // Whether the minor dimension of the input is reduced. Loop fusion reads
+    // the input strided otherwise.
+    bool reduces_minor_dim = true;
+    PrimitiveType type = F32;
+  };
+
+  // Returns the work of `reduce`, computing its input in a loop fusion. A
+  // library fusion of `reduce` reads `materialized`, if not null.
+  static ReduceWork AnalyzeReduce(const HloInstruction& reduce,
+                                  const HloInstruction* materialized);
+
+  struct ReduceRunTimes {
+    absl::Duration loop_fusion;
+    absl::Duration library;
+  };
+
+  // Estimates `work` as a loop fusion, which only parallelizes across
+  // outputs, and as a library fusion, which also splits the reduced
+  // dimensions but reads materialized inputs.
+  ReduceRunTimes EstimateReduce(const ReduceWork& work) const;
 
  private:
   se::DeviceDescription device_info_;
