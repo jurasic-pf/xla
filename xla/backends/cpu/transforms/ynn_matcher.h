@@ -23,7 +23,6 @@ limitations under the License.
 #include "absl/algorithm/container.h"
 #include "absl/base/no_destructor.h"
 #include "absl/container/flat_hash_set.h"
-#include "absl/container/flat_hash_set.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "tsl/platform/protobuf.h"
@@ -151,6 +150,16 @@ class YnnMatcher : public LibraryMatcher {
   // fusion can recompute it.
   bool MaterializesComputedInput(const HloInstruction* reduce) {
     static constexpr int64_t kCacheBytes = int64_t{1} << 20;
+    // Loop fusion parallelizes a reduction only across its outputs, while YNN
+    // also splits the reduced dimensions. Keep reductions to few outputs, e.g.
+    // dot products, in YNN even if it reads a materialized input.
+    static constexpr int64_t kMinOutputsForLoopFusion = 64;
+    const Shape& output = reduce->shape().IsTuple()
+                              ? reduce->shape().tuple_shapes(0)
+                              : reduce->shape();
+    if (ShapeUtil::ElementsIn(output) < kMinOutputsForLoopFusion) {
+      return false;
+    }
     const int64_t reduce_input_bytes =
         ShapeUtil::ByteSizeOfElements(reduce->operand(0)->shape());
     if (reduce_input_bytes < kCacheBytes) {

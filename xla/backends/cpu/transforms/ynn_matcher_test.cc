@@ -332,6 +332,35 @@ TEST_F(YnnReduceTest, DoNotFuseReduceOfProducerWithOtherUsers) {
   )");
 }
 
+TEST_F(YnnReduceTest, FuseFullReduceOfProducerWithOtherUsers) {
+  // Loop fusion would compute these scalar reductions on one thread; YNN
+  // parallelizes over the reduced dimension.
+  const char* hlo_text = R"(
+  HloModule full_reduce_shared_producer
+
+  add {
+    lhs = f32[] parameter(0)
+    rhs = f32[] parameter(1)
+    ROOT add = f32[] add(lhs, rhs)
+  }
+
+  ENTRY main {
+    input = f32[1048576] parameter(0)
+    input2 = f32[1048576] parameter(1)
+    init = f32[] constant(0)
+    multiplied = f32[1048576] multiply(input, input2)
+    squared = f32[1048576] multiply(multiplied, multiplied)
+    r0 = f32[] reduce(multiplied, init), dimensions={0}, to_apply=add
+    r1 = f32[] reduce(squared, init), dimensions={0}, to_apply=add
+    ROOT t = (f32[], f32[]) tuple(r0, r1)
+  }
+  )";
+
+  MatchOptimizedHlo(hlo_text, R"(
+    CHECK: __ynn_fusion
+  )");
+}
+
 class YnnReduceEltwiseTest : public HloTestBase {
  protected:
   DebugOptions GetDebugOptionsForTest() const override {
