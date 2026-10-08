@@ -387,7 +387,9 @@ absl::StatusOr<bool> MergeSiblingReductions(HloComputation* computation,
     const Shape& first_output = instr->shape().IsTuple()
                                     ? instr->shape().tuple_shapes(0)
                                     : instr->shape();
-    if (TooFewOutputsForVariadic(instr, ShapeUtil::ElementsIn(first_output))) {
+    // Unlike a split of a kept dimension, a merge replaces reductions that
+    // library fusions can take as they are.
+    if (ShapeUtil::ElementsIn(first_output) < kMinOutputsForVariadic) {
       continue;
     }
     // All accumulators must have the element type of the first one.
