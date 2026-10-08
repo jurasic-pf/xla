@@ -72,6 +72,9 @@ class CpuInstructionFusion : public InstructionFusion {
   // into all of its users is at least as fast as materializing it.
   bool FusionIntoAllUsersIsFaster(const HloInstruction& producer);
   bool EstimateFusionIntoAllUsersIsFaster(const HloInstruction& producer);
+  // Returns true if recomputing `producer` and its recomputed operand chain
+  // involves arithmetic, not only data movement.
+  bool RecomputedChainHasCompute(const HloInstruction& producer);
   bool RecomputeInEachUserIsFaster(const HloInstruction& producer,
                                    const HloInstruction* consumer,
                                    int64_t copies);

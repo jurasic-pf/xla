@@ -726,12 +726,15 @@ FusionDecision CpuInstructionFusion::ShouldFuse(HloInstruction* consumer,
         evaluation.EvaluateEmittedInstructions(producer) <= kMaxEmittedCopies;
     if (!tiny_reduction && evaluation.CodeDuplicationTooHigh(producer)) {
       int64_t copies = evaluation.EvaluateEmittedInstructions(producer);
+      // Recomputing pure data movement, e.g. slices and concatenates, saves no
+      // arithmetic and adds index computations the model does not count.
       bool fuse =
-          copies <= FusionNodeIndexingEvaluation::kAllowedCodeDuplication
-              ? FusionIntoAllUsersIsFaster(*producer)
-              : CopiesAboveCapAllowed() && copies <= kMaxEmittedCopies &&
-                    cost_analysis_ != nullptr &&
-                    RecomputeInEachUserIsFaster(*producer, consumer, copies);
+          RecomputedChainHasCompute(*producer) &&
+          (copies <= FusionNodeIndexingEvaluation::kAllowedCodeDuplication
+               ? FusionIntoAllUsersIsFaster(*producer)
+               : CopiesAboveCapAllowed() && copies <= kMaxEmittedCopies &&
+                     cost_analysis_ != nullptr &&
+                     RecomputeInEachUserIsFaster(*producer, consumer, copies));
       if (!fuse) {
         return FusionDecision::Forbid("Code duplication too high");
       }
@@ -887,6 +890,17 @@ bool CpuInstructionFusion::EstimateFusionIntoAllUsersIsFaster(
   }
   return RecomputeInEachUserIsFaster(producer, /*consumer=*/nullptr,
                                      /*copies=*/1);
+}
+
+bool CpuInstructionFusion::RecomputedChainHasCompute(
+    const HloInstruction& producer) {
+  if (cost_analysis_ == nullptr) {
+    return true;
+  }
+  return absl::c_any_of(RecomputedChain(producer),
+                        [&](const HloInstruction* instr) {
+                          return cost_analysis_->flop_count(*instr) > 0;
+                        });
 }
 
 bool CpuInstructionFusion::RecomputeInEachUserIsFaster(
