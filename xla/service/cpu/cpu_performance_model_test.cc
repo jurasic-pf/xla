@@ -7,13 +7,16 @@
 #include <gtest/gtest.h>
 #include "absl/status/status_matchers.h"  // IWYU pragma: keep
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "xla/hlo/ir/hlo_instruction.h"
+#include "xla/hlo/ir/hlo_opcode.h"
 #include "xla/hlo/testlib/hlo_hardware_independent_test_base.h"
 #include "xla/hlo/testlib/test_helpers.h"
 #include "xla/service/cpu/cpu_hlo_cost_analysis.h"
 #include "xla/service/hlo_cost_analysis.h"
+#include "xla/stream_executor/device_description.h"
 #include "xla/xla_data.pb.h"
 
 namespace xla::cpu {
@@ -112,61 +115,90 @@ ENTRY e {
 }
 
 
-CpuPerformanceModel::ReduceWork LargeWork(int64_t outputs) {
+// sin(x) * cos(x) of f64[n], reduced to `outputs` outputs. The library fusion
+// reads `materialized_ops` of sin and cos from memory.
+CpuPerformanceModel::ReduceWork TrigWork(int64_t n, int64_t outputs,
+                                         int materialized_ops) {
+  const int64_t trig = CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(
+      F64, HloOpcode::kSin);
+  const int64_t vectorized =
+      CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(F64,
+                                                          HloOpcode::kExp);
   CpuPerformanceModel::ReduceWork work;
-  work.input_elements = int64_t{1} << 24;
+  work.input_elements = n;
   work.outputs = outputs;
   work.type = F64;
-  // Two transcendentals and an add per input element.
-  work.flops = 31 * work.input_elements;
-  work.leaf_bytes = 8 * work.input_elements;
-  work.materialized_bytes = 8 * work.input_elements;
-  work.materialized_flops = 30 * work.input_elements;
+  work.chain.flops = 2 * trig + 2;
+  work.chain.transcendental_flops = 2 * trig;
+  work.chain.library_flops =
+      (2 - materialized_ops) * vectorized + materialized_ops + 1;
+  work.chain.leaf_bytes = 8 * n;
+  if (materialized_ops > 0) {
+    work.materialized_bytes = 8 * n;
+    work.materialized_elements = n;
+    work.materialized.flops = materialized_ops * trig;
+    work.materialized.transcendental_flops = work.materialized.flops;
+    work.materialized.leaf_bytes = 8 * n;
+  }
   return work;
 }
 
-TEST(CpuPerformanceModelReduceTest, LibraryIsFasterForExpensiveFullReduction) {
-  // A loop fusion computes a reduction to one output on one thread.
+TEST(CpuPerformanceModelReduceTest, LibraryIsFasterIfItComputesTheChain) {
+  // The library fusion vectorizes sin and cos.
   CpuPerformanceModel model(CpuPerformanceModel::DefaultDeviceInfo());
-  if (model.device_info().core_count() < 4) {
-    GTEST_SKIP() << "Needs a multi-core host.";
-  }
-  CpuPerformanceModel::ReduceRunTimes times =
-      model.EstimateReduce(LargeWork(/*outputs=*/1));
+  CpuPerformanceModel::ReduceRunTimes times = model.EstimateReduce(
+      TrigWork(int64_t{1} << 24, /*outputs=*/1, /*materialized_ops=*/0));
   EXPECT_LT(times.library, times.loop_fusion);
 }
 
-TEST(CpuPerformanceModelReduceTest, LoopFusionIsFasterForManyOutputs) {
-  // With enough outputs, both use all threads, and the library fusion also
-  // writes and reads the materialized input.
+TEST(CpuPerformanceModelReduceTest, LoopFusionIsFasterIfSineIsMaterialized) {
+  // Both compute sin with the same scalar code; the library fusion also
+  // writes and reads it, and launches a second kernel.
   CpuPerformanceModel model(CpuPerformanceModel::DefaultDeviceInfo());
-  CpuPerformanceModel::ReduceRunTimes times =
-      model.EstimateReduce(LargeWork(/*outputs=*/1 << 16));
+  CpuPerformanceModel::ReduceRunTimes times = model.EstimateReduce(
+      TrigWork(int64_t{1} << 18, /*outputs=*/1, /*materialized_ops=*/2));
   EXPECT_LT(times.loop_fusion, times.library);
 }
 
 TEST(CpuPerformanceModelReduceTest, LoopFusionIsFasterForTinyReduction) {
-  // A tiny reduction is dominated by the cost of calling the library.
+  // A tiny reduction of cheap ops is dominated by the fixed costs of the
+  // second kernel and the library call.
   CpuPerformanceModel model(CpuPerformanceModel::DefaultDeviceInfo());
-  CpuPerformanceModel::ReduceWork work;
-  work.input_elements = 3 * 64;
-  work.outputs = 3;
-  work.type = F64;
-  work.flops = 10 * work.input_elements;
-  work.leaf_bytes = 8 * work.input_elements;
-  work.materialized_bytes = 8 * work.input_elements;
-  work.materialized_flops = 9 * work.input_elements;
+  CpuPerformanceModel::ReduceWork work =
+      TrigWork(3 * 64, /*outputs=*/3, /*materialized_ops=*/1);
+  work.chain.flops = work.chain.library_flops = 3;
+  work.chain.transcendental_flops = 0;
+  work.materialized.flops = 1;
+  work.materialized.transcendental_flops = 0;
   CpuPerformanceModel::ReduceRunTimes times = model.EstimateReduce(work);
   EXPECT_LT(times.loop_fusion, times.library);
 }
 
 TEST(CpuPerformanceModelReduceTest, ColumnReductionIsSlowerInLoopFusion) {
   CpuPerformanceModel model(CpuPerformanceModel::DefaultDeviceInfo());
-  CpuPerformanceModel::ReduceWork rows = LargeWork(/*outputs=*/1 << 12);
+  CpuPerformanceModel::ReduceWork rows =
+      TrigWork(int64_t{1} << 24, /*outputs=*/1 << 12, /*materialized_ops=*/0);
+  rows.chain.flops = 2;
+  rows.chain.transcendental_flops = 0;
   CpuPerformanceModel::ReduceWork columns = rows;
   columns.reduces_minor_dim = false;
   EXPECT_LT(model.EstimateReduce(rows).loop_fusion,
             model.EstimateReduce(columns).loop_fusion);
+}
+
+TEST(CpuPerformanceModelReduceTest, DefaultDeviceInfoCountsPhysicalCores) {
+  se::DeviceDescription info = CpuPerformanceModel::DefaultDeviceInfo();
+  LOG(INFO) << "cores: " << info.core_count()
+            << ", threads per core: " << info.threads_per_core_limit();
+  EXPECT_GE(info.core_count(), 1);
+  EXPECT_GE(info.threads_per_core_limit(), 1);
+}
+
+TEST(CpuPerformanceModelReduceTest, ParallelKernelsPayForkJoin) {
+  EXPECT_EQ(CpuPerformanceModel::KernelOverhead(1),
+            CpuPerformanceModel::kKernelLaunchTime);
+  EXPECT_GT(CpuPerformanceModel::KernelOverhead(16),
+            CpuPerformanceModel::KernelOverhead(4));
 }
 
 TEST_F(CpuPerformanceModelTest, AnalyzeReduceCountsTheRecomputedChain) {
@@ -194,11 +226,18 @@ ENTRY e {
       CpuPerformanceModel::AnalyzeReduce(*reduce, /*materialized=*/sine);
   EXPECT_EQ(work.input_elements, 64 * 1024);
   EXPECT_EQ(work.outputs, 64);
-  // sine (15) + multiply (1) + the reducer's add (1) per element.
-  EXPECT_EQ(work.flops, 17 * 64 * 1024);
-  EXPECT_EQ(work.leaf_bytes, 4 * 64 * 1024);
+  const int64_t sine_flops =
+      CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(F32,
+                                                          HloOpcode::kSin);
+  // sine + multiply + the reducer's add per element.
+  EXPECT_EQ(work.chain.flops, sine_flops + 2);
+  EXPECT_EQ(work.chain.transcendental_flops, sine_flops);
+  // The library fusion reads sine and computes the rest.
+  EXPECT_EQ(work.chain.library_flops, 2);
+  EXPECT_EQ(work.chain.leaf_bytes, 4 * 64 * 1024);
   EXPECT_EQ(work.materialized_bytes, 4 * 64 * 1024);
-  EXPECT_EQ(work.materialized_flops, 15 * 64 * 1024);
+  EXPECT_EQ(work.materialized.flops, sine_flops);
+  EXPECT_EQ(work.materialized.leaf_bytes, 4 * 64 * 1024);
   EXPECT_TRUE(work.reduces_minor_dim);
 }
 

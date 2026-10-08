@@ -46,6 +46,39 @@ limitations under the License.
 
 namespace xla::cpu {
 
+int64_t DefaultParallelTaskCount(int64_t flops, int64_t transcendentals,
+                                 int64_t bytes_accessed,
+                                 int64_t max_parallelism) {
+  // Calculate flops-to-bytes-ratio for 'instruction'.
+  bytes_accessed = std::max(int64_t{1}, bytes_accessed);
+  const float flops_to_bytes_ratio =
+      flops / static_cast<float>(bytes_accessed);
+  int64_t instruction_cost;
+  int64_t min_cost_per_thread;
+  // Check for I/O bound instructions.
+  if (flops_to_bytes_ratio <= 1.0) {
+    // Limit max parallelism for I/O bound instructions by assuming a
+    // sub-linear scaling function (fit based on empirical benchmark results).
+    // TODO(b/29630486) Develop system bandwidth model.
+    max_parallelism = std::min<int64_t>(
+        max_parallelism, std::ceil(std::sqrt(tsl::port::MaxParallelism())));
+    // Use bytes accessed cost and L2 cache size min per-thread cost.
+    instruction_cost = bytes_accessed;
+    min_cost_per_thread = 256LL << 10;  // 256KB L2 Cache size.
+  } else {
+    // Calculate the instruction cost in cycles.
+    // TODO(b/29630486) Improve on this linear cost model.
+    // Consider making 'min_cost_per_thread' be a function of the target
+    // bandwidth limit for instructions with low arithmetic complexity.
+    instruction_cost = 1 * flops + 2 * transcendentals + 10 * bytes_accessed;
+    // Minimum per-thread cost is 100us of work on a 2GHz core.
+    min_cost_per_thread = 100000;
+  }
+  // Return target parallel task count in [1, max_parallelism].
+  return std::min(max_parallelism,
+                  std::max(int64_t{1}, instruction_cost / min_cost_per_thread));
+}
+
 class SimpleCostModel : public ParallelCostModel {
  public:
   SimpleCostModel(const int64_t max_parallelism,
@@ -79,44 +112,10 @@ class DefaultCostModel : public ParallelCostModel {
   ~DefaultCostModel() override {}
 
   int64_t GetParallelTaskCount(HloInstruction* instruction) override {
-    // Parameters for parallel task count computation.
-    int64_t instruction_cost;
-    int64_t min_cost_per_thread;
-    int64_t max_parallelism;
-    // Calculate flops-to-bytes-ratio for 'instruction'.
-    const int64_t bytes_accessed =
-        std::max(int64_t{1}, cost_analysis_->bytes_accessed(*instruction));
-    const float flops_to_bytes_ratio =
-        cost_analysis_->flop_count(*instruction) /
-        static_cast<float>(bytes_accessed);
-    // Check for I/O bound instructions.
-    if (flops_to_bytes_ratio <= 1.0) {
-      // Limit max parallelism for I/O bound instructions by assuming a
-      // sub-linear scaling function (fit based on empirical benchmark results).
-      // TODO(b/29630486) Develop system bandwidth model.
-      max_parallelism = std::min<int64_t>(
-          max_parallelism_, std::ceil(std::sqrt(tsl::port::MaxParallelism())));
-      // Use bytes accessed cost and L2 cache size min per-thread cost.
-      instruction_cost = bytes_accessed;
-      min_cost_per_thread = 256LL << 10;  // 256KB L2 Cache size.
-    } else {
-      // Use max parallelism for compute bound instructions.
-      max_parallelism = max_parallelism_;
-      // Calculate the instruction cost in cycles.
-      // TODO(b/29630486) Improve on this linear cost model.
-      // Consider making 'min_cost_per_thread' be a function of the target
-      // bandwidth limit for instructions with low arithmetic complexity.
-      instruction_cost =
-          1 * cost_analysis_->flop_count(*instruction) +
-          2 * cost_analysis_->transcendental_count(*instruction) +
-          10 * cost_analysis_->bytes_accessed(*instruction);
-      // Minimum per-thread cost is 100us of work on a 2GHz core.
-      min_cost_per_thread = 100000;
-    }
-    // Return target parallel task count in [1, max_parallelism_].
-    return std::min(
-        max_parallelism,
-        std::max(int64_t{1}, instruction_cost / min_cost_per_thread));
+    return DefaultParallelTaskCount(
+        cost_analysis_->flop_count(*instruction),
+        cost_analysis_->transcendental_count(*instruction),
+        cost_analysis_->bytes_accessed(*instruction), max_parallelism_);
   }
 
  private:

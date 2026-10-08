@@ -7,6 +7,7 @@
 #include "absl/container/btree_set.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_opcode.h"
 #include "xla/service/hlo_cost_analysis.h"
@@ -22,17 +23,27 @@ namespace xla::cpu {
 // inside a fusion accounts for elements that are read more than once (broadcast).
 class CpuHloCostAnalysis : public HloCostAnalysis {
  public:
+  // Flops of transcendental ops, which XLA's parallel task assignment counts
+  // as transcendentals rather than flops.
+  static inline constexpr absl::string_view kTranscendentalFlopsKey =
+      "transcendental_flops";
+
   explicit CpuHloCostAnalysis(const Options& options)
       : HloCostAnalysis(options) {}
 
   absl::Status HandleElementwiseOp(const HloInstruction* hlo) override;
   absl::Status HandleBroadcast(const HloInstruction* broadcast) override;
 
-  int64_t GetFlopsPerElementwiseOpElement(PrimitiveType type,
-                                          HloOpcode opcode) const;
+  // Time to compute one element of an elementwise op in a loop fusion, in
+  // units of an add of the same type.
+  static int64_t GetFlopsPerElementwiseOpElement(PrimitiveType type,
+                                                 HloOpcode opcode);
 
   int64_t GetFlopsForElementwiseOp(HloOpcode op_code, const Shape& shape) const;
   int64_t GetFlopsForElementwiseOp(const HloInstruction* instr) const;
+
+  // Flops of `hlo` spent in transcendental ops.
+  int64_t transcendental_flop_count(const HloInstruction& hlo) const;
 
   float CommonElementwiseUtilization(const HloInstruction* a,
                                      const HloInstruction* b) const;

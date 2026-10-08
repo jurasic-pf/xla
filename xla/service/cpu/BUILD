@@ -1074,6 +1074,7 @@ cc_library(
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:status_macros",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -1085,6 +1086,7 @@ xla_cc_test(
         "//xla/hlo/ir:hlo",
         "//xla/hlo/testlib:hlo_hardware_independent_test_base",
         "//xla/hlo/testlib:test_helpers",
+        "//xla:xla_data_proto_cc",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_googletest//:gtest_main",
     ],
@@ -1096,6 +1098,7 @@ cc_library(
     hdrs = ["cpu_performance_model.h"],
     deps = [
         ":cpu_hlo_cost_analysis",
+        ":parallel_task_assignment",
         "//xla:shape_util",
         "//xla:xla_data_proto_cc",
         "//xla/hlo/ir:hlo",
@@ -1122,6 +1125,8 @@ xla_cc_test(
         "//xla/hlo/testlib:test_helpers",
         "//xla:xla_data_proto_cc",
         "//xla/service:hlo_cost_analysis",
+        "//xla/stream_executor:device_description",
+        "@com_google_absl//absl/log",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/status:status_matchers",
         "@com_google_absl//absl/strings:string_view",

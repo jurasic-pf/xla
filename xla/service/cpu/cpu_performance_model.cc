@@ -16,7 +16,6 @@ limitations under the License.
 #include "xla/service/cpu/cpu_performance_model.h"
 
 #include <algorithm>
-#include <cstdlib>
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -35,6 +34,7 @@ limitations under the License.
 #include "xla/layout_util.h"
 #include "xla/primitive_util.h"
 #include "xla/service/cpu/cpu_hlo_cost_analysis.h"
+#include "xla/service/cpu/parallel_task_assignment.h"
 #include "xla/service/hlo_cost_analysis.h"
 #include "xla/shape.h"
 #include "xla/shape_util.h"
@@ -87,23 +87,17 @@ std::string EstimateRunTimeData::ToString() const {
 /*static*/
 se::DeviceDescription CpuPerformanceModel::DefaultDeviceInfo() {
   se::DeviceDescription device_info;
-  device_info.set_core_count(tsl::port::MaxParallelism());
-  // 16 f32 FMA lanes per core: two 256-bit FMA units.
-  device_info.set_fpus_per_core(16);
-  device_info.set_clock_rate_ghz(3.0);
-  device_info.set_memory_bandwidth(int64_t{100} * 1000 * 1000 * 1000);
-  device_info.set_l2_cache_size(int64_t{1} << 20);
-  // Experiment only: XLA_CPU_MODEL_GBPS / XLA_CPU_MODEL_GFLOPS override the
-  // memory bandwidth and peak compute (keeping core count and clock).
-  if (const char* env = std::getenv("XLA_CPU_MODEL_GBPS"); env != nullptr) {
-    device_info.set_memory_bandwidth(
-        static_cast<int64_t>(std::atof(env) * 1e9));
-  }
-  if (const char* env = std::getenv("XLA_CPU_MODEL_GFLOPS"); env != nullptr) {
-    device_info.set_fpus_per_core(std::max(
-        1, static_cast<int>(std::atof(env) /
-                            (2 * 3.0 * device_info.core_count()))));
-  }
+  const int threads_per_core =
+      std::max(1, tsl::port::NumHyperthreadsPerCore());
+  device_info.set_threads_per_core_limit(threads_per_core);
+  device_info.set_core_count(
+      std::max(1, tsl::port::MaxParallelism() / threads_per_core));
+  // A core computes 19.5 f32 adds per ns in a vectorized loop fusion.
+  device_info.set_clock_rate_ghz(3.25);
+  device_info.set_fpus_per_core(6);
+  // Memory bandwidth of all cores, reading and writing.
+  device_info.set_memory_bandwidth(int64_t{65} * 1000 * 1000 * 1000);
+  device_info.set_l2_cache_size(int64_t{512} << 10);
   return device_info;
 }
 
@@ -214,7 +208,14 @@ CpuPerformanceModel::RunTimes CpuPerformanceModel::EstimateRunTimes(
   EstimateRunTimeData producer_runtime =
       EstimateRunTimeForInstruction(producer, cost_analysis);
 
+  // Fusing `producer` into all of its users removes its kernel.
   absl::Duration time_unfused = producer_runtime.exec_time;
+  if (!producer_runtime.IsInfinite()) {
+    time_unfused += KernelOverhead(LoopFusionTasks(
+        producer_runtime.flops,
+        cost_analysis->transcendental_flop_count(*producer),
+        producer_runtime.bytes_read + producer_runtime.bytes_written));
+  }
   absl::Duration time_fused;
 
   for (const HloInstruction* fused_consumer : fused_consumers) {
@@ -319,7 +320,7 @@ absl::Duration CpuPerformanceModel::ReadTimeWithDRAMHeuristic(
   // hit the cache. The first read hits the cache only if the whole operand
   // fits into it.
   float dram_bandwidth = device_info.memory_bandwidth();
-  float cache_bandwidth = dram_bandwidth * kCacheSpeedup;
+  float cache_bandwidth = kCoreCacheBandwidth * device_info.core_count();
   if (n_bytes_net < device_info.l2_cache_size()) {
     dram_bandwidth = cache_bandwidth;
   }
@@ -339,7 +340,8 @@ absl::Duration CpuPerformanceModel::WriteTime(
 /*static*/
 absl::Duration CpuPerformanceModel::ComputeTime(
     const se::DeviceDescription& device_info, int64_t flops) {
-  double flops_per_ns = device_info.clock_rate_ghz() * /*fma:*/ 2 *
+  // Flops are in units of an f32 add, see CpuHloCostAnalysis.
+  double flops_per_ns = device_info.clock_rate_ghz() *
                         device_info.fpus_per_core() * device_info.core_count();
   return absl::Nanoseconds(1.0 * flops / flops_per_ns);
 }
@@ -355,13 +357,57 @@ absl::Duration CpuPerformanceModel::CombineComputeAndMemoryAccessTime(
 absl::Duration CpuPerformanceModel::ComputeTime(
     const se::DeviceDescription& device_info, int64_t flops,
     PrimitiveType type, int64_t threads) {
-  // fpus_per_core counts f32 lanes.
+  // fpus_per_core counts f32 lanes; wider types fill fewer lanes.
   const int64_t bytes = primitive_util::ByteWidth(type);
-  const double lanes = std::max(
-      1.0, device_info.fpus_per_core() * 4.0 / std::max<int64_t>(4, bytes));
-  const double flops_per_ns = device_info.clock_rate_ghz() * /*fma:*/ 2 *
-                              lanes * std::max<int64_t>(1, threads);
+  const double lanes =
+      device_info.fpus_per_core() * 4.0 / std::max<int64_t>(4, bytes);
+  const double flops_per_ns =
+      device_info.clock_rate_ghz() * lanes * std::max<int64_t>(1, threads);
   return absl::Nanoseconds(1.0 * flops / flops_per_ns);
+}
+
+/*static*/
+absl::Duration CpuPerformanceModel::MemoryTime(
+    const se::DeviceDescription& device_info, int64_t bytes,
+    int64_t threads) {
+  threads = std::max<int64_t>(1, threads);
+  double bandwidth =
+      bytes <= threads * device_info.l2_cache_size()
+          ? threads * kCoreCacheBandwidth
+          : std::min<double>(device_info.memory_bandwidth(),
+                             threads * kCoreMemoryBandwidth);
+  return absl::Seconds(bytes / bandwidth);
+}
+
+/*static*/
+absl::Duration CpuPerformanceModel::ForkJoinTime(int64_t tasks) {
+  return tasks > 1 ? kForkJoinTime + tasks * kForkJoinTaskTime
+                   : absl::ZeroDuration();
+}
+
+/*static*/
+absl::Duration CpuPerformanceModel::KernelOverhead(int64_t tasks) {
+  return kKernelLaunchTime + ForkJoinTime(tasks);
+}
+
+int64_t CpuPerformanceModel::LoopFusionTasks(int64_t flops,
+                                             int64_t transcendental_flops,
+                                             int64_t bytes) const {
+  // ParallelTaskAssigner counts each non-transcendental op as one flop and
+  // transcendentals separately; an instruction with at most one flop per byte
+  // runs on at most sqrt(threads) tasks.
+  return DefaultParallelTaskCount(
+      std::max<int64_t>(0, flops - transcendental_flops),
+      /*transcendentals=*/0, bytes, Threads());
+}
+
+int64_t CpuPerformanceModel::Threads() const {
+  return device_info_.core_count() *
+         std::max<int64_t>(1, device_info_.threads_per_core_limit());
+}
+
+int64_t CpuPerformanceModel::Cores(int64_t tasks) const {
+  return std::clamp<int64_t>(tasks, 1, device_info_.core_count());
 }
 
 namespace {
@@ -379,29 +425,40 @@ bool IsLoopFusible(const HloInstruction& instr) {
          instr.opcode() == HloOpcode::kIota;
 }
 
-// Flops per element of `instr` in elemental code. Concatenates and pads
-// select their source per element.
-int64_t FlopsPerElement(const CpuHloCostAnalysis& costs,
-                        const HloInstruction& instr) {
+// Adds the time of one element of `instr` in elemental code to `work`.
+// Concatenates and pads select their source per element.
+void AddElementWork(const HloInstruction& instr,
+                    CpuPerformanceModel::ChainWork* work) {
+  int64_t flops = 0;
   if (instr.opcode() == HloOpcode::kConcatenate) {
-    return instr.operand_count() - 1;
+    flops = instr.operand_count() - 1;
+  } else if (instr.opcode() == HloOpcode::kPad) {
+    flops = 1;
+  } else if (instr.IsElementwise() && instr.opcode() != HloOpcode::kConvert &&
+             instr.opcode() != HloOpcode::kCopy) {
+    const PrimitiveType type = instr.shape().element_type();
+    flops = CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(
+        type, instr.opcode());
+    if (HloCostAnalysis::IsTranscendental(instr.opcode())) {
+      work->transcendental_flops += flops;
+      // A library fusion evaluates the transcendentals it supports with
+      // vectorized polynomials, which cost about as much as an exp.
+      work->library_flops += std::min(
+          flops, CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(
+                     type, HloOpcode::kExp));
+      work->flops += flops;
+      return;
+    }
   }
-  if (instr.opcode() == HloOpcode::kPad) {
-    return 1;
-  }
-  if (!instr.IsElementwise() || instr.opcode() == HloOpcode::kConvert ||
-      instr.opcode() == HloOpcode::kCopy) {
-    return 0;
-  }
-  return costs.GetFlopsPerElementwiseOpElement(instr.shape().element_type(),
-                                                instr.opcode());
+  work->flops += flops;
+  work->library_flops += flops;
 }
 
-// Sums the per-element flops of the loop-fusible chain rooted at `root`,
+// Sums the per-element work of the loop-fusible chain rooted at `root`,
 // stopping at `stop`, and the bytes of the chain's leaves.
-void WalkChain(const CpuHloCostAnalysis& costs, const HloInstruction* root,
-               const HloInstruction* stop, int64_t* flops_per_element,
-               int64_t* leaf_bytes) {
+CpuPerformanceModel::ChainWork WalkChain(const HloInstruction* root,
+                                         const HloInstruction* stop) {
+  CpuPerformanceModel::ChainWork work;
   absl::flat_hash_set<const HloInstruction*> seen;
   std::vector<const HloInstruction*> stack = {root};
   while (!stack.empty()) {
@@ -414,15 +471,16 @@ void WalkChain(const CpuHloCostAnalysis& costs, const HloInstruction* root,
         (instr->opcode() == HloOpcode::kConstant &&
          !ShapeUtil::IsEffectiveScalar(instr->shape()))) {
       if (instr->shape().IsArray()) {
-        *leaf_bytes += ShapeUtil::ByteSizeOfElements(instr->shape());
+        work.leaf_bytes += ShapeUtil::ByteSizeOfElements(instr->shape());
       }
       continue;
     }
-    *flops_per_element += FlopsPerElement(costs, *instr);
+    AddElementWork(*instr, &work);
     for (const HloInstruction* operand : instr->operands()) {
       stack.push_back(operand);
     }
   }
+  return work;
 }
 
 }  // namespace
@@ -430,7 +488,6 @@ void WalkChain(const CpuHloCostAnalysis& costs, const HloInstruction* root,
 /*static*/
 CpuPerformanceModel::ReduceWork CpuPerformanceModel::AnalyzeReduce(
     const HloInstruction& reduce, const HloInstruction* materialized) {
-  CpuHloCostAnalysis costs(HloCostAnalysis::Options{});
   ReduceWork work;
   const Shape& input = reduce.operand(0)->shape();
   const Shape& output = reduce.shape().IsTuple()
@@ -440,22 +497,23 @@ CpuPerformanceModel::ReduceWork CpuPerformanceModel::AnalyzeReduce(
   work.outputs = ShapeUtil::ElementsIn(output);
   work.type = input.element_type();
   const int64_t num_inputs = reduce.operand_count() / 2;
-  // One reducer op per input element and operand.
-  int64_t flops_per_element = num_inputs;
   for (int64_t i = 0; i < num_inputs; ++i) {
-    WalkChain(costs, reduce.operand(i), /*stop=*/nullptr, &flops_per_element,
-              &work.leaf_bytes);
+    // The library fusion computes the chain above `materialized`.
+    ChainWork loop = WalkChain(reduce.operand(i), /*stop=*/nullptr);
+    ChainWork library = WalkChain(reduce.operand(i), materialized);
+    work.chain.flops += loop.flops;
+    work.chain.transcendental_flops += loop.transcendental_flops;
+    work.chain.leaf_bytes += loop.leaf_bytes;
+    work.chain.library_flops += library.library_flops;
   }
-  work.flops = flops_per_element * work.input_elements;
+  // One reducer op per input element and operand.
+  work.chain.flops += num_inputs;
+  work.chain.library_flops += num_inputs;
   if (materialized != nullptr) {
-    int64_t materialized_flops_per_element = 0;
-    int64_t unused_bytes = 0;
-    WalkChain(costs, materialized, /*stop=*/nullptr,
-              &materialized_flops_per_element, &unused_bytes);
+    work.materialized = WalkChain(materialized, /*stop=*/nullptr);
     work.materialized_bytes =
         ShapeUtil::ByteSizeOfElements(materialized->shape());
-    work.materialized_flops = materialized_flops_per_element *
-                              ShapeUtil::ElementsIn(materialized->shape());
+    work.materialized_elements = ShapeUtil::ElementsIn(materialized->shape());
   }
   if (reduce.opcode() == HloOpcode::kReduce) {
     const int64_t minor_dim = input.has_layout()
@@ -469,42 +527,95 @@ CpuPerformanceModel::ReduceWork CpuPerformanceModel::AnalyzeReduce(
 
 CpuPerformanceModel::ReduceRunTimes CpuPerformanceModel::EstimateReduce(
     const ReduceWork& work) const {
-  const int64_t threads = std::max<int64_t>(1, device_info_.core_count());
-  // Loop fusion: partitioned across outputs only; reading strided over a
-  // major dimension forfeits vectorization.
-  const int64_t loop_threads =
-      std::min(threads, std::max<int64_t>(1, work.outputs));
-  const int64_t loop_flops =
-      work.reduces_minor_dim ? work.flops : work.flops * kStridedReducePenalty;
+  const int64_t elem_bytes =
+      std::max<int64_t>(1, primitive_util::ByteWidth(work.type));
+  const int64_t output_bytes = work.outputs * elem_bytes;
   ReduceRunTimes times;
-  times.loop_fusion =
-      CombineComputeAndMemoryAccessTime(
-          ComputeTime(device_info_, loop_flops, work.type, loop_threads),
-          ReadTimeWithDRAMHeuristic(device_info_, work.leaf_bytes,
-                                    work.leaf_bytes)) +
-      kKernelLaunchTime +
-      (loop_threads > 1 ? kParallelTaskTime : absl::ZeroDuration());
-  // Library fusion: a separate kernel writes the materialized input, the
-  // library reads it and computes the rest on all threads.
+
+  // Loop fusion. It is partitioned across outputs; TreeReductionRewriter
+  // splits reductions to fewer outputs than tasks into a partitioned
+  // reduce-window and a small reduction. Reading strided over a major
+  // dimension loads a cache line per element.
+  {
+    int64_t tasks = LoopFusionTasks(
+        work.chain.flops * work.input_elements,
+        work.chain.transcendental_flops * work.input_elements,
+        work.chain.leaf_bytes + output_bytes);
+    // TreeReductionRewriter's window: shorter reductions are not split.
+    constexpr int64_t kTreeReductionWindow = 32;
+    const bool split = work.outputs < tasks &&
+                       work.input_elements >=
+                           kTreeReductionWindow * work.outputs;
+    if (!split) {
+      tasks = std::min(tasks, std::max<int64_t>(1, work.outputs));
+    }
+    const int64_t cores = Cores(tasks);
+    const int64_t read_bytes =
+        work.reduces_minor_dim
+            ? work.chain.leaf_bytes
+            : work.chain.leaf_bytes * std::max<int64_t>(1, 64 / elem_bytes);
+    times.loop_fusion =
+        CombineComputeAndMemoryAccessTime(
+            ComputeTime(device_info_, work.chain.flops * work.input_elements,
+                        work.type, cores),
+            MemoryTime(device_info_, read_bytes, cores)) +
+        KernelOverhead(tasks);
+    if (split) {
+      times.loop_fusion += kKernelLaunchTime;
+    }
+  }
+
+  // Library fusion, after a loop fusion writes the materialized input.
   absl::Duration materialize = absl::ZeroDuration();
   if (work.materialized_bytes > 0) {
+    const int64_t flops =
+        work.materialized.flops * work.materialized_elements;
+    const int64_t tasks = LoopFusionTasks(
+        flops, work.materialized.transcendental_flops *
+                   work.materialized_elements,
+        work.materialized.leaf_bytes + work.materialized_bytes);
+    const int64_t cores = Cores(tasks);
     materialize =
         CombineComputeAndMemoryAccessTime(
-            ComputeTime(device_info_, work.materialized_flops, work.type,
-                        threads),
-            WriteTime(device_info_, work.materialized_bytes)) +
-        kKernelLaunchTime + kParallelTaskTime;
+            ComputeTime(device_info_, flops, work.type, cores),
+            MemoryTime(device_info_,
+                       work.materialized.leaf_bytes + work.materialized_bytes,
+                       cores)) +
+        KernelOverhead(tasks);
   }
-  const int64_t library_flops =
-      std::max<int64_t>(0, work.flops - work.materialized_flops);
-  times.library =
-      materialize +
-      CombineComputeAndMemoryAccessTime(
-          ComputeTime(device_info_, library_flops, work.type, threads),
-          ReadTimeWithDRAMHeuristic(
-              device_info_, work.leaf_bytes + work.materialized_bytes,
-              work.leaf_bytes + work.materialized_bytes)) +
-      kLibraryCallTime;
+  {
+    const int64_t reduced = std::max<int64_t>(
+        1, work.input_elements / std::max<int64_t>(1, work.outputs));
+    const int64_t tile = std::max<int64_t>(1, kLibraryReduceTileBytes /
+                                                  elem_bytes);
+    const double max_cores =
+        std::max(1.0, kLibraryParallelEfficiency * device_info_.core_count());
+    int64_t tasks;
+    double cores;
+    if (reduced > tile) {
+      // Partial reductions of each output's tiles.
+      const int64_t tiles = (reduced + tile - 1) / tile;
+      tasks = tiles * work.outputs;
+      cores = std::min(
+          max_cores,
+          std::max(1.0, 1.0 * tiles / kLibraryPartialReduceTilesPerThread));
+    } else {
+      tasks = (work.input_elements + tile - 1) / tile;
+      cores = std::min<double>(max_cores, tasks);
+    }
+    const int64_t threads = static_cast<int64_t>(std::ceil(cores));
+    const int64_t library_bytes =
+        work.chain.leaf_bytes + work.materialized_bytes;
+    const absl::Duration compute =
+        ComputeTime(device_info_, work.chain.library_flops * work.input_elements,
+                    work.type, /*threads=*/1) /
+        cores;
+    times.library =
+        materialize +
+        CombineComputeAndMemoryAccessTime(
+            compute, MemoryTime(device_info_, library_bytes, threads)) +
+        kLibraryCallTime + ForkJoinTime(std::min(tasks, Threads()));
+  }
   return times;
 }
 

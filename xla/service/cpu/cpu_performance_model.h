@@ -57,13 +57,12 @@ class CpuPerformanceModel {
     absl::Duration time_fused;
   };
 
-  // Speedup of reading from the cache over reading from memory.
-  static constexpr float kCacheSpeedup = 4;
-
   // See GpuPerformanceModelBase::kMemoryComputeParallelism.
   static constexpr double kMemoryComputeParallelism = 0.95;
 
-  // Parameters of a typical multi-core x86 host.
+  // Parameters of the host, with throughputs measured on an AVX2 x86 host.
+  // core_count counts physical cores: hyperthreads share a core's vector
+  // units and add no throughput to vectorized loops.
   static se::DeviceDescription DefaultDeviceInfo();
 
   explicit CpuPerformanceModel(const se::DeviceDescription& device_info)
@@ -122,36 +121,76 @@ class CpuPerformanceModel {
   static absl::Duration CombineComputeAndMemoryAccessTime(
       absl::Duration compute_time, absl::Duration memory_access_time);
 
-  // Fixed costs of running a kernel, measured with microbenchmarks of single
-  // operations: launching one kernel thunk, splitting a kernel across the
-  // intra-op thread pool, and calling into a library fusion (YNN).
-  static constexpr absl::Duration kKernelLaunchTime = absl::Nanoseconds(500);
-  static constexpr absl::Duration kParallelTaskTime = absl::Microseconds(5);
-  static constexpr absl::Duration kLibraryCallTime = absl::Microseconds(10);
-  // Slowdown of a loop fusion that reduces only major dimensions, reading its
-  // input strided, relative to one reducing the minor dimension.
-  static constexpr int64_t kStridedReducePenalty = 4;
+  // Fixed costs, measured with microbenchmarks of single operations on an
+  // 8-core, 16-thread AVX2 x86 host. Launching one kernel thunk:
+  static constexpr absl::Duration kKernelLaunchTime = absl::Nanoseconds(20);
+  // Calling a library (YNNPACK) fusion:
+  static constexpr absl::Duration kLibraryCallTime = absl::Nanoseconds(150);
+  // Running a kernel as `tasks` > 1 parallel tasks on the intra-op thread
+  // pool and waiting for them: kForkJoinTime + tasks * kForkJoinTaskTime.
+  static constexpr absl::Duration kForkJoinTime = absl::Nanoseconds(4700);
+  static constexpr absl::Duration kForkJoinTaskTime = absl::Nanoseconds(1230);
+  // Bandwidth of one core streaming from memory, and from its L2 cache.
+  static constexpr double kCoreMemoryBandwidth = 20e9;
+  static constexpr double kCoreCacheBandwidth = 170e9;
+  // A library reduction computes tiles of this many input bytes as parallel
+  // tasks. If one output reduces more than a tile, it splits the reduced
+  // dimensions into partial reductions, and needs this many tiles per thread
+  // to balance them.
+  static constexpr int64_t kLibraryReduceTileBytes = 128 << 10;
+  static constexpr int64_t kLibraryPartialReduceTilesPerThread = 4;
+  // Fraction of the cores that a library fusion keeps busy.
+  static constexpr double kLibraryParallelEfficiency = 0.85;
 
-  // Time to compute `flops` of `type` on `threads` threads. Unlike
+  // Time to compute `flops` of `type` on `threads` cores. Unlike
   // ComputeTime, counts the vector width of `type`.
   static absl::Duration ComputeTime(const se::DeviceDescription& device_info,
                                     int64_t flops, PrimitiveType type,
                                     int64_t threads);
+
+  // Time to read or write `bytes` on `threads` cores, from their L2 caches if
+  // the bytes fit into them.
+  static absl::Duration MemoryTime(const se::DeviceDescription& device_info,
+                                   int64_t bytes, int64_t threads);
+
+  // Fixed cost of running `tasks` parallel tasks, and of a kernel that runs
+  // as `tasks` parallel tasks.
+  static absl::Duration ForkJoinTime(int64_t tasks);
+  static absl::Duration KernelOverhead(int64_t tasks);
+
+  // Number of parallel tasks of a loop fusion, following
+  // ParallelTaskAssigner, and the cores that run them.
+  int64_t LoopFusionTasks(int64_t flops, int64_t transcendental_flops,
+                          int64_t bytes) const;
+  int64_t Cores(int64_t tasks) const;
+  // Hardware threads of the intra-op thread pool.
+  int64_t Threads() const;
+
+  // Work of a loop-fusible computation, per element unless noted.
+  struct ChainWork {
+    // Time of one element in a loop fusion and in a library fusion, which
+    // vectorizes transcendentals, in units of an add.
+    int64_t flops = 0;
+    int64_t library_flops = 0;
+    // Part of `flops` spent in transcendental ops.
+    int64_t transcendental_flops = 0;
+    // Total bytes of the chain's leaves, e.g. parameters.
+    int64_t leaf_bytes = 0;
+  };
 
   // Work of a reduction whose input is computed by a chain of loop-fusible
   // instructions.
   struct ReduceWork {
     int64_t input_elements = 0;
     int64_t outputs = 0;
-    // Flops to compute the reduction input from the chain's leaves, and to
-    // reduce it.
-    int64_t flops = 0;
-    // Bytes of the chain's leaves, e.g. parameters, read by a loop fusion.
-    int64_t leaf_bytes = 0;
-    // An input that a library fusion cannot absorb, which another kernel
-    // writes and the library fusion reads, and the flops to compute it.
+    // Computing the reduction input from the chain's leaves and reducing it.
+    ChainWork chain;
+    // An input that a library fusion cannot absorb, which a loop fusion
+    // writes and the library fusion reads: its bytes, and the work to
+    // compute it. The library fusion computes the rest of the chain.
     int64_t materialized_bytes = 0;
-    int64_t materialized_flops = 0;
+    int64_t materialized_elements = 0;
+    ChainWork materialized;
     // Whether the minor dimension of the input is reduced. Loop fusion reads
     // the input strided otherwise.
     bool reduces_minor_dim = true;
@@ -168,9 +207,9 @@ class CpuPerformanceModel {
     absl::Duration library;
   };
 
-  // Estimates `work` as a loop fusion, which only parallelizes across
-  // outputs, and as a library fusion, which also splits the reduced
-  // dimensions but reads materialized inputs.
+  // Estimates `work` as a loop fusion and as a library fusion, which
+  // vectorizes transcendentals and splits large reductions across threads,
+  // but reads materialized inputs.
   ReduceRunTimes EstimateReduce(const ReduceWork& work) const;
 
  private:

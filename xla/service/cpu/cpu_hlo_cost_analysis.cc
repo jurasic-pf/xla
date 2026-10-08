@@ -22,7 +22,11 @@ namespace xla::cpu {
 
 absl::Status CpuHloCostAnalysis::HandleElementwiseOp(
     const HloInstruction* hlo) {
-  current_properties_[kFlopsKey] = GetFlopsForElementwiseOp(hlo);
+  const int64_t flops = GetFlopsForElementwiseOp(hlo);
+  current_properties_[kFlopsKey] = flops;
+  if (IsTranscendental(hlo->opcode())) {
+    current_properties_[kTranscendentalFlopsKey] = flops;
+  }
   return absl::OkStatus();
 }
 
@@ -51,36 +55,50 @@ absl::Status CpuHloCostAnalysis::HandleBroadcast(
   return absl::OkStatus();
 }
 
+/*static*/
 int64_t CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(
-    PrimitiveType type, HloOpcode opcode) const {
-  // Approximate cost relative to an add, for vectorized code on x86 and
-  // AArch64. Transcendentals are expanded to polynomial approximations.
+    PrimitiveType type, HloOpcode opcode) {
+  // Time of one element in a loop fusion, relative to an add of the same
+  // type. Measured with single-op loop fusions (x <- op(x), in cache, one
+  // thread) on an AVX2 x86 core: sine, cosine and power, and f64 log, are
+  // scalar libm calls, and f64 rsqrt is scalar code. Ops that were not
+  // measured are grouped with a measured op of the same implementation.
+  // Types narrower than f32 are computed in f32.
+  const bool f64 = type == F64 || type == C128;
   int64_t flops;
   switch (opcode) {
     case HloOpcode::kDivide:
-    case HloOpcode::kRemainder:
-      flops = 8;
+      flops = f64 ? 4 : 3;
       break;
-    case HloOpcode::kCbrt:
-    case HloOpcode::kRsqrt:
     case HloOpcode::kSqrt:
-      flops = 10;
+      flops = f64 ? 7 : 4;
       break;
-    case HloOpcode::kCos:
+    case HloOpcode::kRsqrt:
+      flops = f64 ? 41 : 4;
+      break;
+    case HloOpcode::kTanh:
     case HloOpcode::kErf:
+      flops = f64 ? 14 : 9;
+      break;
     case HloOpcode::kExp:
     case HloOpcode::kExpm1:
+    case HloOpcode::kLogistic:
+      flops = f64 ? 17 : 11;
+      break;
     case HloOpcode::kLog:
     case HloOpcode::kLog1p:
-    case HloOpcode::kLogistic:
+      flops = f64 ? 45 : 15;
+      break;
+    case HloOpcode::kCos:
     case HloOpcode::kSin:
     case HloOpcode::kTan:
-    case HloOpcode::kTanh:
-      flops = 15;
-      break;
+    case HloOpcode::kCbrt:
     case HloOpcode::kAtan2:
+    case HloOpcode::kRemainder:
+      flops = f64 ? 90 : 48;
+      break;
     case HloOpcode::kPower:
-      flops = 20;
+      flops = f64 ? 139 : 113;
       break;
     default:
       flops = 1;
@@ -102,6 +120,11 @@ int64_t CpuHloCostAnalysis::GetFlopsForElementwiseOp(HloOpcode op_code,
 int64_t CpuHloCostAnalysis::GetFlopsForElementwiseOp(
     const HloInstruction* instr) const {
   return GetFlopsForElementwiseOp(instr->opcode(), instr->shape());
+}
+
+int64_t CpuHloCostAnalysis::transcendental_flop_count(
+    const HloInstruction& hlo) const {
+  return GetPropertyForHlo(hlo, kTranscendentalFlopsKey, hlo_properties_);
 }
 
 float CpuHloCostAnalysis::CommonElementwiseUtilization(
