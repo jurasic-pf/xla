@@ -567,11 +567,17 @@ void AddElementWork(const HloInstruction& instr, double weight,
     if (HloCostAnalysis::IsTranscendental(instr.opcode())) {
       work->transcendental_flops += weight * flops;
       // A library fusion evaluates the transcendentals it supports with
-      // vectorized polynomials, which cost about as much as an exp.
+      // vectorized polynomials, which cost about as much as an exp. Its sqrt
+      // is slower, measured in a reduction of sqrt(d*d + 1) from broadcasts:
+      // 0.35 ns f32, 1.03 ns f64 per element on one core.
+      const bool is_sqrt = instr.opcode() == HloOpcode::kSqrt ||
+                           instr.opcode() == HloOpcode::kRsqrt;
       const double library_flops =
-          weight * std::min(flops,
-                            CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(
-                                type, HloOpcode::kExp));
+          weight *
+          (is_sqrt ? (primitive_util::ByteWidth(type) >= 8 ? 10 : 7)
+                   : std::min(flops,
+                              CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(
+                                  type, HloOpcode::kExp)));
       work->library_flops += library_flops;
       work->library_transcendental_flops += library_flops;
       work->flops += weight * flops;
@@ -624,6 +630,17 @@ CpuPerformanceModel::ChainWork WalkChain(
     }
     if (first) {
       AddElementWork(*instr, weight, &work);
+      // A library fusion reads a slice under a broadcast per element of the
+      // broadcast, measured as 0.05 ns f32, 0.06 ns f64 per element for a
+      // column of an [N,3] array.
+      if (via_broadcast && instr->opcode() == HloOpcode::kSlice) {
+        const double cost =
+            weight *
+            (primitive_util::ByteWidth(instr->shape().element_type()) >= 8 ? 0.6
+                                                                          : 1);
+        work.library_flops += cost;
+        work.library_transcendental_flops += cost;
+      }
     }
     const bool broadcast = instr->opcode() == HloOpcode::kBroadcast;
     const double operand_weight =
@@ -703,8 +720,23 @@ CpuPerformanceModel::ReduceWork CpuPerformanceModel::AnalyzeReduce(
         ShapeUtil::ByteSizeOfElements(other->shape());
     work.extra_materialized_leaf_bytes += other_work.leaf_bytes;
   }
+  // The loop emitter vectorizes reductions only with reassociable reducers;
+  // min and max keep the whole fused loop scalar.
+  const HloInstruction* reducer_root = reduce.to_apply()->root_instruction();
+  if (reducer_root->opcode() == HloOpcode::kTuple &&
+      reducer_root->operand_count() > 0) {
+    reducer_root = reducer_root->operand(0);
+  }
+  work.loop_reducer_vectorizes =
+      reducer_root->opcode() != HloOpcode::kMinimum &&
+      reducer_root->opcode() != HloOpcode::kMaximum;
   if (reduce.opcode() == HloOpcode::kReduce) {
     work.strided_read_factor = StridedReadFactor(input, reduce.dimensions());
+    const int64_t minor_dim = input.has_layout()
+                                  ? LayoutUtil::Minor(input.layout(), 0)
+                                  : input.dimensions().size() - 1;
+    work.reduces_minor_dim =
+        absl::c_linear_search(reduce.dimensions(), minor_dim);
   }
   work.once_per_execution = RunsOncePerExecution(reduce);
   return work;
@@ -745,10 +777,15 @@ CpuPerformanceModel::ReduceRunTimes CpuPerformanceModel::EstimateReduce(
     const int64_t read_bytes =
         work.chain.leaf_bytes +
         work.chain.streamed_bytes * (work.strided_read_factor - 1);
+    // Measured with a 5-op chain reduced on one core: min costs 2.35x (f32)
+    // and 1.64x (f64) as much as add.
+    const double scalar_slowdown =
+        work.loop_reducer_vectorizes ? 1.0 : (elem_bytes >= 8 ? 1.64 : 2.35);
     times.loop_fusion =
         CombineComputeAndMemoryAccessTime(
             ComputeTime(device_info_,
-                        std::llround(work.chain.flops * work.input_elements),
+                        std::llround(work.chain.flops * work.input_elements *
+                                     scalar_slowdown),
                         work.type, cores),
             ReduceReadTime(read_bytes, cores)) +
         KernelOverhead(tasks);
@@ -815,7 +852,8 @@ CpuPerformanceModel::ReduceRunTimes CpuPerformanceModel::EstimateReduce(
              ? work.chain.leaf_bytes
              : work.chain.leaf_bytes + work.materialized_bytes) +
         work.extra_materialized_bytes;
-    const double speedup = primitive_util::ByteWidth(work.type) >= 8
+    const double speedup = !work.reduces_minor_dim ? 1.0
+                           : primitive_util::ByteWidth(work.type) >= 8
                                ? kLibraryArithmeticSpeedupF64
                                : kLibraryArithmeticSpeedupF32;
     const double library_flops =

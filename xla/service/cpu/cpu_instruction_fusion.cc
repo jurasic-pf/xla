@@ -949,6 +949,7 @@ CpuInstructionFusion::Destinations CpuInstructionFusion::FindDestinations(
     if (instr->opcode() == HloOpcode::kFusion ||
         instr->opcode() == HloOpcode::kReduce || !instr->IsElementwise() ||
         instr->user_count() == 0) {
+      destinations.kernels.insert(instr);
       destinations.read_factor =
           std::max(destinations.read_factor,
                    CpuPerformanceModel::ReadFactor(instr, &producer));
@@ -1061,32 +1062,35 @@ bool CpuInstructionFusion::ComputedByUsersAnyway(
     const HloInstruction& operand, const HloInstruction& producer,
     const absl::flat_hash_set<const HloInstruction*>& chain) {
   // A fused kernel computes each fused instruction once per element. If
-  // `operand` is fused into all of its users, and those outside the chain
-  // end up in the kernels that consume `producer` (they are users of
-  // `producer`, or siblings consumed only by them), every kernel that
-  // recomputes `producer` computes `operand` anyway. Users inside the chain
-  // do not count: computing `operand` for them is the recomputation.
-  // Only values read at the same index are shared: the producer and the
-  // siblings must be elementwise in `operand`, which has their shape.
+  // `operand` is fused into all of its users, and its users outside the
+  // chain end up, through elementwise ops, only in kernels that also compute
+  // `producer`, those kernels compute `operand` anyway. Users inside the chain
+  // do not count: computing `operand` for them is the recomputation. Only
+  // values read at the same index are shared, so `producer` must be
+  // elementwise in `operand`, which has its shape.
   if (cost_analysis_ == nullptr || !producer.IsElementwise() ||
       !ShapeUtil::SameDimensions(operand.shape(), producer.shape())) {
     return false;
   }
-  auto is_producer_user = [&](const HloInstruction* instr) {
-    return absl::c_linear_search(producer.users(), instr);
-  };
+  absl::flat_hash_set<const HloInstruction*> kernels;
+  for (const HloInstruction* user : producer.users()) {
+    const Destinations destinations = FindDestinations(producer, *user);
+    kernels.insert(destinations.kernels.begin(), destinations.kernels.end());
+  }
   bool any_outside = false;
   for (const HloInstruction* user : operand.users()) {
     if (chain.contains(user)) {
       continue;
     }
     any_outside = true;
-    const bool sibling =
-        user->IsElementwise() &&
-        ShapeUtil::SameDimensions(user->shape(), operand.shape()) &&
-        user->user_count() > 0 &&
-        absl::c_all_of(user->users(), is_producer_user);
-    if (!is_producer_user(user) && !sibling) {
+    if (!user->IsElementwise() && !kernels.contains(user)) {
+      return false;
+    }
+    const Destinations destinations = FindDestinations(operand, *user);
+    if (!absl::c_all_of(destinations.kernels,
+                        [&](const HloInstruction* kernel) {
+                          return kernels.contains(kernel);
+                        })) {
       return false;
     }
   }

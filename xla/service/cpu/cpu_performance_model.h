@@ -179,9 +179,12 @@ class CpuPerformanceModel {
   static int64_t ReadFactor(const HloInstruction* consumer,
                             const HloInstruction* operand);
 
-  // A library reduction computes other ops of its input faster than a loop
-  // fusion, measured with a 5-op chain from broadcasts, reduced in cache on
-  // one thread: f32 0.048 vs 0.181 ns, f64 0.084 vs 0.256 ns per element.
+  // A library reduction over the minor dimension computes other ops of its
+  // input faster than a loop fusion, as it vectorizes along that dimension.
+  // Measured with a 5-op chain from broadcasts, reduced in cache on one
+  // thread: f32 0.048 vs 0.181 ns, f64 0.084 vs 0.256 ns per element. Keeping
+  // a minor dimension of 3 or 8 elements, it has no such advantage (0.9-1.5x
+  // at 16 threads).
   static constexpr double kLibraryArithmeticSpeedupF32 = 3.8;
   static constexpr double kLibraryArithmeticSpeedupF64 = 3.0;
 
@@ -263,6 +266,10 @@ class CpuPerformanceModel {
     int64_t extra_materialized_leaf_bytes = 0;
     // Bytes loaded per byte of streamed input, see StridedReadFactor.
     int64_t strided_read_factor = 1;
+    // Whether the minor dimension of the input is reduced.
+    bool reduces_minor_dim = true;
+    // Whether a loop fusion can vectorize the reducer, i.e. reassociate it.
+    bool loop_reducer_vectorizes = true;
     PrimitiveType type = F32;
   };
 

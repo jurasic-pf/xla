@@ -36,6 +36,7 @@ limitations under the License.
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_opcode.h"
 #include "xla/service/cpu/cpu_performance_model.h"
+#include "xla/layout_util.h"
 #include "xla/shape.h"
 #include "xla/shape_util.h"
 
@@ -159,6 +160,27 @@ class YnnMatcher : public LibraryMatcher {
     std::vector<const HloInstruction*> others;
   };
 
+  // A tiled library cannot stream through a transposition of a value it
+  // computes: it writes the whole value and reads it back.
+  static bool TransposesComputedValue(const HloInstruction& instr) {
+    const bool transposes =
+        instr.opcode() == HloOpcode::kTranspose ||
+        (instr.opcode() == HloOpcode::kCopy && instr.shape().has_layout() &&
+         instr.operand(0)->shape().has_layout() &&
+         !LayoutUtil::Equal(instr.shape().layout(),
+                            instr.operand(0)->shape().layout()));
+    if (!transposes) {
+      return false;
+    }
+    const HloInstruction* source = instr.operand(0);
+    while (source->opcode() == HloOpcode::kBitcast) {
+      source = source->operand(0);
+    }
+    return source->opcode() != HloOpcode::kParameter &&
+           source->opcode() != HloOpcode::kConstant &&
+           source->opcode() != HloOpcode::kGetTupleElement;
+  }
+
   static bool IsMaterializedAnyway(
       const HloInstruction& instr,
       const absl::flat_hash_set<const HloInstruction*>& absorbed) {
@@ -220,7 +242,8 @@ class YnnMatcher : public LibraryMatcher {
               return absorbed.contains(user);
             });
         absl::StatusOr<bool> supported = IsOpSupported(operand);
-        if (all_users_absorbed && supported.ok() && *supported) {
+        if (all_users_absorbed && supported.ok() && *supported &&
+            !TransposesComputedValue(*operand)) {
           absorbed.insert(operand);
           queue.push(operand);
           continue;

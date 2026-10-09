@@ -89,6 +89,7 @@ class CpuInstructionFusion : public InstructionFusion {
   struct Destinations {
     int64_t read_factor;
     int64_t outputs;
+    absl::flat_hash_set<const HloInstruction*> kernels;
   };
   Destinations FindDestinations(const HloInstruction& producer,
                                 const HloInstruction& user);
