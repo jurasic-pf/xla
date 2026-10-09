@@ -19,6 +19,7 @@ limitations under the License.
 #include <cstdint>
 #include <queue>
 #include <string>
+#include <vector>
 
 #include "absl/algorithm/container.h"
 #include "absl/base/no_destructor.h"
@@ -154,6 +155,8 @@ class YnnMatcher : public LibraryMatcher {
   struct Materialized {
     const HloInstruction* instr = nullptr;
     bool anyway = false;
+    // The other inputs that are not absorbed and not materialized anyway.
+    std::vector<const HloInstruction*> others;
   };
 
   static bool IsMaterializedAnyway(
@@ -200,6 +203,7 @@ class YnnMatcher : public LibraryMatcher {
     std::queue<const HloInstruction*> queue;
     queue.push(reduce);
     const HloInstruction* largest = nullptr;
+    std::vector<const HloInstruction*> inputs;
     while (!queue.empty() &&
            static_cast<int64_t>(absorbed.size()) < MaxFusionSize()) {
       const HloInstruction* instr = queue.front();
@@ -221,6 +225,9 @@ class YnnMatcher : public LibraryMatcher {
           queue.push(operand);
           continue;
         }
+        if (!absl::c_linear_search(inputs, operand)) {
+          inputs.push_back(operand);
+        }
         if (largest == nullptr ||
             ShapeUtil::ByteSizeOfElements(operand->shape()) >
                 ShapeUtil::ByteSizeOfElements(largest->shape())) {
@@ -231,7 +238,14 @@ class YnnMatcher : public LibraryMatcher {
     if (largest == nullptr) {
       return {};
     }
-    return {largest, IsMaterializedAnyway(*largest, absorbed)};
+    Materialized materialized{largest,
+                              IsMaterializedAnyway(*largest, absorbed)};
+    for (const HloInstruction* input : inputs) {
+      if (input != largest && !IsMaterializedAnyway(*input, absorbed)) {
+        materialized.others.push_back(input);
+      }
+    }
+    return materialized;
   }
 
   // Returns true if a loop fusion with `outputs` outputs (default: those of
@@ -265,7 +279,7 @@ class YnnMatcher : public LibraryMatcher {
     static const absl::NoDestructor<CpuPerformanceModel> model(
         CpuPerformanceModel::DefaultDeviceInfo());
     CpuPerformanceModel::ReduceWork work = CpuPerformanceModel::AnalyzeReduce(
-        *reduce, materialized.instr, materialized.anyway);
+        *reduce, materialized.instr, materialized.anyway, materialized.others);
     if (outputs > 0) {
       work.outputs = outputs;
     }

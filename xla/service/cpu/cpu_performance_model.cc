@@ -568,10 +568,12 @@ void AddElementWork(const HloInstruction& instr, double weight,
       work->transcendental_flops += weight * flops;
       // A library fusion evaluates the transcendentals it supports with
       // vectorized polynomials, which cost about as much as an exp.
-      work->library_flops +=
+      const double library_flops =
           weight * std::min(flops,
                             CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(
                                 type, HloOpcode::kExp));
+      work->library_flops += library_flops;
+      work->library_transcendental_flops += library_flops;
       work->flops += weight * flops;
       return;
     }
@@ -588,7 +590,7 @@ void AddElementWork(const HloInstruction& instr, double weight,
 // streamed.
 CpuPerformanceModel::ChainWork WalkChain(
     absl::Span<const HloInstruction* const> roots,
-    const HloInstruction* stop) {
+    absl::Span<const HloInstruction* const> stops) {
   CpuPerformanceModel::ChainWork work;
   // Instructions visited at all, and visited other than through a broadcast.
   absl::flat_hash_set<const HloInstruction*> seen;
@@ -608,7 +610,8 @@ CpuPerformanceModel::ChainWork WalkChain(
     }
     const bool first = seen.insert(instr).second;
     const bool leaf =
-        instr == stop || !instr->shape().IsArray() || !IsLoopFusible(*instr) ||
+        absl::c_linear_search(stops, instr) || !instr->shape().IsArray() ||
+        !IsLoopFusible(*instr) ||
         (instr->opcode() == HloOpcode::kConstant &&
          !ShapeUtil::IsEffectiveScalar(instr->shape()));
     if (leaf) {
@@ -650,7 +653,8 @@ std::string CpuPerformanceModel::ReduceWork::ToString() const {
 /*static*/
 CpuPerformanceModel::ReduceWork CpuPerformanceModel::AnalyzeReduce(
     const HloInstruction& reduce, const HloInstruction* materialized,
-    bool materialized_anyway) {
+    bool materialized_anyway,
+    absl::Span<const HloInstruction* const> also_materialized) {
   ReduceWork work;
   const Shape& input = reduce.operand(0)->shape();
   const Shape& output = reduce.shape().IsTuple()
@@ -663,18 +667,41 @@ CpuPerformanceModel::ReduceWork CpuPerformanceModel::AnalyzeReduce(
   absl::Span<const HloInstruction* const> inputs =
       absl::MakeConstSpan(reduce.operands()).subspan(0, num_inputs);
   work.materialized_anyway = materialized != nullptr && materialized_anyway;
-  work.chain = WalkChain(
-      inputs, /*stop=*/work.materialized_anyway ? materialized : nullptr);
-  // The library fusion computes the chain above `materialized`.
-  work.chain.library_flops = WalkChain(inputs, materialized).library_flops;
+  std::vector<const HloInstruction*> loop_stops;
+  if (work.materialized_anyway) {
+    loop_stops.push_back(materialized);
+  }
+  work.chain = WalkChain(inputs, loop_stops);
+  // The library fusion computes the chain above the materialized inputs.
+  std::vector<const HloInstruction*> library_stops(also_materialized.begin(),
+                                                   also_materialized.end());
+  if (materialized != nullptr) {
+    library_stops.push_back(materialized);
+  }
+  const ChainWork library = WalkChain(inputs, library_stops);
+  work.chain.library_flops = library.library_flops;
+  work.chain.library_transcendental_flops =
+      library.library_transcendental_flops;
   // One reducer op per input element and operand.
   work.chain.flops += num_inputs;
   work.chain.library_flops += num_inputs;
   if (materialized != nullptr) {
-    work.materialized = WalkChain({materialized}, /*stop=*/nullptr);
+    work.materialized = WalkChain({materialized}, /*stops=*/{});
     work.materialized_bytes =
         ShapeUtil::ByteSizeOfElements(materialized->shape());
     work.materialized_elements = ShapeUtil::ElementsIn(materialized->shape());
+  }
+  // Other inputs that the library fusion cannot absorb are written by loop
+  // fusions too, and read by the library fusion.
+  for (const HloInstruction* other : also_materialized) {
+    const ChainWork other_work = WalkChain({other}, /*stops=*/{});
+    const int64_t elements = ShapeUtil::ElementsIn(other->shape());
+    work.extra_materialized_flops += std::llround(other_work.flops * elements);
+    work.extra_materialized_transcendental_flops +=
+        std::llround(other_work.transcendental_flops * elements);
+    work.extra_materialized_bytes +=
+        ShapeUtil::ByteSizeOfElements(other->shape());
+    work.extra_materialized_leaf_bytes += other_work.leaf_bytes;
   }
   if (reduce.opcode() == HloOpcode::kReduce) {
     work.strided_read_factor = StridedReadFactor(input, reduce.dimensions());
@@ -732,24 +759,35 @@ CpuPerformanceModel::ReduceRunTimes CpuPerformanceModel::EstimateReduce(
 
   // Library fusion, after a loop fusion writes the materialized input.
   absl::Duration materialize = absl::ZeroDuration();
-  if (work.materialized_bytes > 0 && !work.materialized_anyway) {
+  {
+    const bool primary = work.materialized_bytes > 0 && !work.materialized_anyway;
     const int64_t flops =
-        std::llround(work.materialized.flops * work.materialized_elements);
-    const int64_t tasks = LoopFusionTasks(
-        flops,
-        std::llround(work.materialized.transcendental_flops *
-                     work.materialized_elements),
-        work.materialized.leaf_bytes + work.materialized_bytes);
-    const int64_t cores = Cores(tasks);
-    materialize =
-        CombineComputeAndMemoryAccessTime(
-            ComputeTime(device_info_, flops, work.type, cores),
-            MemoryTime(device_info_,
-                       work.materialized.leaf_bytes + work.materialized_bytes,
-                       cores)) +
-        KernelOverhead(tasks) +
-        (work.once_per_execution ? FreshAllocationTime(work.materialized_bytes)
-                                 : absl::ZeroDuration());
+        (primary ? std::llround(work.materialized.flops *
+                                work.materialized_elements)
+                 : 0) +
+        work.extra_materialized_flops;
+    const int64_t transcendental_flops =
+        (primary ? std::llround(work.materialized.transcendental_flops *
+                                work.materialized_elements)
+                 : 0) +
+        work.extra_materialized_transcendental_flops;
+    const int64_t written =
+        (primary ? work.materialized_bytes : 0) + work.extra_materialized_bytes;
+    const int64_t leaves =
+        (primary ? work.materialized.leaf_bytes : 0) +
+        work.extra_materialized_leaf_bytes;
+    if (written > 0) {
+      const int64_t tasks =
+          LoopFusionTasks(flops, transcendental_flops, leaves + written);
+      const int64_t cores = Cores(tasks);
+      materialize =
+          CombineComputeAndMemoryAccessTime(
+              ComputeTime(device_info_, flops, work.type, cores),
+              MemoryTime(device_info_, leaves + written, cores)) +
+          KernelOverhead(tasks) +
+          (work.once_per_execution ? FreshAllocationTime(written)
+                                   : absl::ZeroDuration());
+    }
   }
   {
     const int64_t reduced = std::max<int64_t>(
@@ -773,12 +811,20 @@ CpuPerformanceModel::ReduceRunTimes CpuPerformanceModel::EstimateReduce(
     }
     // If it is materialized anyway, the loop fusion's leaves include it.
     const int64_t library_bytes =
-        work.materialized_anyway
-            ? work.chain.leaf_bytes
-            : work.chain.leaf_bytes + work.materialized_bytes;
+        (work.materialized_anyway
+             ? work.chain.leaf_bytes
+             : work.chain.leaf_bytes + work.materialized_bytes) +
+        work.extra_materialized_bytes;
+    const double speedup = primitive_util::ByteWidth(work.type) >= 8
+                               ? kLibraryArithmeticSpeedupF64
+                               : kLibraryArithmeticSpeedupF32;
+    const double library_flops =
+        work.chain.library_transcendental_flops +
+        (work.chain.library_flops - work.chain.library_transcendental_flops) /
+            speedup;
     const absl::Duration compute =
         ComputeTime(device_info_,
-                    std::llround(work.chain.library_flops * work.input_elements),
+                    std::llround(library_flops * work.input_elements),
                     work.type, /*threads=*/1) /
         cores;
     times.library =

@@ -74,6 +74,12 @@ class CpuInstructionFusion : public InstructionFusion {
   bool EstimateFusionIntoAllUsersIsFaster(const HloInstruction& producer);
   // Returns true if recomputing `producer` and its recomputed operand chain
   // involves arithmetic, not only data movement.
+  // Returns true if every kernel that recomputes `producer` computes
+  // `operand`, an operand of its recomputed `chain`, anyway.
+  bool ComputedByUsersAnyway(
+      const HloInstruction& operand, const HloInstruction& producer,
+      const absl::flat_hash_set<const HloInstruction*>& chain);
+
   // Returns an upper bound of the temp bytes of the entry computation.
   static int64_t EstimateEntryTempBytes(const HloModule& module);
 

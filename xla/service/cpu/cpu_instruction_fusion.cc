@@ -1057,6 +1057,42 @@ bool CpuInstructionFusion::RecomputeInEachUserIsFaster(
   return time_fused <= time_unfused;
 }
 
+bool CpuInstructionFusion::ComputedByUsersAnyway(
+    const HloInstruction& operand, const HloInstruction& producer,
+    const absl::flat_hash_set<const HloInstruction*>& chain) {
+  // A fused kernel computes each fused instruction once per element. If
+  // `operand` is fused into all of its users, and those outside the chain
+  // end up in the kernels that consume `producer` (they are users of
+  // `producer`, or siblings consumed only by them), every kernel that
+  // recomputes `producer` computes `operand` anyway. Users inside the chain
+  // do not count: computing `operand` for them is the recomputation.
+  // Only values read at the same index are shared: the producer and the
+  // siblings must be elementwise in `operand`, which has their shape.
+  if (cost_analysis_ == nullptr || !producer.IsElementwise() ||
+      !ShapeUtil::SameDimensions(operand.shape(), producer.shape())) {
+    return false;
+  }
+  auto is_producer_user = [&](const HloInstruction* instr) {
+    return absl::c_linear_search(producer.users(), instr);
+  };
+  bool any_outside = false;
+  for (const HloInstruction* user : operand.users()) {
+    if (chain.contains(user)) {
+      continue;
+    }
+    any_outside = true;
+    const bool sibling =
+        user->IsElementwise() &&
+        ShapeUtil::SameDimensions(user->shape(), operand.shape()) &&
+        user->user_count() > 0 &&
+        absl::c_all_of(user->users(), is_producer_user);
+    if (!is_producer_user(user) && !sibling) {
+      return false;
+    }
+  }
+  return any_outside && FusionIntoAllUsersIsFaster(operand);
+}
+
 absl::flat_hash_set<const HloInstruction*>
 CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) {
   // Operands that do not fit into the cache are fused into each user together
@@ -1084,7 +1120,8 @@ CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) {
                performance_model_.device_info().l2_cache_size() &&
            // Experiment only: cheap small operands are fused into the users
            // as well, so they are recomputed with the producer.
-           !(ChainIncludesSmall() && !IsExpensive(*operand)))) {
+           !(ChainIncludesSmall() && !IsExpensive(*operand))) ||
+          ComputedByUsersAnyway(*operand, producer, chain)) {
         continue;
       }
       chain.insert(operand);
