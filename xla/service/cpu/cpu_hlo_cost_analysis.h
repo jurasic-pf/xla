@@ -34,6 +34,12 @@ class CpuHloCostAnalysis : public HloCostAnalysis {
   absl::Status HandleElementwiseOp(const HloInstruction* hlo) override;
   absl::Status HandleBroadcast(const HloInstruction* broadcast) override;
   absl::Status HandleDot(const HloInstruction* dot) override;
+  absl::Status HandleSlice(const HloInstruction* slice) override;
+
+  // Time to compute one element of `slice` in a loop fusion, in units of an
+  // add: de-interleaving part of the minor dimension of a 32-bit or narrower
+  // array, e.g. a component of an [N,4] array.
+  static int64_t SliceFlopsPerElement(const HloInstruction& slice);
 
   // Time to compute one element of an elementwise op in a loop fusion, in
   // units of an add of the same type.

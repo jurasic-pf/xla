@@ -559,6 +559,7 @@ void AddElementWork(const HloInstruction& instr, double weight,
     flops = instr.operand_count() - 1;
   } else if (instr.opcode() == HloOpcode::kPad) {
     flops = 1;
+
   } else if (instr.IsElementwise() && instr.opcode() != HloOpcode::kConvert &&
              instr.opcode() != HloOpcode::kCopy) {
     const PrimitiveType type = instr.shape().element_type();
@@ -630,6 +631,16 @@ CpuPerformanceModel::ChainWork WalkChain(
     }
     if (first) {
       AddElementWork(*instr, weight, &work);
+      // A loop fusion pays for de-interleaving a slice it reads per element;
+      // under a broadcast, the slice is invariant in the inner loop (measured:
+      // no cost).
+      if (!via_broadcast && instr->opcode() == HloOpcode::kSlice) {
+        const double cost =
+            weight * CpuHloCostAnalysis::SliceFlopsPerElement(*instr);
+        work.flops += cost;
+        work.library_flops += cost;
+        work.library_transcendental_flops += cost;
+      }
       // A library fusion reads a slice under a broadcast per element of the
       // broadcast, measured as 0.05 ns f32, 0.06 ns f64 per element for a
       // column of an [N,3] array.

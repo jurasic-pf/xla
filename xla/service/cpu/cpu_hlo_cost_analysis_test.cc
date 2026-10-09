@@ -79,6 +79,26 @@ ENTRY e {
   EXPECT_FLOAT_EQ(analysis.operand_utilization(*dot, 1), 4096);
 }
 
+TEST_F(CpuHloCostAnalysisTest, DeinterleavingSlicesCostTime) {
+  absl::string_view hlo_string = R"(
+HloModule m
+
+ENTRY e {
+  q = f32[1024,4] parameter(0)
+  c = f32[1024,1] slice(q), slice={[0:1024], [1:2]}
+  r = f32[512,4] slice(q), slice={[0:512], [0:4]}
+  d = f64[1024,4] parameter(1)
+  e = f64[1024,1] slice(d), slice={[0:1024], [1:2]}
+  ROOT t = (f32[1024,1], f32[512,4], f64[1024,1]) tuple(c, r, e)
+})";
+  ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(hlo_string));
+  CpuHloCostAnalysis analysis(options_);
+  ASSERT_IS_OK(module->entry_computation()->Accept(&analysis));
+  EXPECT_EQ(analysis.flop_count(*FindInstruction(module.get(), "c")), 2048);
+  EXPECT_EQ(analysis.flop_count(*FindInstruction(module.get(), "r")), 0);
+  EXPECT_EQ(analysis.flop_count(*FindInstruction(module.get(), "e")), 0);
+}
+
 TEST_F(CpuHloCostAnalysisTest, F64LibmCallsAreMoreExpensive) {
   EXPECT_GT(
       CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(F64, HloOpcode::kLog),

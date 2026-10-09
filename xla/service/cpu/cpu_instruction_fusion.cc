@@ -983,7 +983,9 @@ bool CpuInstructionFusion::RecomputedChainHasCompute(
   }
   return absl::c_any_of(RecomputedChain(producer),
                         [&](const HloInstruction* instr) {
-                          return cost_analysis_->flop_count(*instr) > 0;
+                          // Slices cost time but move data.
+                          return instr->opcode() != HloOpcode::kSlice &&
+                                 cost_analysis_->flop_count(*instr) > 0;
                         });
 }
 

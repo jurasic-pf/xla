@@ -12,6 +12,7 @@
 #include "absl/status/status_macros.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_opcode.h"
+#include "xla/layout_util.h"
 #include "xla/primitive_util.h"
 #include "xla/service/hlo_cost_analysis.h"
 #include "xla/shape.h"
@@ -65,6 +66,28 @@ absl::Status CpuHloCostAnalysis::HandleDot(const HloInstruction* dot) {
           i, static_cast<float>(reads) / elements);
     }
   }
+  return absl::OkStatus();
+}
+
+/*static*/
+int64_t CpuHloCostAnalysis::SliceFlopsPerElement(const HloInstruction& slice) {
+  // Measured with an 8-op chain on 65536 elements, one core: reading the 4
+  // components as column slices of an [N,4] array costs 0.80 ns per element
+  // in f32, 0.41 ns from separate arrays; f64 costs the same either way.
+  const Shape& in = slice.operand(0)->shape();
+  const Shape& out = slice.shape();
+  if (!in.has_layout() || out.dimensions().empty() ||
+      primitive_util::BitWidth(out.element_type()) > 32) {
+    return 0;
+  }
+  const int64_t minor = LayoutUtil::Minor(in.layout(), 0);
+  return out.dimensions(minor) < in.dimensions(minor) ? 2 : 0;
+}
+
+absl::Status CpuHloCostAnalysis::HandleSlice(const HloInstruction* slice) {
+  ABSL_RETURN_IF_ERROR(HloCostAnalysis::HandleSlice(slice));
+  current_properties_[kFlopsKey] =
+      SliceFlopsPerElement(*slice) * ShapeUtil::ElementsIn(slice->shape());
   return absl::OkStatus();
 }
 
