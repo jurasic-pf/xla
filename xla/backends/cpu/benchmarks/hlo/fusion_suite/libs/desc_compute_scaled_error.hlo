@@ -1,0 +1,2124 @@
+HloModule jit_compute_scaled_error, entry_computation_layout={(f64[1274]{0}, f64[49,65]{1,0}, f64[49,65]{1,0}, f64[49,65]{1,0}, f64[49,65]{1,0}, /*index=5*/f64[49,65]{1,0}, s64[1,7]{1,0}, s64[225]{0}, f64[49,65]{1,0}, f64[49,65]{1,0}, /*index=10*/f64[49,65]{1,0}, f64[49,65]{1,0}, f64[49,65]{1,0}, f64[49,65]{1,0}, s64[1,7]{1,0}, /*index=15*/s64[230]{0}, f64[49,65]{1,0}, f64[49,65]{1,0}, f64[49,65]{1,0}, f64[49,65]{1,0}, /*index=20*/f64[49,65]{1,0}, f64[49,65]{1,0}, s64[1,7]{1,0}, s64[225]{0}, f64[637,3]{1,0}, /*index=25*/f64[], s64[], s64[], f64[833]{0})->f64[1274]{0}}, allow_spmd_sharding_propagation_to_parameters={true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true}, allow_spmd_sharding_propagation_to_output={true}
+
+
+
+
+
+
+%atleast_1d.1 (Arg_0.2: f64[833]) -> f64[833] {
+  ROOT %Arg_0.2 = f64[833]{0} parameter(0)
+}
+
+%atleast_1d_6.2 (Arg_0.4: f64[230]) -> f64[230] {
+  ROOT %Arg_0.4 = f64[230]{0} parameter(0)
+}
+
+%atleast_1d_13.3 (Arg_0.6: f64[225]) -> f64[225] {
+  ROOT %Arg_0.6 = f64[225]{0} parameter(0)
+}
+
+%atleast_1d_20.4 (Arg_0.8: f64[13]) -> f64[13] {
+  ROOT %Arg_0.8 = f64[13]{0} parameter(0)
+}
+
+%atleast_1d_27.5 (Arg_0.10: f64[1]) -> f64[1] {
+  ROOT %Arg_0.10 = f64[1]{0} parameter(0)
+}
+
+%unpack_state.6 (Arg_0.11: f64[833]) -> (f64[225], f64[1], f64[230], f64[225], f64[13], /*index=5*/f64[13]) {
+  %Arg_0.11 = f64[833]{0} parameter(0)
+  %jit_atleast_1d_.7 = f64[833]{0} call(%Arg_0.11), to_apply=%atleast_1d.1
+  %iota.7 = s64[225]{0} iota(), iota_dimension=0
+  %constant.20 = s64[] constant(455)
+  %add.13 = s64[225]{0} broadcast(%constant.20), dimensions={}
+  %add.16 = s64[225]{0} add(%iota.7, %add.13)
+  %constant.15 = s64[] constant(0)
+  %broadcast.9 = s64[225]{0} broadcast(%constant.15), dimensions={}
+  %lt.9 = pred[225]{0} compare(%add.16, %broadcast.9), direction=LT
+  %constant.14 = s64[] constant(833)
+  %broadcast.8 = s64[225]{0} broadcast(%constant.14), dimensions={}
+  %add.21 = s64[225]{0} add(%add.16, %broadcast.8)
+  %select_n.7 = s64[225]{0} select(%lt.9, %add.21, %add.16)
+  %convert_element_type.7 = s32[225]{0} convert(%select_n.7)
+  %broadcast_in_dim.7 = s32[225,1]{1,0} reshape(%convert_element_type.7)
+  %gather.8 = f64[225]{0} gather(%jit_atleast_1d_.7, %broadcast_in_dim.7), offset_dims={}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1}
+  %jit_atleast_1d_.10 = f64[225]{0} call(%gather.8), to_apply=%atleast_1d_13.3
+  %constant.11 = s32[1,1]{1,0} constant({ {706} })
+  %gather.11 = f64[1]{0} gather(%jit_atleast_1d_.7, %constant.11), offset_dims={}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1}
+  %jit_atleast_1d_.13 = f64[1]{0} call(%gather.11), to_apply=%atleast_1d_27.5
+  %iota.5 = s64[230]{0} iota(), iota_dimension=0
+  %constant.17 = s64[] constant(0)
+  %lt.6 = s64[230]{0} broadcast(%constant.17), dimensions={}
+  %lt.7 = pred[230]{0} compare(%iota.5, %lt.6), direction=LT
+  %constant.16 = s64[] constant(833)
+  %add.12 = s64[230]{0} broadcast(%constant.16), dimensions={}
+  %add.19 = s64[230]{0} add(%iota.5, %add.12)
+  %select_n.5 = s64[230]{0} select(%lt.7, %add.19, %iota.5)
+  %convert_element_type.5 = s32[230]{0} convert(%select_n.5)
+  %broadcast_in_dim.5 = s32[230,1]{1,0} reshape(%convert_element_type.5)
+  %gather.6 = f64[230]{0} gather(%jit_atleast_1d_.7, %broadcast_in_dim.5), offset_dims={}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1}
+  %jit_atleast_1d_.8 = f64[230]{0} call(%gather.6), to_apply=%atleast_1d_6.2
+  %iota.6 = s64[225]{0} iota(), iota_dimension=0
+  %constant.21 = s64[] constant(230)
+  %add.14 = s64[225]{0} broadcast(%constant.21), dimensions={}
+  %add.15 = s64[225]{0} add(%iota.6, %add.14)
+  %lt.8 = pred[225]{0} compare(%add.15, %broadcast.9), direction=LT
+  %add.20 = s64[225]{0} add(%add.15, %broadcast.8)
+  %select_n.6 = s64[225]{0} select(%lt.8, %add.20, %add.15)
+  %convert_element_type.6 = s32[225]{0} convert(%select_n.6)
+  %broadcast_in_dim.6 = s32[225,1]{1,0} reshape(%convert_element_type.6)
+  %gather.7 = f64[225]{0} gather(%jit_atleast_1d_.7, %broadcast_in_dim.6), offset_dims={}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1}
+  %jit_atleast_1d_.9 = f64[225]{0} call(%gather.7), to_apply=%atleast_1d_13.3
+  %iota.9 = s64[13]{0} iota(), iota_dimension=0
+  %constant.18 = s64[] constant(693)
+  %broadcast.10 = s64[13]{0} broadcast(%constant.18), dimensions={}
+  %add.18 = s64[13]{0} add(%iota.9, %broadcast.10)
+  %constant.13 = s64[] constant(0)
+  %broadcast.7 = s64[13]{0} broadcast(%constant.13), dimensions={}
+  %lt.11 = pred[13]{0} compare(%add.18, %broadcast.7), direction=LT
+  %constant.12 = s64[] constant(833)
+  %broadcast.6 = s64[13]{0} broadcast(%constant.12), dimensions={}
+  %add.23 = s64[13]{0} add(%add.18, %broadcast.6)
+  %select_n.9 = s64[13]{0} select(%lt.11, %add.23, %add.18)
+  %convert_element_type.9 = s32[13]{0} convert(%select_n.9)
+  %broadcast_in_dim.9 = s32[13,1]{1,0} reshape(%convert_element_type.9)
+  %gather.10 = f64[13]{0} gather(%jit_atleast_1d_.7, %broadcast_in_dim.9), offset_dims={}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1}
+  %jit_atleast_1d_.12 = f64[13]{0} call(%gather.10), to_apply=%atleast_1d_20.4
+  %iota.8 = s64[13]{0} iota(), iota_dimension=0
+  %constant.19 = s64[] constant(680)
+  %broadcast.11 = s64[13]{0} broadcast(%constant.19), dimensions={}
+  %add.17 = s64[13]{0} add(%iota.8, %broadcast.11)
+  %lt.10 = pred[13]{0} compare(%add.17, %broadcast.7), direction=LT
+  %add.22 = s64[13]{0} add(%add.17, %broadcast.6)
+  %select_n.8 = s64[13]{0} select(%lt.10, %add.22, %add.17)
+  %convert_element_type.8 = s32[13]{0} convert(%select_n.8)
+  %broadcast_in_dim.8 = s32[13,1]{1,0} reshape(%convert_element_type.8)
+  %gather.9 = f64[13]{0} gather(%jit_atleast_1d_.7, %broadcast_in_dim.8), offset_dims={}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1}
+  %jit_atleast_1d_.11 = f64[13]{0} call(%gather.9), to_apply=%atleast_1d_20.4
+  ROOT %tuple.1 = (f64[225]{0}, f64[1]{0}, f64[230]{0}, f64[225]{0}, f64[13]{0}, /*index=5*/f64[13]{0}) tuple(%jit_atleast_1d_.10, %jit_atleast_1d_.13, %jit_atleast_1d_.8, %jit_atleast_1d_.9, %jit_atleast_1d_.12, /*index=5*/%jit_atleast_1d_.11)
+}
+
+%region_0.7 (scatter.2: f64[], scatter.3: f64[]) -> f64[] {
+  %scatter.2 = f64[] parameter(0)
+  ROOT %scatter.3 = f64[] parameter(1)
+}
+
+%_flip.8 (Arg_0.14: c128[65,3]) -> c128[65,3] {
+  %Arg_0.14 = c128[65,3]{1,0} parameter(0)
+  ROOT %rev.3 = c128[65,3]{1,0} reverse(%Arg_0.14), dimensions={1}
+}
+
+%atleast_1d_41.9 (Arg_0.16: f64[65,1]) -> f64[65,1] {
+  ROOT %Arg_0.16 = f64[65,1]{1,0} parameter(0)
+}
+
+%atleast_1d_42.10 (Arg_0.18: c128[65,3]) -> c128[65,3] {
+  ROOT %Arg_0.18 = c128[65,3]{1,0} parameter(0)
+}
+
+%atleast_1d_43.11 (Arg_0.20: f64[65,6]) -> f64[65,6] {
+  ROOT %Arg_0.20 = f64[65,6]{1,0} parameter(0)
+}
+
+%fft.12 (Arg_0.22: c128[65,13]) -> c128[65,13] {
+  %Arg_0.22 = c128[65,13]{1,0} parameter(0)
+  ROOT %fft.1 = c128[65,13]{1,0} fft(%Arg_0.22), fft_type=IFFT, fft_length={13}
+}
+
+%region_1.13 (scatter.7: f64[], scatter.8: f64[]) -> f64[] {
+  %scatter.7 = f64[] parameter(0)
+  ROOT %scatter.8 = f64[] parameter(1)
+}
+
+%region_2.14 (scatter.12: f64[], scatter.13: f64[]) -> f64[] {
+  %scatter.12 = f64[] parameter(0)
+  ROOT %scatter.13 = f64[] parameter(1)
+}
+
+%region_3.15 (scatter.17: f64[], scatter.18: f64[]) -> f64[] {
+  %scatter.17 = f64[] parameter(0)
+  ROOT %scatter.18 = f64[] parameter(1)
+}
+
+%region_4.16 (scatter.22: f64[], scatter.23: f64[]) -> f64[] {
+  %scatter.22 = f64[] parameter(0)
+  ROOT %scatter.23 = f64[] parameter(1)
+}
+
+%region_5.17 (scatter.27: f64[], scatter.28: f64[]) -> f64[] {
+  %scatter.27 = f64[] parameter(0)
+  ROOT %scatter.28 = f64[] parameter(1)
+}
+
+%region_6.18 (scatter.32: f64[], scatter.33: f64[]) -> f64[] {
+  %scatter.32 = f64[] parameter(0)
+  ROOT %scatter.33 = f64[] parameter(1)
+}
+
+%region_7.19 (scatter.37: f64[], scatter.38: f64[]) -> f64[] {
+  %scatter.37 = f64[] parameter(0)
+  ROOT %scatter.38 = f64[] parameter(1)
+}
+
+%region_8.20 (scatter.42: f64[], scatter.43: f64[]) -> f64[] {
+  %scatter.42 = f64[] parameter(0)
+  ROOT %scatter.43 = f64[] parameter(1)
+}
+
+%region_9.21 (scatter.47: f64[], scatter.48: f64[]) -> f64[] {
+  %scatter.47 = f64[] parameter(0)
+  ROOT %scatter.48 = f64[] parameter(1)
+}
+
+%region_10.22 (scatter.52: f64[], scatter.53: f64[]) -> f64[] {
+  %scatter.52 = f64[] parameter(0)
+  ROOT %scatter.53 = f64[] parameter(1)
+}
+
+%region_11.23 (scatter.57: f64[], scatter.58: f64[]) -> f64[] {
+  %scatter.57 = f64[] parameter(0)
+  ROOT %scatter.58 = f64[] parameter(1)
+}
+
+%region_12.24 (scatter.62: f64[], scatter.63: f64[]) -> f64[] {
+  %scatter.62 = f64[] parameter(0)
+  ROOT %scatter.63 = f64[] parameter(1)
+}
+
+%region_13.25 (scatter.67: f64[], scatter.68: f64[]) -> f64[] {
+  %scatter.67 = f64[] parameter(0)
+  ROOT %scatter.68 = f64[] parameter(1)
+}
+
+%cross.26 (Arg_0.24: f64[637,3], Arg_1.2: f64[637,3]) -> f64[637,3] {
+  %Arg_0.24 = f64[637,3]{1,0} parameter(0)
+  %slice.49 = f64[637,1]{1,0} slice(%Arg_0.24), slice={[0:637], [1:2]}
+  %squeeze.7 = f64[637]{0} reshape(%slice.49)
+  %Arg_1.2 = f64[637,3]{1,0} parameter(1)
+  %slice.53 = f64[637,1]{1,0} slice(%Arg_1.2), slice={[0:637], [2:3]}
+  %squeeze.11 = f64[637]{0} reshape(%slice.53)
+  %mul.77 = f64[637]{0} multiply(%squeeze.7, %squeeze.11)
+  %slice.50 = f64[637,1]{1,0} slice(%Arg_0.24), slice={[0:637], [2:3]}
+  %squeeze.8 = f64[637]{0} reshape(%slice.50)
+  %slice.52 = f64[637,1]{1,0} slice(%Arg_1.2), slice={[0:637], [1:2]}
+  %squeeze.10 = f64[637]{0} reshape(%slice.52)
+  %mul.78 = f64[637]{0} multiply(%squeeze.8, %squeeze.10)
+  %sub.17 = f64[637]{0} subtract(%mul.77, %mul.78)
+  %broadcast_in_dim.35 = f64[1,637]{1,0} reshape(%sub.17)
+  %slice.51 = f64[637,1]{1,0} slice(%Arg_1.2), slice={[0:637], [0:1]}
+  %squeeze.9 = f64[637]{0} reshape(%slice.51)
+  %mul.79 = f64[637]{0} multiply(%squeeze.8, %squeeze.9)
+  %slice.48 = f64[637,1]{1,0} slice(%Arg_0.24), slice={[0:637], [0:1]}
+  %squeeze.6 = f64[637]{0} reshape(%slice.48)
+  %mul.80 = f64[637]{0} multiply(%squeeze.6, %squeeze.11)
+  %sub.18 = f64[637]{0} subtract(%mul.79, %mul.80)
+  %broadcast_in_dim.36 = f64[1,637]{1,0} reshape(%sub.18)
+  %mul.81 = f64[637]{0} multiply(%squeeze.6, %squeeze.10)
+  %mul.82 = f64[637]{0} multiply(%squeeze.7, %squeeze.9)
+  %sub.19 = f64[637]{0} subtract(%mul.81, %mul.82)
+  %broadcast_in_dim.37 = f64[1,637]{1,0} reshape(%sub.19)
+  %concatenate.21 = f64[3,637]{1,0} concatenate(%broadcast_in_dim.35, %broadcast_in_dim.36, %broadcast_in_dim.37), dimensions={0}
+  ROOT %transpose.7 = f64[637,3]{0,1} transpose(%concatenate.21), dimensions={1,0}
+}
+
+%region_14.27 (reduce_sum.3: f64[], reduce_sum.4: f64[]) -> f64[] {
+  %reduce_sum.3 = f64[] parameter(0)
+  %reduce_sum.4 = f64[] parameter(1)
+  ROOT %reduce_sum.5 = f64[] add(%reduce_sum.3, %reduce_sum.4)
+}
+
+%region_15.28 (reduce_sum.10: f64[], reduce_sum.11: f64[]) -> f64[] {
+  %reduce_sum.10 = f64[] parameter(0)
+  %reduce_sum.11 = f64[] parameter(1)
+  ROOT %reduce_sum.12 = f64[] add(%reduce_sum.10, %reduce_sum.11)
+}
+
+%region_16.29 (reduce_sum.17: f64[], reduce_sum.18: f64[]) -> f64[] {
+  %reduce_sum.17 = f64[] parameter(0)
+  %reduce_sum.18 = f64[] parameter(1)
+  ROOT %reduce_sum.19 = f64[] add(%reduce_sum.17, %reduce_sum.18)
+}
+
+%region_17.30 (reduce_sum.24: f64[], reduce_sum.25: f64[]) -> f64[] {
+  %reduce_sum.24 = f64[] parameter(0)
+  %reduce_sum.25 = f64[] parameter(1)
+  ROOT %reduce_sum.26 = f64[] add(%reduce_sum.24, %reduce_sum.25)
+}
+
+%region_18.31 (scatter.72: f64[], scatter.73: f64[]) -> f64[] {
+  %scatter.72 = f64[] parameter(0)
+  ROOT %scatter.73 = f64[] parameter(1)
+}
+
+%region_19.32 (scatter.77: f64[], scatter.78: f64[]) -> f64[] {
+  %scatter.77 = f64[] parameter(0)
+  ROOT %scatter.78 = f64[] parameter(1)
+}
+
+%region_20.33 (scatter.82: f64[], scatter.83: f64[]) -> f64[] {
+  %scatter.82 = f64[] parameter(0)
+  ROOT %scatter.83 = f64[] parameter(1)
+}
+
+%atleast_2d.34 (Arg_0.26: f64[26]) -> f64[1,26] {
+  %Arg_0.26 = f64[26]{0} parameter(0)
+  ROOT %broadcast_in_dim.43 = f64[1,26]{1,0} reshape(%Arg_0.26)
+}
+
+%atleast_2d_74.35 (Arg_0.29: f64[1,26]) -> f64[1,26] {
+  ROOT %Arg_0.29 = f64[1,26]{1,0} parameter(0)
+}
+
+%region_21.36 (arg_tuple.1: (s64[], s64[26], s64[])) -> (s64[], s64[26], s64[]) {
+  %arg_tuple.1 = (s64[], s64[26]{0}, s64[]) parameter(0)
+  %get-tuple-element.3 = s64[] get-tuple-element(%arg_tuple.1), index=0
+  %constant.48 = s64[] constant(1)
+  %add.54 = s64[] add(%get-tuple-element.3, %constant.48)
+  %get-tuple-element.4 = s64[26]{0} get-tuple-element(%arg_tuple.1), index=1
+  %constant.47 = s64[26]{0} constant({...})
+  %sub.25 = s64[26]{0} broadcast(%get-tuple-element.3), dimensions={}
+  %sub.26 = s64[26]{0} subtract(%constant.47, %sub.25)
+  %constant.46 = s64[] constant(1)
+  %broadcast.29 = s64[26]{0} broadcast(%constant.46), dimensions={}
+  %max.1 = s64[26]{0} maximum(%sub.26, %broadcast.29)
+  %mul.112 = s64[26]{0} multiply(%get-tuple-element.4, %max.1)
+  %get-tuple-element.5 = s64[] get-tuple-element(%arg_tuple.1), index=2
+  ROOT %tuple.3 = (s64[], s64[26]{0}, s64[]) tuple(%add.54, %mul.112, %get-tuple-element.5)
+}
+
+%region_22.37 (arg_tuple.3: (s64[], s64[26], s64[])) -> pred[] {
+  %arg_tuple.3 = (s64[], s64[26]{0}, s64[]) parameter(0)
+  %get-tuple-element.10 = s64[26]{0} get-tuple-element(%arg_tuple.3), index=1
+  %get-tuple-element.9 = s64[] get-tuple-element(%arg_tuple.3), index=0
+  %get-tuple-element.11 = s64[] get-tuple-element(%arg_tuple.3), index=2
+  ROOT %lt.30 = pred[] compare(%get-tuple-element.9, %get-tuple-element.11), direction=LT
+}
+
+%_where.38 (Arg_0.33: pred[], Arg_1.7: s32[], Arg_2.2: s32[]) -> s32[] {
+  %Arg_0.33 = pred[] parameter(0)
+  %Arg_1.7 = s32[] parameter(1)
+  %Arg_2.2 = s32[] parameter(2)
+  ROOT %select_n.28 = s32[] select(%Arg_0.33, %Arg_1.7, %Arg_2.2)
+}
+
+%remainder.39 (Arg_0.34: s32[], Arg_1.8: s32[]) -> s32[] {
+  %Arg_0.34 = s32[] parameter(0)
+  %Arg_1.8 = s32[] parameter(1)
+  %constant.55 = s32[] constant(0)
+  %eq.1 = pred[] compare(%Arg_1.8, %constant.55), direction=EQ
+  %constant.54 = s32[] constant(1)
+  %jit__where_.1 = s32[] call(%eq.1, %constant.54, %Arg_1.8), to_apply=%_where.38
+  %rem.1 = s32[] remainder(%Arg_0.34, %jit__where_.1)
+  %lt.33 = pred[] compare(%rem.1, %constant.55), direction=LT
+  %lt.34 = pred[] compare(%jit__where_.1, %constant.55), direction=LT
+  %ne.3 = pred[] compare(%lt.33, %lt.34), direction=NE
+  %ne.2 = pred[] compare(%rem.1, %constant.55), direction=NE
+  %and.1 = pred[] and(%ne.3, %ne.2)
+  %add.56 = s32[] add(%rem.1, %jit__where_.1)
+  ROOT %select_n.30 = s32[] select(%and.1, %add.56, %rem.1)
+}
+
+%_roll_dynamic.40 (Arg_0.35: f64[1,26], Arg_1.9: s64[]) -> f64[1,26] {
+  %Arg_0.35 = f64[1,26]{1,0} parameter(0)
+  %concatenate.27 = f64[1,52]{1,0} concatenate(%Arg_0.35, %Arg_0.35), dimensions={1}
+  %constant.57 = s32[] constant(0)
+  %constant.58 = s32[] constant(26)
+  %Arg_1.9 = s64[] parameter(1)
+  %convert_element_type.103 = s32[] convert(%Arg_1.9)
+  %jit_remainder_.1 = s32[] call(%convert_element_type.103, %constant.58), to_apply=%remainder.39
+  %sub.28 = s32[] subtract(%constant.58, %jit_remainder_.1)
+  %lt.36 = pred[] compare(%sub.28, %constant.57), direction=LT
+  %constant.56 = s32[] constant(52)
+  %add.58 = s32[] add(%sub.28, %constant.56)
+  %select_n.32 = s32[] select(%lt.36, %add.58, %sub.28)
+  ROOT %dynamic_slice.1 = f64[1,26]{1,0} dynamic-slice(%concatenate.27, %constant.57, %select_n.32), dynamic_slice_sizes={1,26}
+}
+
+%_where_96.41 (Arg_0.37: pred[26], Arg_1.11: s64[], Arg_2.4: f64[1,26]) -> f64[1,26] {
+  %Arg_0.37 = pred[26]{0} parameter(0)
+  %broadcast_in_dim.47 = pred[1,26]{1,0} reshape(%Arg_0.37)
+  %Arg_1.11 = s64[] parameter(1)
+  %convert_element_type.105 = f64[] convert(%Arg_1.11)
+  %broadcast_in_dim.48 = f64[1,26]{1,0} broadcast(%convert_element_type.105), dimensions={}
+  %Arg_2.4 = f64[1,26]{1,0} parameter(2)
+  ROOT %select_n.34 = f64[1,26]{1,0} select(%broadcast_in_dim.47, %broadcast_in_dim.48, %Arg_2.4)
+}
+
+%_polyder_jax.42 (Arg_0.38: f64[1,26], Arg_1.12: s64[]) -> f64[1,26] {
+  %constant.60 = s64[] constant(0)
+  %constant.59 = s64[] constant(1)
+  %broadcast.30 = s64[26]{0} broadcast(%constant.59), dimensions={}
+  %Arg_1.12 = s64[] parameter(1)
+  %while.4 = (s64[], s64[26]{0}, s64[]) tuple(%constant.60, %broadcast.30, %Arg_1.12)
+  %while.5 = (s64[], s64[26]{0}, s64[]) while(%while.4), condition=%region_22.37, body=%region_21.36
+  %while.6 = s64[] get-tuple-element(%while.5), index=0
+  %iota.11 = s64[26]{0} iota(), iota_dimension=0
+  %lt.39 = s64[26]{0} broadcast(%Arg_1.12), dimensions={}
+  %lt.40 = pred[26]{0} compare(%iota.11, %lt.39), direction=LT
+  %while.7 = s64[26]{0} get-tuple-element(%while.5), index=1
+  %convert_element_type.106 = f64[26]{0} convert(%while.7)
+  %broadcast_in_dim.49 = f64[1,26]{1,0} reshape(%convert_element_type.106)
+  %Arg_0.38 = f64[1,26]{1,0} parameter(0)
+  %jit_atleast_2d_.2 = f64[1,26]{1,0} call(%Arg_0.38), to_apply=%atleast_2d_74.35
+  %mul.114 = f64[1,26]{1,0} multiply(%broadcast_in_dim.49, %jit_atleast_2d_.2)
+  %jit__roll_dynamic_.1 = f64[1,26]{1,0} call(%mul.114, %Arg_1.12), to_apply=%_roll_dynamic.40
+  ROOT %jit__where_.3 = f64[1,26]{1,0} call(%lt.40, %constant.60, %jit__roll_dynamic_.1), to_apply=%_where_96.41
+}
+
+%atleast_1d_101.43 (Arg_0.41: f64[637]) -> f64[637] {
+  ROOT %Arg_0.41 = f64[637]{0} parameter(0)
+}
+
+%atleast_2d_109.44 (Arg_0.44: f64[1]) -> f64[1,1] {
+  %Arg_0.44 = f64[1]{0} parameter(0)
+  ROOT %broadcast_in_dim.53 = f64[1,1]{1,0} reshape(%Arg_0.44)
+}
+
+%closed_call.45 (Arg_0.45: f64[637], Arg_1.15: f64[1,26], Arg_2.6: s64[], Arg_3.2: f64[1,637]) -> (s64[], f64[1,637]) {
+  %Arg_2.6 = s64[] parameter(2)
+  %constant.69 = s64[] constant(1)
+  %add.65 = s64[] add(%Arg_2.6, %constant.69)
+  %Arg_3.2 = f64[1,637]{1,0} parameter(3)
+  %Arg_0.45 = f64[637]{0} parameter(0)
+  %broadcast_in_dim.54 = f64[1,637]{1,0} reshape(%Arg_0.45)
+  %mul.116 = f64[1,637]{1,0} multiply(%Arg_3.2, %broadcast_in_dim.54)
+  %Arg_1.15 = f64[1,26]{1,0} parameter(1)
+  %constant.68 = s32[] constant(0)
+  %convert_element_type.108 = s32[] convert(%Arg_2.6)
+  %lt.42 = pred[] compare(%convert_element_type.108, %constant.68), direction=LT
+  %constant.67 = s32[] constant(26)
+  %add.66 = s32[] add(%convert_element_type.108, %constant.67)
+  %select_n.36 = s32[] select(%lt.42, %add.66, %convert_element_type.108)
+  %dynamic_slice.3 = f64[1,1]{1,0} dynamic-slice(%Arg_1.15, %constant.68, %select_n.36), dynamic_slice_sizes={1,1}
+  %squeeze.15 = f64[1]{0} reshape(%dynamic_slice.3)
+  %jit_atleast_2d_.5 = f64[1,1]{1,0} call(%squeeze.15), to_apply=%atleast_2d_109.44
+  %add.67 = f64[1,1]{1,0} broadcast(%jit_atleast_2d_.5), dimensions={0,1}
+  %add.68 = f64[1]{0} reshape(%add.67)
+  %add.69 = f64[1,637]{1,0} broadcast(%add.68), dimensions={0}
+  %add.70 = f64[1,637]{1,0} add(%mul.116, %add.69)
+  ROOT %tuple.5 = (s64[], f64[1,637]{1,0}) tuple(%add.65, %add.70)
+}
+
+%region_23.46 (arg_tuple.5: (s64[], s64[], f64[1,637], f64[637], f64[1,26])) -> (s64[], s64[], f64[1,637], f64[637], f64[1,26]) {
+  %arg_tuple.5 = (s64[], s64[], f64[1,637]{1,0}, f64[637]{0}, f64[1,26]{1,0}) parameter(0)
+  %get-tuple-element.17 = s64[] get-tuple-element(%arg_tuple.5), index=0
+  %constant.70 = s64[] constant(1)
+  %add.72 = s64[] add(%get-tuple-element.17, %constant.70)
+  %get-tuple-element.20 = f64[637]{0} get-tuple-element(%arg_tuple.5), index=3
+  %get-tuple-element.21 = f64[1,26]{1,0} get-tuple-element(%arg_tuple.5), index=4
+  %get-tuple-element.18 = s64[] get-tuple-element(%arg_tuple.5), index=1
+  %get-tuple-element.19 = f64[1,637]{1,0} get-tuple-element(%arg_tuple.5), index=2
+  %closed_call.3 = (s64[], f64[1,637]{1,0}) call(%get-tuple-element.20, %get-tuple-element.21, %get-tuple-element.18, %get-tuple-element.19), to_apply=%closed_call.45
+  %closed_call.4 = s64[] get-tuple-element(%closed_call.3), index=0
+  %closed_call.5 = f64[1,637]{1,0} get-tuple-element(%closed_call.3), index=1
+  ROOT %tuple.7 = (s64[], s64[], f64[1,637]{1,0}, f64[637]{0}, f64[1,26]{1,0}) tuple(%add.72, %closed_call.4, %closed_call.5, %get-tuple-element.20, %get-tuple-element.21)
+}
+
+%region_24.47 (arg_tuple.7: (s64[], s64[], f64[1,637], f64[637], f64[1,26])) -> pred[] {
+  %arg_tuple.7 = (s64[], s64[], f64[1,637]{1,0}, f64[637]{0}, f64[1,26]{1,0}) parameter(0)
+  %get-tuple-element.28 = s64[] get-tuple-element(%arg_tuple.7), index=1
+  %get-tuple-element.29 = f64[1,637]{1,0} get-tuple-element(%arg_tuple.7), index=2
+  %get-tuple-element.30 = f64[637]{0} get-tuple-element(%arg_tuple.7), index=3
+  %get-tuple-element.31 = f64[1,26]{1,0} get-tuple-element(%arg_tuple.7), index=4
+  %get-tuple-element.27 = s64[] get-tuple-element(%arg_tuple.7), index=0
+  %constant.72 = s64[] constant(26)
+  ROOT %lt.44 = pred[] compare(%get-tuple-element.27, %constant.72), direction=LT
+}
+
+%_polyval_jax.48 (Arg_0.46: f64[1,26], Arg_1.16: f64[637]) -> f64[1,637] {
+  %constant.74 = s64[] constant(0)
+  %constant.73 = f64[] constant(0)
+  %broadcast_in_dim.55 = f64[1,637]{1,0} broadcast(%constant.73), dimensions={}
+  %Arg_1.16 = f64[637]{0} parameter(1)
+  %jit_atleast_1d_.83 = f64[637]{0} call(%Arg_1.16), to_apply=%atleast_1d_101.43
+  %Arg_0.46 = f64[1,26]{1,0} parameter(0)
+  %jit_atleast_2d_.6 = f64[1,26]{1,0} call(%Arg_0.46), to_apply=%atleast_2d_74.35
+  %while.13 = (s64[], s64[], f64[1,637]{1,0}, f64[637]{0}, f64[1,26]{1,0}) tuple(%constant.74, %constant.74, %broadcast_in_dim.55, %jit_atleast_1d_.83, %jit_atleast_2d_.6)
+  %while.14 = (s64[], s64[], f64[1,637]{1,0}, f64[637]{0}, f64[1,26]{1,0}) while(%while.13), condition=%region_24.47, body=%region_23.46
+  %while.15 = s64[] get-tuple-element(%while.14), index=0
+  %while.16 = s64[] get-tuple-element(%while.14), index=1
+  ROOT %while.17 = f64[1,637]{1,0} get-tuple-element(%while.14), index=2
+}
+
+%_where_114.49 (Arg_0.48: pred[637], Arg_1.18: s64[], Arg_2.8: f64[637]) -> f64[637] {
+  %Arg_0.48 = pred[637]{0} parameter(0)
+  %Arg_1.18 = s64[] parameter(1)
+  %convert_element_type.110 = f64[] convert(%Arg_1.18)
+  %broadcast_in_dim.57 = f64[637]{0} broadcast(%convert_element_type.110), dimensions={}
+  %Arg_2.8 = f64[637]{0} parameter(2)
+  ROOT %select_n.38 = f64[637]{0} select(%Arg_0.48, %broadcast_in_dim.57, %Arg_2.8)
+}
+
+%_where_120.50 (Arg_0.50: pred[637], Arg_1.20: s64[], Arg_2.10: f64[3,637]) -> f64[3,637] {
+  %Arg_0.50 = pred[637]{0} parameter(0)
+  %broadcast_in_dim.62 = pred[3,637]{1,0} broadcast(%Arg_0.50), dimensions={1}
+  %Arg_1.20 = s64[] parameter(1)
+  %convert_element_type.112 = f64[] convert(%Arg_1.20)
+  %broadcast_in_dim.63 = f64[3,637]{1,0} broadcast(%convert_element_type.112), dimensions={}
+  %Arg_2.10 = f64[3,637]{1,0} parameter(2)
+  ROOT %select_n.40 = f64[3,637]{1,0} select(%broadcast_in_dim.62, %broadcast_in_dim.63, %Arg_2.10)
+}
+
+%region_25.51 (scatter.87: f64[], scatter.88: f64[]) -> f64[] {
+  %scatter.87 = f64[] parameter(0)
+  ROOT %scatter.88 = f64[] parameter(1)
+}
+
+%region_26.52 (scatter.92: f64[], scatter.93: f64[]) -> f64[] {
+  %scatter.92 = f64[] parameter(0)
+  ROOT %scatter.93 = f64[] parameter(1)
+}
+
+%region_27.53 (scatter.97: f64[], scatter.98: f64[]) -> f64[] {
+  %scatter.97 = f64[] parameter(0)
+  ROOT %scatter.98 = f64[] parameter(1)
+}
+
+%region_28.54 (scatter.102: f64[], scatter.103: f64[]) -> f64[] {
+  %scatter.102 = f64[] parameter(0)
+  ROOT %scatter.103 = f64[] parameter(1)
+}
+
+%region_29.55 (reduce_sum.31: f64[], reduce_sum.32: f64[]) -> f64[] {
+  %reduce_sum.31 = f64[] parameter(0)
+  %reduce_sum.32 = f64[] parameter(1)
+  ROOT %reduce_sum.33 = f64[] add(%reduce_sum.31, %reduce_sum.32)
+}
+
+%region_30.56 (reduce_sum.38: f64[], reduce_sum.39: f64[]) -> f64[] {
+  %reduce_sum.38 = f64[] parameter(0)
+  %reduce_sum.39 = f64[] parameter(1)
+  ROOT %reduce_sum.40 = f64[] add(%reduce_sum.38, %reduce_sum.39)
+}
+
+%region_31.57 (reduce_sum.45: f64[], reduce_sum.46: f64[]) -> f64[] {
+  %reduce_sum.45 = f64[] parameter(0)
+  %reduce_sum.46 = f64[] parameter(1)
+  ROOT %reduce_sum.47 = f64[] add(%reduce_sum.45, %reduce_sum.46)
+}
+
+%region_32.58 (scatter.107: f64[], scatter.108: f64[]) -> f64[] {
+  %scatter.107 = f64[] parameter(0)
+  ROOT %scatter.108 = f64[] parameter(1)
+}
+
+%region_33.59 (scatter.112: f64[], scatter.113: f64[]) -> f64[] {
+  %scatter.112 = f64[] parameter(0)
+  ROOT %scatter.113 = f64[] parameter(1)
+}
+
+%region_34.60 (reduce_sum.52: f64[], reduce_sum.53: f64[]) -> f64[] {
+  %reduce_sum.52 = f64[] parameter(0)
+  %reduce_sum.53 = f64[] parameter(1)
+  ROOT %reduce_sum.54 = f64[] add(%reduce_sum.52, %reduce_sum.53)
+}
+
+%region_35.61 (reduce_sum.59: f64[], reduce_sum.60: f64[]) -> f64[] {
+  %reduce_sum.59 = f64[] parameter(0)
+  %reduce_sum.60 = f64[] parameter(1)
+  ROOT %reduce_sum.61 = f64[] add(%reduce_sum.59, %reduce_sum.60)
+}
+
+%region_36.62 (reduce_sum.66: f64[], reduce_sum.67: f64[]) -> f64[] {
+  %reduce_sum.66 = f64[] parameter(0)
+  %reduce_sum.67 = f64[] parameter(1)
+  ROOT %reduce_sum.68 = f64[] add(%reduce_sum.66, %reduce_sum.67)
+}
+
+%region_37.63 (scatter.117: f64[], scatter.118: f64[]) -> f64[] {
+  %scatter.117 = f64[] parameter(0)
+  ROOT %scatter.118 = f64[] parameter(1)
+}
+
+%region_38.64 (scatter.122: f64[], scatter.123: f64[]) -> f64[] {
+  %scatter.122 = f64[] parameter(0)
+  ROOT %scatter.123 = f64[] parameter(1)
+}
+
+%region_39.65 (scatter.127: f64[], scatter.128: f64[]) -> f64[] {
+  %scatter.127 = f64[] parameter(0)
+  ROOT %scatter.128 = f64[] parameter(1)
+}
+
+%region_40.66 (reduce_sum.73: f64[], reduce_sum.74: f64[]) -> f64[] {
+  %reduce_sum.73 = f64[] parameter(0)
+  %reduce_sum.74 = f64[] parameter(1)
+  ROOT %reduce_sum.75 = f64[] add(%reduce_sum.73, %reduce_sum.74)
+}
+
+%region_41.67 (reduce_sum.80: f64[], reduce_sum.81: f64[]) -> f64[] {
+  %reduce_sum.80 = f64[] parameter(0)
+  %reduce_sum.81 = f64[] parameter(1)
+  ROOT %reduce_sum.82 = f64[] add(%reduce_sum.80, %reduce_sum.81)
+}
+
+%region_42.68 (reduce_sum.87: f64[], reduce_sum.88: f64[]) -> f64[] {
+  %reduce_sum.87 = f64[] parameter(0)
+  %reduce_sum.88 = f64[] parameter(1)
+  ROOT %reduce_sum.89 = f64[] add(%reduce_sum.87, %reduce_sum.88)
+}
+
+%region_43.69 (reduce_sum.94: f64[], reduce_sum.95: f64[]) -> f64[] {
+  %reduce_sum.94 = f64[] parameter(0)
+  %reduce_sum.95 = f64[] parameter(1)
+  ROOT %reduce_sum.96 = f64[] add(%reduce_sum.94, %reduce_sum.95)
+}
+
+%region_44.70 (reduce_sum.101: f64[], reduce_sum.102: f64[]) -> f64[] {
+  %reduce_sum.101 = f64[] parameter(0)
+  %reduce_sum.102 = f64[] parameter(1)
+  ROOT %reduce_sum.103 = f64[] add(%reduce_sum.101, %reduce_sum.102)
+}
+
+%region_45.71 (reduce_sum.108: f64[], reduce_sum.109: f64[]) -> f64[] {
+  %reduce_sum.108 = f64[] parameter(0)
+  %reduce_sum.109 = f64[] parameter(1)
+  ROOT %reduce_sum.110 = f64[] add(%reduce_sum.108, %reduce_sum.109)
+}
+
+%region_46.72 (reduce_sum.115: f64[], reduce_sum.116: f64[]) -> f64[] {
+  %reduce_sum.115 = f64[] parameter(0)
+  %reduce_sum.116 = f64[] parameter(1)
+  ROOT %reduce_sum.117 = f64[] add(%reduce_sum.115, %reduce_sum.116)
+}
+
+%region_47.73 (reduce_sum.122: f64[], reduce_sum.123: f64[]) -> f64[] {
+  %reduce_sum.122 = f64[] parameter(0)
+  %reduce_sum.123 = f64[] parameter(1)
+  ROOT %reduce_sum.124 = f64[] add(%reduce_sum.122, %reduce_sum.123)
+}
+
+%region_48.74 (reduce_sum.129: f64[], reduce_sum.130: f64[]) -> f64[] {
+  %reduce_sum.129 = f64[] parameter(0)
+  %reduce_sum.130 = f64[] parameter(1)
+  ROOT %reduce_sum.131 = f64[] add(%reduce_sum.129, %reduce_sum.130)
+}
+
+%region_49.75 (reduce_sum.136: f64[], reduce_sum.137: f64[]) -> f64[] {
+  %reduce_sum.136 = f64[] parameter(0)
+  %reduce_sum.137 = f64[] parameter(1)
+  ROOT %reduce_sum.138 = f64[] add(%reduce_sum.136, %reduce_sum.137)
+}
+
+%region_50.76 (reduce_sum.143: f64[], reduce_sum.144: f64[]) -> f64[] {
+  %reduce_sum.143 = f64[] parameter(0)
+  %reduce_sum.144 = f64[] parameter(1)
+  ROOT %reduce_sum.145 = f64[] add(%reduce_sum.143, %reduce_sum.144)
+}
+
+%region_51.77 (reduce_sum.150: f64[], reduce_sum.151: f64[]) -> f64[] {
+  %reduce_sum.150 = f64[] parameter(0)
+  %reduce_sum.151 = f64[] parameter(1)
+  ROOT %reduce_sum.152 = f64[] add(%reduce_sum.150, %reduce_sum.151)
+}
+
+%region_52.78 (reduce_sum.157: f64[], reduce_sum.158: f64[]) -> f64[] {
+  %reduce_sum.157 = f64[] parameter(0)
+  %reduce_sum.158 = f64[] parameter(1)
+  ROOT %reduce_sum.159 = f64[] add(%reduce_sum.157, %reduce_sum.158)
+}
+
+%norm.79 (Arg_0.52: f64[637,3]) -> f64[637] {
+  %Arg_0.52 = f64[637,3]{1,0} parameter(0)
+  %mul.295 = f64[637,3]{1,0} multiply(%Arg_0.52, %Arg_0.52)
+  %constant.76 = f64[] constant(0)
+  %reduce_sum.161 = f64[637]{0} reduce(%mul.295, %constant.76), dimensions={1}, to_apply=%region_52.78
+  ROOT %sqrt.1 = f64[637]{0} sqrt(%reduce_sum.161)
+}
+
+%region_53.80 (reduce_sum.165: f64[], reduce_sum.166: f64[]) -> f64[] {
+  %reduce_sum.165 = f64[] parameter(0)
+  %reduce_sum.166 = f64[] parameter(1)
+  ROOT %reduce_sum.167 = f64[] add(%reduce_sum.165, %reduce_sum.166)
+}
+
+%atleast_1d_130.81 (Arg_0.54: f64[1274]) -> f64[1274] {
+  ROOT %Arg_0.54 = f64[1274]{0} parameter(0)
+}
+
+%compute_scaled_error.82 (Arg_0.55: f64[1274], Arg_1.21: f64[49,65], Arg_2.11: f64[49,65], Arg_3.3: f64[49,65], Arg_4.1: f64[49,65], Arg_5.1: f64[49,65], Arg_6.1: s64[1,7], Arg_7.1: s64[225], Arg_8.1: f64[49,65], Arg_9.1: f64[49,65], Arg_10.1: f64[49,65], Arg_11.1: f64[49,65], Arg_12.1: f64[49,65], Arg_13.1: f64[49,65], Arg_14.1: s64[1,7], Arg_15.1: s64[230], Arg_16.1: f64[49,65], Arg_17.1: f64[49,65], Arg_18.1: f64[49,65], Arg_19.1: f64[49,65], Arg_20.1: f64[49,65], Arg_21.1: f64[49,65], Arg_22.1: s64[1,7], Arg_23.1: s64[225], Arg_24.1: f64[637,3], Arg_25.1: f64[], Arg_26.1: s64[], Arg_27.1: s64[], Arg_28.1: f64[225], Arg_29.1: f64[1], Arg_30.1: f64[230], Arg_31.1: f64[225], Arg_32.1: f64[13], Arg_33.1: f64[13]) -> f64[1274] {
+  %Arg_11.1 = f64[49,65]{1,0} parameter(11)
+  %constant.94 = f64[] constant(0)
+  %broadcast.44 = f64[455]{0} broadcast(%constant.94), dimensions={}
+  %Arg_15.1 = s64[230]{0} parameter(15)
+  %constant.84 = s64[] constant(0)
+  %broadcast.37 = s64[230]{0} broadcast(%constant.84), dimensions={}
+  %lt.60 = pred[230]{0} compare(%Arg_15.1, %broadcast.37), direction=LT
+  %constant.83 = s64[] constant(455)
+  %broadcast.36 = s64[230]{0} broadcast(%constant.83), dimensions={}
+  %add.131 = s64[230]{0} add(%Arg_15.1, %broadcast.36)
+  %select_n.56 = s64[230]{0} select(%lt.60, %add.131, %Arg_15.1)
+  %convert_element_type.199 = s32[230]{0} convert(%select_n.56)
+  %broadcast_in_dim.102 = s32[230,1]{1,0} reshape(%convert_element_type.199)
+  %Arg_30.1 = f64[230]{0} parameter(30)
+  %scatter.136 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.102, %Arg_30.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_6.18
+  %reshape.92 = f64[65,7]{1,0} reshape(%scatter.136)
+  %slice.114 = f64[65,1]{1,0} slice(%reshape.92), slice={[0:65], [3:4]}
+  %constant.86 = f64[] constant(13)
+  %broadcast.39 = f64[65,1]{1,0} broadcast(%constant.86), dimensions={}
+  %mul.335 = f64[65,1]{1,0} multiply(%slice.114, %broadcast.39)
+  %jit_atleast_1d_.146 = f64[65,1]{1,0} call(%mul.335), to_apply=%atleast_1d_41.9
+  %convert_element_type.202 = c128[65,1]{1,0} convert(%jit_atleast_1d_.146)
+  %slice.112 = f64[65,3]{1,0} slice(%reshape.92), slice={[0:65], [4:7]}
+  %convert_element_type.201 = c128[65,3]{1,0} convert(%slice.112)
+  %slice.113 = f64[65,3]{1,0} slice(%reshape.92), slice={[0:65], [0:3]}
+  %rev.49 = f64[65,3]{1,0} reverse(%slice.113), dimensions={1}
+  %convert_element_type.200 = c128[65,3]{1,0} convert(%rev.49)
+  %constant.88 = c128[] constant((0, 1))
+  %broadcast.41 = c128[65,3]{1,0} broadcast(%constant.88), dimensions={}
+  %mul.333 = c128[65,3]{1,0} multiply(%convert_element_type.200, %broadcast.41)
+  %sub.61 = c128[65,3]{1,0} subtract(%convert_element_type.201, %mul.333)
+  %constant.87 = c128[] constant((6.5, 0))
+  %broadcast.40 = c128[65,3]{1,0} broadcast(%constant.87), dimensions={}
+  %mul.334 = c128[65,3]{1,0} multiply(%sub.61, %broadcast.40)
+  %jit_atleast_1d_.147 = c128[65,3]{1,0} call(%mul.334), to_apply=%atleast_1d_42.10
+  %constant.85 = f64[] constant(0)
+  %broadcast.38 = f64[65,6]{1,0} broadcast(%constant.85), dimensions={}
+  %jit_atleast_1d_.148 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.203 = c128[65,6]{1,0} convert(%jit_atleast_1d_.148)
+  %real.64 = f64[65,3]{1,0} real(%mul.334)
+  %imag.32 = f64[65,3]{1,0} imag(%mul.334)
+  %neg.47 = f64[65,3]{1,0} negate(%imag.32)
+  %complex.32 = c128[65,3]{1,0} complex(%real.64, %neg.47)
+  %jit__flip_.32 = c128[65,3]{1,0} call(%complex.32), to_apply=%_flip.8
+  %jit_atleast_1d_.149 = c128[65,3]{1,0} call(%jit__flip_.32), to_apply=%atleast_1d_42.10
+  %concatenate.50 = c128[65,13]{1,0} concatenate(%convert_element_type.202, %jit_atleast_1d_.147, %convert_element_type.203, %jit_atleast_1d_.149), dimensions={1}
+  %jit_fft_.32 = c128[65,13]{1,0} call(%concatenate.50), to_apply=%fft.12
+  %real.65 = f64[65,13]{1,0} real(%jit_fft_.32)
+  %dot_general.32 = f64[49,13]{1,0} dot(%Arg_11.1, %real.65), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.93 = f64[13,49]{0,1} transpose(%dot_general.32), dimensions={1,0}
+  %broadcast_in_dim_reshape.21 = f64[1,637]{1,0} reshape(%reshape.93)
+  %Arg_8.1 = f64[49,65]{1,0} parameter(8)
+  %lt.56 = pred[230]{0} compare(%Arg_15.1, %broadcast.37), direction=LT
+  %add.126 = s64[230]{0} add(%Arg_15.1, %broadcast.36)
+  %select_n.52 = s64[230]{0} select(%lt.56, %add.126, %Arg_15.1)
+  %convert_element_type.178 = s32[230]{0} convert(%select_n.52)
+  %broadcast_in_dim.98 = s32[230,1]{1,0} reshape(%convert_element_type.178)
+  %scatter.132 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.98, %Arg_30.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_2.14
+  %reshape.80 = f64[65,7]{1,0} reshape(%scatter.132)
+  %slice.102 = f64[65,1]{1,0} slice(%reshape.80), slice={[0:65], [3:4]}
+  %mul.319 = f64[65,1]{1,0} multiply(%slice.102, %broadcast.39)
+  %jit_atleast_1d_.130 = f64[65,1]{1,0} call(%mul.319), to_apply=%atleast_1d_41.9
+  %convert_element_type.181 = c128[65,1]{1,0} convert(%jit_atleast_1d_.130)
+  %slice.100 = f64[65,3]{1,0} slice(%reshape.80), slice={[0:65], [4:7]}
+  %convert_element_type.180 = c128[65,3]{1,0} convert(%slice.100)
+  %slice.101 = f64[65,3]{1,0} slice(%reshape.80), slice={[0:65], [0:3]}
+  %rev.44 = f64[65,3]{1,0} reverse(%slice.101), dimensions={1}
+  %convert_element_type.179 = c128[65,3]{1,0} convert(%rev.44)
+  %mul.317 = c128[65,3]{1,0} multiply(%convert_element_type.179, %broadcast.41)
+  %sub.57 = c128[65,3]{1,0} subtract(%convert_element_type.180, %mul.317)
+  %mul.318 = c128[65,3]{1,0} multiply(%sub.57, %broadcast.40)
+  %jit_atleast_1d_.131 = c128[65,3]{1,0} call(%mul.318), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.132 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.182 = c128[65,6]{1,0} convert(%jit_atleast_1d_.132)
+  %real.56 = f64[65,3]{1,0} real(%mul.318)
+  %imag.28 = f64[65,3]{1,0} imag(%mul.318)
+  %neg.43 = f64[65,3]{1,0} negate(%imag.28)
+  %complex.28 = c128[65,3]{1,0} complex(%real.56, %neg.43)
+  %jit__flip_.28 = c128[65,3]{1,0} call(%complex.28), to_apply=%_flip.8
+  %jit_atleast_1d_.133 = c128[65,3]{1,0} call(%jit__flip_.28), to_apply=%atleast_1d_42.10
+  %concatenate.45 = c128[65,13]{1,0} concatenate(%convert_element_type.181, %jit_atleast_1d_.131, %convert_element_type.182, %jit_atleast_1d_.133), dimensions={1}
+  %jit_fft_.28 = c128[65,13]{1,0} call(%concatenate.45), to_apply=%fft.12
+  %real.57 = f64[65,13]{1,0} real(%jit_fft_.28)
+  %dot_general.28 = f64[49,13]{1,0} dot(%Arg_8.1, %real.57), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.81 = f64[13,49]{0,1} transpose(%dot_general.28), dimensions={1,0}
+  %reshape.82 = f64[637]{0} reshape(%reshape.81)
+  %constant.93 = f64[] constant(0)
+  %broadcast.43 = f64[637]{0} broadcast(%constant.93), dimensions={}
+  %mul.373 = f64[637]{0} multiply(%reshape.82, %broadcast.43)
+  %broadcast_in_dim.117 = f64[1,637]{1,0} reshape(%mul.373)
+  %Arg_19.1 = f64[49,65]{1,0} parameter(19)
+  %Arg_23.1 = s64[225]{0} parameter(23)
+  %constant.95 = s64[] constant(0)
+  %broadcast.45 = s64[225]{0} broadcast(%constant.95), dimensions={}
+  %lt.67 = pred[225]{0} compare(%Arg_23.1, %broadcast.45), direction=LT
+  %constant.89 = s64[] constant(455)
+  %broadcast.42 = s64[225]{0} broadcast(%constant.89), dimensions={}
+  %add.146 = s64[225]{0} add(%Arg_23.1, %broadcast.42)
+  %select_n.63 = s64[225]{0} select(%lt.67, %add.146, %Arg_23.1)
+  %convert_element_type.235 = s32[225]{0} convert(%select_n.63)
+  %broadcast_in_dim.116 = s32[225,1]{1,0} reshape(%convert_element_type.235)
+  %Arg_31.1 = f64[225]{0} parameter(31)
+  %scatter.143 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.116, %Arg_31.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_13.25
+  %reshape.109 = f64[65,7]{1,0} reshape(%scatter.143)
+  %slice.135 = f64[65,1]{1,0} slice(%reshape.109), slice={[0:65], [3:4]}
+  %mul.372 = f64[65,1]{1,0} multiply(%slice.135, %broadcast.39)
+  %jit_atleast_1d_.174 = f64[65,1]{1,0} call(%mul.372), to_apply=%atleast_1d_41.9
+  %convert_element_type.238 = c128[65,1]{1,0} convert(%jit_atleast_1d_.174)
+  %slice.133 = f64[65,3]{1,0} slice(%reshape.109), slice={[0:65], [4:7]}
+  %convert_element_type.237 = c128[65,3]{1,0} convert(%slice.133)
+  %slice.134 = f64[65,3]{1,0} slice(%reshape.109), slice={[0:65], [0:3]}
+  %rev.57 = f64[65,3]{1,0} reverse(%slice.134), dimensions={1}
+  %convert_element_type.236 = c128[65,3]{1,0} convert(%rev.57)
+  %mul.370 = c128[65,3]{1,0} multiply(%convert_element_type.236, %broadcast.41)
+  %sub.68 = c128[65,3]{1,0} subtract(%convert_element_type.237, %mul.370)
+  %mul.371 = c128[65,3]{1,0} multiply(%sub.68, %broadcast.40)
+  %jit_atleast_1d_.175 = c128[65,3]{1,0} call(%mul.371), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.176 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.239 = c128[65,6]{1,0} convert(%jit_atleast_1d_.176)
+  %real.78 = f64[65,3]{1,0} real(%mul.371)
+  %imag.39 = f64[65,3]{1,0} imag(%mul.371)
+  %neg.57 = f64[65,3]{1,0} negate(%imag.39)
+  %complex.39 = c128[65,3]{1,0} complex(%real.78, %neg.57)
+  %jit__flip_.39 = c128[65,3]{1,0} call(%complex.39), to_apply=%_flip.8
+  %jit_atleast_1d_.177 = c128[65,3]{1,0} call(%jit__flip_.39), to_apply=%atleast_1d_42.10
+  %concatenate.61 = c128[65,13]{1,0} concatenate(%convert_element_type.238, %jit_atleast_1d_.175, %convert_element_type.239, %jit_atleast_1d_.177), dimensions={1}
+  %jit_fft_.39 = c128[65,13]{1,0} call(%concatenate.61), to_apply=%fft.12
+  %real.79 = f64[65,13]{1,0} real(%jit_fft_.39)
+  %dot_general.39 = f64[49,13]{1,0} dot(%Arg_19.1, %real.79), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.110 = f64[13,49]{0,1} transpose(%dot_general.39), dimensions={1,0}
+  %broadcast_in_dim_reshape.22 = f64[1,637]{1,0} reshape(%reshape.110)
+  %concatenate.62 = f64[3,637]{1,0} concatenate(%broadcast_in_dim_reshape.21, %broadcast_in_dim.117, %broadcast_in_dim_reshape.22), dimensions={0}
+  %transpose.24 = f64[637,3]{0,1} transpose(%concatenate.62), dimensions={1,0}
+  %Arg_9.1 = f64[49,65]{1,0} parameter(9)
+  %lt.61 = pred[230]{0} compare(%Arg_15.1, %broadcast.37), direction=LT
+  %add.132 = s64[230]{0} add(%Arg_15.1, %broadcast.36)
+  %select_n.57 = s64[230]{0} select(%lt.61, %add.132, %Arg_15.1)
+  %convert_element_type.204 = s32[230]{0} convert(%select_n.57)
+  %broadcast_in_dim.103 = s32[230,1]{1,0} reshape(%convert_element_type.204)
+  %scatter.137 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.103, %Arg_30.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_7.19
+  %reshape.95 = f64[65,7]{1,0} reshape(%scatter.137)
+  %slice.117 = f64[65,1]{1,0} slice(%reshape.95), slice={[0:65], [3:4]}
+  %mul.338 = f64[65,1]{1,0} multiply(%slice.117, %broadcast.39)
+  %jit_atleast_1d_.150 = f64[65,1]{1,0} call(%mul.338), to_apply=%atleast_1d_41.9
+  %convert_element_type.207 = c128[65,1]{1,0} convert(%jit_atleast_1d_.150)
+  %slice.115 = f64[65,3]{1,0} slice(%reshape.95), slice={[0:65], [4:7]}
+  %convert_element_type.206 = c128[65,3]{1,0} convert(%slice.115)
+  %slice.116 = f64[65,3]{1,0} slice(%reshape.95), slice={[0:65], [0:3]}
+  %rev.50 = f64[65,3]{1,0} reverse(%slice.116), dimensions={1}
+  %convert_element_type.205 = c128[65,3]{1,0} convert(%rev.50)
+  %mul.336 = c128[65,3]{1,0} multiply(%convert_element_type.205, %broadcast.41)
+  %sub.62 = c128[65,3]{1,0} subtract(%convert_element_type.206, %mul.336)
+  %mul.337 = c128[65,3]{1,0} multiply(%sub.62, %broadcast.40)
+  %jit_atleast_1d_.151 = c128[65,3]{1,0} call(%mul.337), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.152 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.208 = c128[65,6]{1,0} convert(%jit_atleast_1d_.152)
+  %real.66 = f64[65,3]{1,0} real(%mul.337)
+  %imag.33 = f64[65,3]{1,0} imag(%mul.337)
+  %neg.48 = f64[65,3]{1,0} negate(%imag.33)
+  %complex.33 = c128[65,3]{1,0} complex(%real.66, %neg.48)
+  %jit__flip_.33 = c128[65,3]{1,0} call(%complex.33), to_apply=%_flip.8
+  %jit_atleast_1d_.153 = c128[65,3]{1,0} call(%jit__flip_.33), to_apply=%atleast_1d_42.10
+  %concatenate.51 = c128[65,13]{1,0} concatenate(%convert_element_type.207, %jit_atleast_1d_.151, %convert_element_type.208, %jit_atleast_1d_.153), dimensions={1}
+  %jit_fft_.33 = c128[65,13]{1,0} call(%concatenate.51), to_apply=%fft.12
+  %real.67 = f64[65,13]{1,0} real(%jit_fft_.33)
+  %dot_general.33 = f64[49,13]{1,0} dot(%Arg_9.1, %real.67), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.96 = f64[13,49]{0,1} transpose(%dot_general.33), dimensions={1,0}
+  %broadcast_in_dim_reshape.19 = f64[1,637]{1,0} reshape(%reshape.96)
+  %mul.369 = f64[637]{0} multiply(%reshape.82, %broadcast.43)
+  %broadcast_in_dim.115 = f64[1,637]{1,0} reshape(%mul.369)
+  %Arg_17.1 = f64[49,65]{1,0} parameter(17)
+  %lt.66 = pred[225]{0} compare(%Arg_23.1, %broadcast.45), direction=LT
+  %add.145 = s64[225]{0} add(%Arg_23.1, %broadcast.42)
+  %select_n.62 = s64[225]{0} select(%lt.66, %add.145, %Arg_23.1)
+  %convert_element_type.230 = s32[225]{0} convert(%select_n.62)
+  %broadcast_in_dim.114 = s32[225,1]{1,0} reshape(%convert_element_type.230)
+  %scatter.142 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.114, %Arg_31.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_12.24
+  %reshape.107 = f64[65,7]{1,0} reshape(%scatter.142)
+  %slice.132 = f64[65,1]{1,0} slice(%reshape.107), slice={[0:65], [3:4]}
+  %mul.368 = f64[65,1]{1,0} multiply(%slice.132, %broadcast.39)
+  %jit_atleast_1d_.170 = f64[65,1]{1,0} call(%mul.368), to_apply=%atleast_1d_41.9
+  %convert_element_type.233 = c128[65,1]{1,0} convert(%jit_atleast_1d_.170)
+  %slice.130 = f64[65,3]{1,0} slice(%reshape.107), slice={[0:65], [4:7]}
+  %convert_element_type.232 = c128[65,3]{1,0} convert(%slice.130)
+  %slice.131 = f64[65,3]{1,0} slice(%reshape.107), slice={[0:65], [0:3]}
+  %rev.56 = f64[65,3]{1,0} reverse(%slice.131), dimensions={1}
+  %convert_element_type.231 = c128[65,3]{1,0} convert(%rev.56)
+  %mul.366 = c128[65,3]{1,0} multiply(%convert_element_type.231, %broadcast.41)
+  %sub.67 = c128[65,3]{1,0} subtract(%convert_element_type.232, %mul.366)
+  %mul.367 = c128[65,3]{1,0} multiply(%sub.67, %broadcast.40)
+  %jit_atleast_1d_.171 = c128[65,3]{1,0} call(%mul.367), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.172 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.234 = c128[65,6]{1,0} convert(%jit_atleast_1d_.172)
+  %real.76 = f64[65,3]{1,0} real(%mul.367)
+  %imag.38 = f64[65,3]{1,0} imag(%mul.367)
+  %neg.56 = f64[65,3]{1,0} negate(%imag.38)
+  %complex.38 = c128[65,3]{1,0} complex(%real.76, %neg.56)
+  %jit__flip_.38 = c128[65,3]{1,0} call(%complex.38), to_apply=%_flip.8
+  %jit_atleast_1d_.173 = c128[65,3]{1,0} call(%jit__flip_.38), to_apply=%atleast_1d_42.10
+  %concatenate.59 = c128[65,13]{1,0} concatenate(%convert_element_type.233, %jit_atleast_1d_.171, %convert_element_type.234, %jit_atleast_1d_.173), dimensions={1}
+  %jit_fft_.38 = c128[65,13]{1,0} call(%concatenate.59), to_apply=%fft.12
+  %real.77 = f64[65,13]{1,0} real(%jit_fft_.38)
+  %dot_general.38 = f64[49,13]{1,0} dot(%Arg_17.1, %real.77), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.108 = f64[13,49]{0,1} transpose(%dot_general.38), dimensions={1,0}
+  %broadcast_in_dim_reshape.20 = f64[1,637]{1,0} reshape(%reshape.108)
+  %concatenate.60 = f64[3,637]{1,0} concatenate(%broadcast_in_dim_reshape.19, %broadcast_in_dim.115, %broadcast_in_dim_reshape.20), dimensions={0}
+  %transpose.23 = f64[637,3]{0,1} transpose(%concatenate.60), dimensions={1,0}
+  %lt.55 = pred[230]{0} compare(%Arg_15.1, %broadcast.37), direction=LT
+  %add.125 = s64[230]{0} add(%Arg_15.1, %broadcast.36)
+  %select_n.51 = s64[230]{0} select(%lt.55, %add.125, %Arg_15.1)
+  %convert_element_type.172 = s32[230]{0} convert(%select_n.51)
+  %broadcast_in_dim.97 = s32[230,1]{1,0} reshape(%convert_element_type.172)
+  %scatter.131 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.97, %Arg_30.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_1.13
+  %reshape.77 = f64[65,7]{1,0} reshape(%scatter.131)
+  %rev.42 = f64[65,7]{1,0} reverse(%reshape.77), dimensions={1}
+  %Arg_14.1 = s64[1,7]{1,0} parameter(14)
+  %convert_element_type.173 = f64[1,7]{1,0} convert(%Arg_14.1)
+  %mul.310 = f64[1,7]{1,0} broadcast(%convert_element_type.173), dimensions={0,1}
+  %mul.311 = f64[7]{0} reshape(%mul.310)
+  %mul.312 = f64[65,7]{1,0} broadcast(%mul.311), dimensions={1}
+  %mul.313 = f64[65,7]{1,0} multiply(%rev.42, %mul.312)
+  %slice.99 = f64[65,1]{1,0} slice(%mul.313), slice={[0:65], [3:4]}
+  %mul.316 = f64[65,1]{1,0} multiply(%slice.99, %broadcast.39)
+  %jit_atleast_1d_.126 = f64[65,1]{1,0} call(%mul.316), to_apply=%atleast_1d_41.9
+  %convert_element_type.176 = c128[65,1]{1,0} convert(%jit_atleast_1d_.126)
+  %slice.97 = f64[65,3]{1,0} slice(%mul.313), slice={[0:65], [4:7]}
+  %convert_element_type.175 = c128[65,3]{1,0} convert(%slice.97)
+  %slice.98 = f64[65,3]{1,0} slice(%mul.313), slice={[0:65], [0:3]}
+  %rev.43 = f64[65,3]{1,0} reverse(%slice.98), dimensions={1}
+  %convert_element_type.174 = c128[65,3]{1,0} convert(%rev.43)
+  %mul.314 = c128[65,3]{1,0} multiply(%convert_element_type.174, %broadcast.41)
+  %sub.56 = c128[65,3]{1,0} subtract(%convert_element_type.175, %mul.314)
+  %mul.315 = c128[65,3]{1,0} multiply(%sub.56, %broadcast.40)
+  %jit_atleast_1d_.127 = c128[65,3]{1,0} call(%mul.315), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.128 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.177 = c128[65,6]{1,0} convert(%jit_atleast_1d_.128)
+  %real.54 = f64[65,3]{1,0} real(%mul.315)
+  %imag.27 = f64[65,3]{1,0} imag(%mul.315)
+  %neg.42 = f64[65,3]{1,0} negate(%imag.27)
+  %complex.27 = c128[65,3]{1,0} complex(%real.54, %neg.42)
+  %jit__flip_.27 = c128[65,3]{1,0} call(%complex.27), to_apply=%_flip.8
+  %jit_atleast_1d_.129 = c128[65,3]{1,0} call(%jit__flip_.27), to_apply=%atleast_1d_42.10
+  %concatenate.44 = c128[65,13]{1,0} concatenate(%convert_element_type.176, %jit_atleast_1d_.127, %convert_element_type.177, %jit_atleast_1d_.129), dimensions={1}
+  %jit_fft_.27 = c128[65,13]{1,0} call(%concatenate.44), to_apply=%fft.12
+  %real.55 = f64[65,13]{1,0} real(%jit_fft_.27)
+  %dot_general.27 = f64[49,13]{1,0} dot(%Arg_8.1, %real.55), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.78 = f64[13,49]{0,1} transpose(%dot_general.27), dimensions={1,0}
+  %broadcast_in_dim_reshape.13 = f64[1,637]{1,0} reshape(%reshape.78)
+  %broadcast_in_dim_reshape.14 = f64[1,637]{1,0} reshape(%reshape.81)
+  %Arg_16.1 = f64[49,65]{1,0} parameter(16)
+  %lt.54 = pred[225]{0} compare(%Arg_23.1, %broadcast.45), direction=LT
+  %add.124 = s64[225]{0} add(%Arg_23.1, %broadcast.42)
+  %select_n.50 = s64[225]{0} select(%lt.54, %add.124, %Arg_23.1)
+  %convert_element_type.166 = s32[225]{0} convert(%select_n.50)
+  %broadcast_in_dim.96 = s32[225,1]{1,0} reshape(%convert_element_type.166)
+  %scatter.130 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.96, %Arg_31.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_0.7
+  %reshape.75 = f64[65,7]{1,0} reshape(%scatter.130)
+  %rev.40 = f64[65,7]{1,0} reverse(%reshape.75), dimensions={1}
+  %Arg_22.1 = s64[1,7]{1,0} parameter(22)
+  %convert_element_type.167 = f64[1,7]{1,0} convert(%Arg_22.1)
+  %mul.303 = f64[1,7]{1,0} broadcast(%convert_element_type.167), dimensions={0,1}
+  %mul.304 = f64[7]{0} reshape(%mul.303)
+  %mul.305 = f64[65,7]{1,0} broadcast(%mul.304), dimensions={1}
+  %mul.306 = f64[65,7]{1,0} multiply(%rev.40, %mul.305)
+  %slice.96 = f64[65,1]{1,0} slice(%mul.306), slice={[0:65], [3:4]}
+  %mul.309 = f64[65,1]{1,0} multiply(%slice.96, %broadcast.39)
+  %jit_atleast_1d_.122 = f64[65,1]{1,0} call(%mul.309), to_apply=%atleast_1d_41.9
+  %convert_element_type.170 = c128[65,1]{1,0} convert(%jit_atleast_1d_.122)
+  %slice.94 = f64[65,3]{1,0} slice(%mul.306), slice={[0:65], [4:7]}
+  %convert_element_type.169 = c128[65,3]{1,0} convert(%slice.94)
+  %slice.95 = f64[65,3]{1,0} slice(%mul.306), slice={[0:65], [0:3]}
+  %rev.41 = f64[65,3]{1,0} reverse(%slice.95), dimensions={1}
+  %convert_element_type.168 = c128[65,3]{1,0} convert(%rev.41)
+  %mul.307 = c128[65,3]{1,0} multiply(%convert_element_type.168, %broadcast.41)
+  %sub.55 = c128[65,3]{1,0} subtract(%convert_element_type.169, %mul.307)
+  %mul.308 = c128[65,3]{1,0} multiply(%sub.55, %broadcast.40)
+  %jit_atleast_1d_.123 = c128[65,3]{1,0} call(%mul.308), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.124 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.171 = c128[65,6]{1,0} convert(%jit_atleast_1d_.124)
+  %real.52 = f64[65,3]{1,0} real(%mul.308)
+  %imag.26 = f64[65,3]{1,0} imag(%mul.308)
+  %neg.41 = f64[65,3]{1,0} negate(%imag.26)
+  %complex.26 = c128[65,3]{1,0} complex(%real.52, %neg.41)
+  %jit__flip_.26 = c128[65,3]{1,0} call(%complex.26), to_apply=%_flip.8
+  %jit_atleast_1d_.125 = c128[65,3]{1,0} call(%jit__flip_.26), to_apply=%atleast_1d_42.10
+  %concatenate.43 = c128[65,13]{1,0} concatenate(%convert_element_type.170, %jit_atleast_1d_.123, %convert_element_type.171, %jit_atleast_1d_.125), dimensions={1}
+  %jit_fft_.26 = c128[65,13]{1,0} call(%concatenate.43), to_apply=%fft.12
+  %real.53 = f64[65,13]{1,0} real(%jit_fft_.26)
+  %dot_general.26 = f64[49,13]{1,0} dot(%Arg_16.1, %real.53), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.76 = f64[13,49]{0,1} transpose(%dot_general.26), dimensions={1,0}
+  %broadcast_in_dim_reshape.15 = f64[1,637]{1,0} reshape(%reshape.76)
+  %concatenate.46 = f64[3,637]{1,0} concatenate(%broadcast_in_dim_reshape.13, %broadcast_in_dim_reshape.14, %broadcast_in_dim_reshape.15), dimensions={0}
+  %transpose.19 = f64[637,3]{0,1} transpose(%concatenate.46), dimensions={1,0}
+  %jit_cross_.16 = f64[637,3]{0,1} call(%transpose.23, %transpose.19), to_apply=%cross.26
+  %mul.377 = f64[637,3]{0,1} multiply(%transpose.24, %jit_cross_.16)
+  %constant.92 = f64[] constant(0)
+  %reduce_sum.172 = f64[637]{0} reduce(%mul.377, %constant.92), dimensions={1}, to_apply=%region_17.30
+  %abs.5 = f64[637]{0} abs(%reduce_sum.172)
+  %le.5 = pred[637]{0} compare(%abs.5, %broadcast.43), direction=LE
+  %constant.91 = s64[] constant(0)
+  %Arg_29.1 = f64[1]{0} parameter(29)
+  %mul.398 = f64[1]{0} broadcast(%Arg_29.1), dimensions={0}
+  %mul.399 = f64[] reshape(%mul.398)
+  %mul.400 = f64[637]{0} broadcast(%mul.399), dimensions={}
+  %Arg_24.1 = f64[637,3]{1,0} parameter(24)
+  %slice.145 = f64[637,1]{1,0} slice(%Arg_24.1), slice={[0:637], [0:1]}
+  %squeeze.21 = f64[637]{0} reshape(%slice.145)
+  %mul.401 = f64[637]{0} multiply(%mul.400, %squeeze.21)
+  %constant.80 = f64[] constant(3.1415926535897931)
+  %broadcast.34 = f64[637]{0} broadcast(%constant.80), dimensions={}
+  %div.15 = f64[637]{0} divide(%mul.401, %broadcast.34)
+  %jit__where_.14 = f64[637]{0} call(%le.5, %constant.91, %div.15), to_apply=%_where_114.49
+  %constant.90 = s64[] constant(1)
+  %jit__where_.15 = f64[637]{0} call(%le.5, %constant.90, %reduce_sum.172), to_apply=%_where_114.49
+  %div.16 = f64[637]{0} divide(%jit__where_.14, %jit__where_.15)
+  %Arg_32.1 = f64[13]{0} parameter(32)
+  %broadcast_in_dim.121 = f64[1,13]{1,0} reshape(%Arg_32.1)
+  %constant.79 = f64[] constant(0)
+  %broadcast.33 = f64[1,13]{1,0} broadcast(%constant.79), dimensions={}
+  %concatenate.66 = f64[2,13]{1,0} concatenate(%broadcast_in_dim.121, %broadcast.33), dimensions={0}
+  %reshape.120 = f64[13,2]{0,1} transpose(%concatenate.66), dimensions={1,0}
+  %reshape.121 = f64[26]{0} reshape(%reshape.120)
+  %rev.63 = f64[26]{0} reverse(%reshape.121), dimensions={0}
+  %jit_atleast_2d_.9 = f64[1,26]{1,0} call(%rev.63), to_apply=%atleast_2d.34
+  %jit__polyder_jax_.3 = f64[1,26]{1,0} call(%jit_atleast_2d_.9, %constant.91), to_apply=%_polyder_jax.42
+  %slice.146 = f64[637,1]{1,0} slice(%Arg_24.1), slice={[0:637], [0:1]}
+  %squeeze.22 = f64[637]{0} reshape(%slice.146)
+  %jit__polyval_jax_.3 = f64[1,637]{1,0} call(%jit__polyder_jax_.3, %squeeze.22), to_apply=%_polyval_jax.48
+  %squeeze.23 = f64[637]{0} reshape(%jit__polyval_jax_.3)
+  %neg.61 = f64[637]{0} negate(%squeeze.23)
+  %mul.402 = f64[637]{0} multiply(%neg.61, %broadcast.43)
+  %Arg_2.11 = f64[49,65]{1,0} parameter(2)
+  %Arg_7.1 = s64[225]{0} parameter(7)
+  %lt.57 = pred[225]{0} compare(%Arg_7.1, %broadcast.45), direction=LT
+  %add.127 = s64[225]{0} add(%Arg_7.1, %broadcast.42)
+  %select_n.53 = s64[225]{0} select(%lt.57, %add.127, %Arg_7.1)
+  %convert_element_type.183 = s32[225]{0} convert(%select_n.53)
+  %broadcast_in_dim.99 = s32[225,1]{1,0} reshape(%convert_element_type.183)
+  %Arg_28.1 = f64[225]{0} parameter(28)
+  %scatter.133 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.99, %Arg_28.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_3.15
+  %reshape.83 = f64[65,7]{1,0} reshape(%scatter.133)
+  %slice.105 = f64[65,1]{1,0} slice(%reshape.83), slice={[0:65], [3:4]}
+  %mul.322 = f64[65,1]{1,0} multiply(%slice.105, %broadcast.39)
+  %jit_atleast_1d_.134 = f64[65,1]{1,0} call(%mul.322), to_apply=%atleast_1d_41.9
+  %convert_element_type.186 = c128[65,1]{1,0} convert(%jit_atleast_1d_.134)
+  %slice.103 = f64[65,3]{1,0} slice(%reshape.83), slice={[0:65], [4:7]}
+  %convert_element_type.185 = c128[65,3]{1,0} convert(%slice.103)
+  %slice.104 = f64[65,3]{1,0} slice(%reshape.83), slice={[0:65], [0:3]}
+  %rev.45 = f64[65,3]{1,0} reverse(%slice.104), dimensions={1}
+  %convert_element_type.184 = c128[65,3]{1,0} convert(%rev.45)
+  %mul.320 = c128[65,3]{1,0} multiply(%convert_element_type.184, %broadcast.41)
+  %sub.58 = c128[65,3]{1,0} subtract(%convert_element_type.185, %mul.320)
+  %mul.321 = c128[65,3]{1,0} multiply(%sub.58, %broadcast.40)
+  %jit_atleast_1d_.135 = c128[65,3]{1,0} call(%mul.321), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.136 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.187 = c128[65,6]{1,0} convert(%jit_atleast_1d_.136)
+  %real.58 = f64[65,3]{1,0} real(%mul.321)
+  %imag.29 = f64[65,3]{1,0} imag(%mul.321)
+  %neg.44 = f64[65,3]{1,0} negate(%imag.29)
+  %complex.29 = c128[65,3]{1,0} complex(%real.58, %neg.44)
+  %jit__flip_.29 = c128[65,3]{1,0} call(%complex.29), to_apply=%_flip.8
+  %jit_atleast_1d_.137 = c128[65,3]{1,0} call(%jit__flip_.29), to_apply=%atleast_1d_42.10
+  %concatenate.47 = c128[65,13]{1,0} concatenate(%convert_element_type.186, %jit_atleast_1d_.135, %convert_element_type.187, %jit_atleast_1d_.137), dimensions={1}
+  %jit_fft_.29 = c128[65,13]{1,0} call(%concatenate.47), to_apply=%fft.12
+  %real.59 = f64[65,13]{1,0} real(%jit_fft_.29)
+  %dot_general.29 = f64[49,13]{1,0} dot(%Arg_2.11, %real.59), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.84 = f64[13,49]{0,1} transpose(%dot_general.29), dimensions={1,0}
+  %reshape.85 = f64[637]{0} reshape(%reshape.84)
+  %constant.82 = f64[] constant(1)
+  %add.123 = f64[637]{0} broadcast(%constant.82), dimensions={}
+  %add.128 = f64[637]{0} add(%reshape.85, %add.123)
+  %add.152 = f64[637]{0} add(%mul.402, %add.128)
+  %mul.403 = f64[637]{0} multiply(%div.16, %add.152)
+  %mul.494 = f64[637]{0} multiply(%squeeze.23, %broadcast.43)
+  %Arg_1.21 = f64[49,65]{1,0} parameter(1)
+  %lt.79 = pred[225]{0} compare(%Arg_7.1, %broadcast.45), direction=LT
+  %add.173 = s64[225]{0} add(%Arg_7.1, %broadcast.42)
+  %select_n.75 = s64[225]{0} select(%lt.79, %add.173, %Arg_7.1)
+  %convert_element_type.302 = s32[225]{0} convert(%select_n.75)
+  %broadcast_in_dim.139 = s32[225,1]{1,0} reshape(%convert_element_type.302)
+  %scatter.155 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.139, %Arg_28.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_39.65
+  %reshape.143 = f64[65,7]{1,0} reshape(%scatter.155)
+  %Arg_6.1 = s64[1,7]{1,0} parameter(6)
+  %integer_pow.8 = s64[1,7]{1,0} multiply(%Arg_6.1, %Arg_6.1)
+  %convert_element_type.303 = f64[1,7]{1,0} convert(%integer_pow.8)
+  %mul.474 = f64[1,7]{1,0} broadcast(%convert_element_type.303), dimensions={0,1}
+  %mul.475 = f64[7]{0} reshape(%mul.474)
+  %mul.476 = f64[65,7]{1,0} broadcast(%mul.475), dimensions={1}
+  %mul.477 = f64[65,7]{1,0} multiply(%reshape.143, %mul.476)
+  %constant.78 = f64[] constant(-1)
+  %broadcast.32 = f64[65,7]{1,0} broadcast(%constant.78), dimensions={}
+  %mul.478 = f64[65,7]{1,0} multiply(%mul.477, %broadcast.32)
+  %slice.173 = f64[65,1]{1,0} slice(%mul.478), slice={[0:65], [3:4]}
+  %mul.481 = f64[65,1]{1,0} multiply(%slice.173, %broadcast.39)
+  %jit_atleast_1d_.222 = f64[65,1]{1,0} call(%mul.481), to_apply=%atleast_1d_41.9
+  %convert_element_type.306 = c128[65,1]{1,0} convert(%jit_atleast_1d_.222)
+  %slice.171 = f64[65,3]{1,0} slice(%mul.478), slice={[0:65], [4:7]}
+  %convert_element_type.305 = c128[65,3]{1,0} convert(%slice.171)
+  %slice.172 = f64[65,3]{1,0} slice(%mul.478), slice={[0:65], [0:3]}
+  %rev.75 = f64[65,3]{1,0} reverse(%slice.172), dimensions={1}
+  %convert_element_type.304 = c128[65,3]{1,0} convert(%rev.75)
+  %mul.479 = c128[65,3]{1,0} multiply(%convert_element_type.304, %broadcast.41)
+  %sub.81 = c128[65,3]{1,0} subtract(%convert_element_type.305, %mul.479)
+  %mul.480 = c128[65,3]{1,0} multiply(%sub.81, %broadcast.40)
+  %jit_atleast_1d_.223 = c128[65,3]{1,0} call(%mul.480), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.224 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.307 = c128[65,6]{1,0} convert(%jit_atleast_1d_.224)
+  %real.102 = f64[65,3]{1,0} real(%mul.480)
+  %imag.51 = f64[65,3]{1,0} imag(%mul.480)
+  %neg.73 = f64[65,3]{1,0} negate(%imag.51)
+  %complex.51 = c128[65,3]{1,0} complex(%real.102, %neg.73)
+  %jit__flip_.51 = c128[65,3]{1,0} call(%complex.51), to_apply=%_flip.8
+  %jit_atleast_1d_.225 = c128[65,3]{1,0} call(%jit__flip_.51), to_apply=%atleast_1d_42.10
+  %concatenate.78 = c128[65,13]{1,0} concatenate(%convert_element_type.306, %jit_atleast_1d_.223, %convert_element_type.307, %jit_atleast_1d_.225), dimensions={1}
+  %jit_fft_.51 = c128[65,13]{1,0} call(%concatenate.78), to_apply=%fft.12
+  %real.103 = f64[65,13]{1,0} real(%jit_fft_.51)
+  %dot_general.51 = f64[49,13]{1,0} dot(%Arg_1.21, %real.103), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.144 = f64[13,49]{0,1} transpose(%dot_general.51), dimensions={1,0}
+  %reshape.145 = f64[637]{0} reshape(%reshape.144)
+  %sub.84 = f64[637]{0} subtract(%mul.494, %reshape.145)
+  %mul.495 = f64[637]{0} multiply(%div.16, %sub.84)
+  %integer_pow.9 = f64[637]{0} multiply(%reduce_sum.172, %reduce_sum.172)
+  %abs.7 = f64[637]{0} abs(%integer_pow.9)
+  %le.7 = pred[637]{0} compare(%abs.7, %broadcast.43), direction=LE
+  %neg.74 = f64[637]{0} negate(%div.15)
+  %neg.51 = f64[637]{0} negate(%reshape.82)
+  %mul.349 = f64[637]{0} multiply(%neg.51, %broadcast.43)
+  %lt.58 = pred[230]{0} compare(%Arg_15.1, %broadcast.37), direction=LT
+  %add.129 = s64[230]{0} add(%Arg_15.1, %broadcast.36)
+  %select_n.54 = s64[230]{0} select(%lt.58, %add.129, %Arg_15.1)
+  %convert_element_type.188 = s32[230]{0} convert(%select_n.54)
+  %broadcast_in_dim.100 = s32[230,1]{1,0} reshape(%convert_element_type.188)
+  %scatter.134 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.100, %Arg_30.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_4.16
+  %reshape.86 = f64[65,7]{1,0} reshape(%scatter.134)
+  %rev.46 = f64[65,7]{1,0} reverse(%reshape.86), dimensions={1}
+  %convert_element_type.189 = f64[1,7]{1,0} convert(%Arg_14.1)
+  %mul.323 = f64[1,7]{1,0} broadcast(%convert_element_type.189), dimensions={0,1}
+  %mul.324 = f64[7]{0} reshape(%mul.323)
+  %mul.325 = f64[65,7]{1,0} broadcast(%mul.324), dimensions={1}
+  %mul.326 = f64[65,7]{1,0} multiply(%rev.46, %mul.325)
+  %slice.108 = f64[65,1]{1,0} slice(%mul.326), slice={[0:65], [3:4]}
+  %mul.329 = f64[65,1]{1,0} multiply(%slice.108, %broadcast.39)
+  %jit_atleast_1d_.138 = f64[65,1]{1,0} call(%mul.329), to_apply=%atleast_1d_41.9
+  %convert_element_type.192 = c128[65,1]{1,0} convert(%jit_atleast_1d_.138)
+  %slice.106 = f64[65,3]{1,0} slice(%mul.326), slice={[0:65], [4:7]}
+  %convert_element_type.191 = c128[65,3]{1,0} convert(%slice.106)
+  %slice.107 = f64[65,3]{1,0} slice(%mul.326), slice={[0:65], [0:3]}
+  %rev.47 = f64[65,3]{1,0} reverse(%slice.107), dimensions={1}
+  %convert_element_type.190 = c128[65,3]{1,0} convert(%rev.47)
+  %mul.327 = c128[65,3]{1,0} multiply(%convert_element_type.190, %broadcast.41)
+  %sub.59 = c128[65,3]{1,0} subtract(%convert_element_type.191, %mul.327)
+  %mul.328 = c128[65,3]{1,0} multiply(%sub.59, %broadcast.40)
+  %jit_atleast_1d_.139 = c128[65,3]{1,0} call(%mul.328), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.140 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.193 = c128[65,6]{1,0} convert(%jit_atleast_1d_.140)
+  %real.60 = f64[65,3]{1,0} real(%mul.328)
+  %imag.30 = f64[65,3]{1,0} imag(%mul.328)
+  %neg.45 = f64[65,3]{1,0} negate(%imag.30)
+  %complex.30 = c128[65,3]{1,0} complex(%real.60, %neg.45)
+  %jit__flip_.30 = c128[65,3]{1,0} call(%complex.30), to_apply=%_flip.8
+  %jit_atleast_1d_.141 = c128[65,3]{1,0} call(%jit__flip_.30), to_apply=%atleast_1d_42.10
+  %concatenate.48 = c128[65,13]{1,0} concatenate(%convert_element_type.192, %jit_atleast_1d_.139, %convert_element_type.193, %jit_atleast_1d_.141), dimensions={1}
+  %jit_fft_.30 = c128[65,13]{1,0} call(%concatenate.48), to_apply=%fft.12
+  %real.61 = f64[65,13]{1,0} real(%jit_fft_.30)
+  %dot_general.30 = f64[49,13]{1,0} dot(%Arg_11.1, %real.61), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.87 = f64[13,49]{0,1} transpose(%dot_general.30), dimensions={1,0}
+  %reshape.88 = f64[637]{0} reshape(%reshape.87)
+  %add.135 = f64[637]{0} add(%mul.349, %reshape.88)
+  %broadcast_in_dim.106 = f64[1,637]{1,0} reshape(%add.135)
+  %reshape.94 = f64[637]{0} reshape(%reshape.93)
+  %reshape.79 = f64[637]{0} reshape(%reshape.78)
+  %mul.350 = f64[637]{0} multiply(%reshape.79, %broadcast.43)
+  %add.136 = f64[637]{0} add(%reshape.94, %mul.350)
+  %mul.351 = f64[637]{0} multiply(%reshape.82, %broadcast.43)
+  %add.137 = f64[637]{0} add(%add.136, %mul.351)
+  %broadcast_in_dim.107 = f64[1,637]{1,0} reshape(%add.137)
+  %lt.63 = pred[225]{0} compare(%Arg_23.1, %broadcast.45), direction=LT
+  %add.134 = s64[225]{0} add(%Arg_23.1, %broadcast.42)
+  %select_n.59 = s64[225]{0} select(%lt.63, %add.134, %Arg_23.1)
+  %convert_element_type.214 = s32[225]{0} convert(%select_n.59)
+  %broadcast_in_dim.105 = s32[225,1]{1,0} reshape(%convert_element_type.214)
+  %scatter.139 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.105, %Arg_31.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_9.21
+  %reshape.101 = f64[65,7]{1,0} reshape(%scatter.139)
+  %rev.52 = f64[65,7]{1,0} reverse(%reshape.101), dimensions={1}
+  %convert_element_type.215 = f64[1,7]{1,0} convert(%Arg_22.1)
+  %mul.342 = f64[1,7]{1,0} broadcast(%convert_element_type.215), dimensions={0,1}
+  %mul.343 = f64[7]{0} reshape(%mul.342)
+  %mul.344 = f64[65,7]{1,0} broadcast(%mul.343), dimensions={1}
+  %mul.345 = f64[65,7]{1,0} multiply(%rev.52, %mul.344)
+  %slice.123 = f64[65,1]{1,0} slice(%mul.345), slice={[0:65], [3:4]}
+  %mul.348 = f64[65,1]{1,0} multiply(%slice.123, %broadcast.39)
+  %jit_atleast_1d_.158 = f64[65,1]{1,0} call(%mul.348), to_apply=%atleast_1d_41.9
+  %convert_element_type.218 = c128[65,1]{1,0} convert(%jit_atleast_1d_.158)
+  %slice.121 = f64[65,3]{1,0} slice(%mul.345), slice={[0:65], [4:7]}
+  %convert_element_type.217 = c128[65,3]{1,0} convert(%slice.121)
+  %slice.122 = f64[65,3]{1,0} slice(%mul.345), slice={[0:65], [0:3]}
+  %rev.53 = f64[65,3]{1,0} reverse(%slice.122), dimensions={1}
+  %convert_element_type.216 = c128[65,3]{1,0} convert(%rev.53)
+  %mul.346 = c128[65,3]{1,0} multiply(%convert_element_type.216, %broadcast.41)
+  %sub.64 = c128[65,3]{1,0} subtract(%convert_element_type.217, %mul.346)
+  %mul.347 = c128[65,3]{1,0} multiply(%sub.64, %broadcast.40)
+  %jit_atleast_1d_.159 = c128[65,3]{1,0} call(%mul.347), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.160 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.219 = c128[65,6]{1,0} convert(%jit_atleast_1d_.160)
+  %real.70 = f64[65,3]{1,0} real(%mul.347)
+  %imag.35 = f64[65,3]{1,0} imag(%mul.347)
+  %neg.50 = f64[65,3]{1,0} negate(%imag.35)
+  %complex.35 = c128[65,3]{1,0} complex(%real.70, %neg.50)
+  %jit__flip_.35 = c128[65,3]{1,0} call(%complex.35), to_apply=%_flip.8
+  %jit_atleast_1d_.161 = c128[65,3]{1,0} call(%jit__flip_.35), to_apply=%atleast_1d_42.10
+  %concatenate.53 = c128[65,13]{1,0} concatenate(%convert_element_type.218, %jit_atleast_1d_.159, %convert_element_type.219, %jit_atleast_1d_.161), dimensions={1}
+  %jit_fft_.35 = c128[65,13]{1,0} call(%concatenate.53), to_apply=%fft.12
+  %real.71 = f64[65,13]{1,0} real(%jit_fft_.35)
+  %dot_general.35 = f64[49,13]{1,0} dot(%Arg_19.1, %real.71), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.102 = f64[13,49]{0,1} transpose(%dot_general.35), dimensions={1,0}
+  %broadcast_in_dim_reshape.16 = f64[1,637]{1,0} reshape(%reshape.102)
+  %concatenate.54 = f64[3,637]{1,0} concatenate(%broadcast_in_dim.106, %broadcast_in_dim.107, %broadcast_in_dim_reshape.16), dimensions={0}
+  %transpose.20 = f64[637,3]{0,1} transpose(%concatenate.54), dimensions={1,0}
+  %jit_cross_.21 = f64[637,3]{0,1} call(%transpose.23, %transpose.19), to_apply=%cross.26
+  %mul.461 = f64[637,3]{0,1} multiply(%transpose.20, %jit_cross_.21)
+  %reduce_sum.176 = f64[637]{0} reduce(%mul.461, %constant.92), dimensions={1}, to_apply=%region_34.60
+  %neg.64 = f64[637]{0} negate(%reshape.82)
+  %mul.427 = f64[637]{0} multiply(%neg.64, %broadcast.43)
+  %lt.72 = pred[230]{0} compare(%Arg_15.1, %broadcast.37), direction=LT
+  %add.155 = s64[230]{0} add(%Arg_15.1, %broadcast.36)
+  %select_n.68 = s64[230]{0} select(%lt.72, %add.155, %Arg_15.1)
+  %convert_element_type.263 = s32[230]{0} convert(%select_n.68)
+  %broadcast_in_dim.126 = s32[230,1]{1,0} reshape(%convert_element_type.263)
+  %scatter.148 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.126, %Arg_30.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_26.52
+  %reshape.124 = f64[65,7]{1,0} reshape(%scatter.148)
+  %rev.66 = f64[65,7]{1,0} reverse(%reshape.124), dimensions={1}
+  %convert_element_type.264 = f64[1,7]{1,0} convert(%Arg_14.1)
+  %mul.420 = f64[1,7]{1,0} broadcast(%convert_element_type.264), dimensions={0,1}
+  %mul.421 = f64[7]{0} reshape(%mul.420)
+  %mul.422 = f64[65,7]{1,0} broadcast(%mul.421), dimensions={1}
+  %mul.423 = f64[65,7]{1,0} multiply(%rev.66, %mul.422)
+  %slice.152 = f64[65,1]{1,0} slice(%mul.423), slice={[0:65], [3:4]}
+  %mul.426 = f64[65,1]{1,0} multiply(%slice.152, %broadcast.39)
+  %jit_atleast_1d_.194 = f64[65,1]{1,0} call(%mul.426), to_apply=%atleast_1d_41.9
+  %convert_element_type.267 = c128[65,1]{1,0} convert(%jit_atleast_1d_.194)
+  %slice.150 = f64[65,3]{1,0} slice(%mul.423), slice={[0:65], [4:7]}
+  %convert_element_type.266 = c128[65,3]{1,0} convert(%slice.150)
+  %slice.151 = f64[65,3]{1,0} slice(%mul.423), slice={[0:65], [0:3]}
+  %rev.67 = f64[65,3]{1,0} reverse(%slice.151), dimensions={1}
+  %convert_element_type.265 = c128[65,3]{1,0} convert(%rev.67)
+  %mul.424 = c128[65,3]{1,0} multiply(%convert_element_type.265, %broadcast.41)
+  %sub.74 = c128[65,3]{1,0} subtract(%convert_element_type.266, %mul.424)
+  %mul.425 = c128[65,3]{1,0} multiply(%sub.74, %broadcast.40)
+  %jit_atleast_1d_.195 = c128[65,3]{1,0} call(%mul.425), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.196 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.268 = c128[65,6]{1,0} convert(%jit_atleast_1d_.196)
+  %real.88 = f64[65,3]{1,0} real(%mul.425)
+  %imag.44 = f64[65,3]{1,0} imag(%mul.425)
+  %neg.63 = f64[65,3]{1,0} negate(%imag.44)
+  %complex.44 = c128[65,3]{1,0} complex(%real.88, %neg.63)
+  %jit__flip_.44 = c128[65,3]{1,0} call(%complex.44), to_apply=%_flip.8
+  %jit_atleast_1d_.197 = c128[65,3]{1,0} call(%jit__flip_.44), to_apply=%atleast_1d_42.10
+  %concatenate.68 = c128[65,13]{1,0} concatenate(%convert_element_type.267, %jit_atleast_1d_.195, %convert_element_type.268, %jit_atleast_1d_.197), dimensions={1}
+  %jit_fft_.44 = c128[65,13]{1,0} call(%concatenate.68), to_apply=%fft.12
+  %real.89 = f64[65,13]{1,0} real(%jit_fft_.44)
+  %dot_general.44 = f64[49,13]{1,0} dot(%Arg_9.1, %real.89), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.125 = f64[13,49]{0,1} transpose(%dot_general.44), dimensions={1,0}
+  %reshape.126 = f64[637]{0} reshape(%reshape.125)
+  %add.156 = f64[637]{0} add(%mul.427, %reshape.126)
+  %broadcast_in_dim.127 = f64[1,637]{1,0} reshape(%add.156)
+  %reshape.97 = f64[637]{0} reshape(%reshape.96)
+  %mul.428 = f64[637]{0} multiply(%reshape.79, %broadcast.43)
+  %add.157 = f64[637]{0} add(%reshape.97, %mul.428)
+  %mul.429 = f64[637]{0} multiply(%reshape.82, %broadcast.43)
+  %add.158 = f64[637]{0} add(%add.157, %mul.429)
+  %broadcast_in_dim.128 = f64[1,637]{1,0} reshape(%add.158)
+  %lt.71 = pred[225]{0} compare(%Arg_23.1, %broadcast.45), direction=LT
+  %add.154 = s64[225]{0} add(%Arg_23.1, %broadcast.42)
+  %select_n.67 = s64[225]{0} select(%lt.71, %add.154, %Arg_23.1)
+  %convert_element_type.257 = s32[225]{0} convert(%select_n.67)
+  %broadcast_in_dim.125 = s32[225,1]{1,0} reshape(%convert_element_type.257)
+  %scatter.147 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.125, %Arg_31.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_25.51
+  %reshape.122 = f64[65,7]{1,0} reshape(%scatter.147)
+  %rev.64 = f64[65,7]{1,0} reverse(%reshape.122), dimensions={1}
+  %convert_element_type.258 = f64[1,7]{1,0} convert(%Arg_22.1)
+  %mul.413 = f64[1,7]{1,0} broadcast(%convert_element_type.258), dimensions={0,1}
+  %mul.414 = f64[7]{0} reshape(%mul.413)
+  %mul.415 = f64[65,7]{1,0} broadcast(%mul.414), dimensions={1}
+  %mul.416 = f64[65,7]{1,0} multiply(%rev.64, %mul.415)
+  %slice.149 = f64[65,1]{1,0} slice(%mul.416), slice={[0:65], [3:4]}
+  %mul.419 = f64[65,1]{1,0} multiply(%slice.149, %broadcast.39)
+  %jit_atleast_1d_.190 = f64[65,1]{1,0} call(%mul.419), to_apply=%atleast_1d_41.9
+  %convert_element_type.261 = c128[65,1]{1,0} convert(%jit_atleast_1d_.190)
+  %slice.147 = f64[65,3]{1,0} slice(%mul.416), slice={[0:65], [4:7]}
+  %convert_element_type.260 = c128[65,3]{1,0} convert(%slice.147)
+  %slice.148 = f64[65,3]{1,0} slice(%mul.416), slice={[0:65], [0:3]}
+  %rev.65 = f64[65,3]{1,0} reverse(%slice.148), dimensions={1}
+  %convert_element_type.259 = c128[65,3]{1,0} convert(%rev.65)
+  %mul.417 = c128[65,3]{1,0} multiply(%convert_element_type.259, %broadcast.41)
+  %sub.73 = c128[65,3]{1,0} subtract(%convert_element_type.260, %mul.417)
+  %mul.418 = c128[65,3]{1,0} multiply(%sub.73, %broadcast.40)
+  %jit_atleast_1d_.191 = c128[65,3]{1,0} call(%mul.418), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.192 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.262 = c128[65,6]{1,0} convert(%jit_atleast_1d_.192)
+  %real.86 = f64[65,3]{1,0} real(%mul.418)
+  %imag.43 = f64[65,3]{1,0} imag(%mul.418)
+  %neg.62 = f64[65,3]{1,0} negate(%imag.43)
+  %complex.43 = c128[65,3]{1,0} complex(%real.86, %neg.62)
+  %jit__flip_.43 = c128[65,3]{1,0} call(%complex.43), to_apply=%_flip.8
+  %jit_atleast_1d_.193 = c128[65,3]{1,0} call(%jit__flip_.43), to_apply=%atleast_1d_42.10
+  %concatenate.67 = c128[65,13]{1,0} concatenate(%convert_element_type.261, %jit_atleast_1d_.191, %convert_element_type.262, %jit_atleast_1d_.193), dimensions={1}
+  %jit_fft_.43 = c128[65,13]{1,0} call(%concatenate.67), to_apply=%fft.12
+  %real.87 = f64[65,13]{1,0} real(%jit_fft_.43)
+  %dot_general.43 = f64[49,13]{1,0} dot(%Arg_17.1, %real.87), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.123 = f64[13,49]{0,1} transpose(%dot_general.43), dimensions={1,0}
+  %broadcast_in_dim_reshape.23 = f64[1,637]{1,0} reshape(%reshape.123)
+  %concatenate.69 = f64[3,637]{1,0} concatenate(%broadcast_in_dim.127, %broadcast_in_dim.128, %broadcast_in_dim_reshape.23), dimensions={0}
+  %transpose.27 = f64[637,3]{0,1} transpose(%concatenate.69), dimensions={1,0}
+  %jit_cross_.22 = f64[637,3]{0,1} call(%transpose.27, %transpose.19), to_apply=%cross.26
+  %mul.462 = f64[637,3]{0,1} multiply(%transpose.24, %jit_cross_.22)
+  %reduce_sum.177 = f64[637]{0} reduce(%mul.462, %constant.92), dimensions={1}, to_apply=%region_35.61
+  %add.169 = f64[637]{0} add(%reduce_sum.176, %reduce_sum.177)
+  %neg.70 = f64[637]{0} negate(%reshape.82)
+  %lt.76 = pred[230]{0} compare(%Arg_15.1, %broadcast.37), direction=LT
+  %add.166 = s64[230]{0} add(%Arg_15.1, %broadcast.36)
+  %select_n.72 = s64[230]{0} select(%lt.76, %add.166, %Arg_15.1)
+  %convert_element_type.285 = s32[230]{0} convert(%select_n.72)
+  %broadcast_in_dim.134 = s32[230,1]{1,0} reshape(%convert_element_type.285)
+  %scatter.152 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.134, %Arg_30.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_33.59
+  %reshape.134 = f64[65,7]{1,0} reshape(%scatter.152)
+  %integer_pow.7 = s64[1,7]{1,0} multiply(%Arg_14.1, %Arg_14.1)
+  %convert_element_type.286 = f64[1,7]{1,0} convert(%integer_pow.7)
+  %mul.451 = f64[1,7]{1,0} broadcast(%convert_element_type.286), dimensions={0,1}
+  %mul.452 = f64[7]{0} reshape(%mul.451)
+  %mul.453 = f64[65,7]{1,0} broadcast(%mul.452), dimensions={1}
+  %mul.454 = f64[65,7]{1,0} multiply(%reshape.134, %mul.453)
+  %mul.455 = f64[65,7]{1,0} multiply(%mul.454, %broadcast.32)
+  %slice.164 = f64[65,1]{1,0} slice(%mul.455), slice={[0:65], [3:4]}
+  %mul.458 = f64[65,1]{1,0} multiply(%slice.164, %broadcast.39)
+  %jit_atleast_1d_.210 = f64[65,1]{1,0} call(%mul.458), to_apply=%atleast_1d_41.9
+  %convert_element_type.289 = c128[65,1]{1,0} convert(%jit_atleast_1d_.210)
+  %slice.162 = f64[65,3]{1,0} slice(%mul.455), slice={[0:65], [4:7]}
+  %convert_element_type.288 = c128[65,3]{1,0} convert(%slice.162)
+  %slice.163 = f64[65,3]{1,0} slice(%mul.455), slice={[0:65], [0:3]}
+  %rev.71 = f64[65,3]{1,0} reverse(%slice.163), dimensions={1}
+  %convert_element_type.287 = c128[65,3]{1,0} convert(%rev.71)
+  %mul.456 = c128[65,3]{1,0} multiply(%convert_element_type.287, %broadcast.41)
+  %sub.78 = c128[65,3]{1,0} subtract(%convert_element_type.288, %mul.456)
+  %mul.457 = c128[65,3]{1,0} multiply(%sub.78, %broadcast.40)
+  %jit_atleast_1d_.211 = c128[65,3]{1,0} call(%mul.457), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.212 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.290 = c128[65,6]{1,0} convert(%jit_atleast_1d_.212)
+  %real.96 = f64[65,3]{1,0} real(%mul.457)
+  %imag.48 = f64[65,3]{1,0} imag(%mul.457)
+  %neg.69 = f64[65,3]{1,0} negate(%imag.48)
+  %complex.48 = c128[65,3]{1,0} complex(%real.96, %neg.69)
+  %jit__flip_.48 = c128[65,3]{1,0} call(%complex.48), to_apply=%_flip.8
+  %jit_atleast_1d_.213 = c128[65,3]{1,0} call(%jit__flip_.48), to_apply=%atleast_1d_42.10
+  %concatenate.74 = c128[65,13]{1,0} concatenate(%convert_element_type.289, %jit_atleast_1d_.211, %convert_element_type.290, %jit_atleast_1d_.213), dimensions={1}
+  %jit_fft_.48 = c128[65,13]{1,0} call(%concatenate.74), to_apply=%fft.12
+  %real.97 = f64[65,13]{1,0} real(%jit_fft_.48)
+  %dot_general.48 = f64[49,13]{1,0} dot(%Arg_8.1, %real.97), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.135 = f64[13,49]{0,1} transpose(%dot_general.48), dimensions={1,0}
+  %reshape.136 = f64[637]{0} reshape(%reshape.135)
+  %add.167 = f64[637]{0} add(%neg.70, %reshape.136)
+  %broadcast_in_dim.135 = f64[1,637]{1,0} reshape(%add.167)
+  %constant.81 = f64[] constant(2)
+  %broadcast.35 = f64[637]{0} broadcast(%constant.81), dimensions={}
+  %mul.459 = f64[637]{0} multiply(%reshape.79, %broadcast.35)
+  %mul.460 = f64[637]{0} multiply(%reshape.82, %broadcast.43)
+  %add.168 = f64[637]{0} add(%mul.459, %mul.460)
+  %broadcast_in_dim.136 = f64[1,637]{1,0} reshape(%add.168)
+  %lt.75 = pred[225]{0} compare(%Arg_23.1, %broadcast.45), direction=LT
+  %add.165 = s64[225]{0} add(%Arg_23.1, %broadcast.42)
+  %select_n.71 = s64[225]{0} select(%lt.75, %add.165, %Arg_23.1)
+  %convert_element_type.279 = s32[225]{0} convert(%select_n.71)
+  %broadcast_in_dim.133 = s32[225,1]{1,0} reshape(%convert_element_type.279)
+  %scatter.151 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.133, %Arg_31.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_32.58
+  %reshape.132 = f64[65,7]{1,0} reshape(%scatter.151)
+  %integer_pow.6 = s64[1,7]{1,0} multiply(%Arg_22.1, %Arg_22.1)
+  %convert_element_type.280 = f64[1,7]{1,0} convert(%integer_pow.6)
+  %mul.443 = f64[1,7]{1,0} broadcast(%convert_element_type.280), dimensions={0,1}
+  %mul.444 = f64[7]{0} reshape(%mul.443)
+  %mul.445 = f64[65,7]{1,0} broadcast(%mul.444), dimensions={1}
+  %mul.446 = f64[65,7]{1,0} multiply(%reshape.132, %mul.445)
+  %mul.447 = f64[65,7]{1,0} multiply(%mul.446, %broadcast.32)
+  %slice.161 = f64[65,1]{1,0} slice(%mul.447), slice={[0:65], [3:4]}
+  %mul.450 = f64[65,1]{1,0} multiply(%slice.161, %broadcast.39)
+  %jit_atleast_1d_.206 = f64[65,1]{1,0} call(%mul.450), to_apply=%atleast_1d_41.9
+  %convert_element_type.283 = c128[65,1]{1,0} convert(%jit_atleast_1d_.206)
+  %slice.159 = f64[65,3]{1,0} slice(%mul.447), slice={[0:65], [4:7]}
+  %convert_element_type.282 = c128[65,3]{1,0} convert(%slice.159)
+  %slice.160 = f64[65,3]{1,0} slice(%mul.447), slice={[0:65], [0:3]}
+  %rev.70 = f64[65,3]{1,0} reverse(%slice.160), dimensions={1}
+  %convert_element_type.281 = c128[65,3]{1,0} convert(%rev.70)
+  %mul.448 = c128[65,3]{1,0} multiply(%convert_element_type.281, %broadcast.41)
+  %sub.77 = c128[65,3]{1,0} subtract(%convert_element_type.282, %mul.448)
+  %mul.449 = c128[65,3]{1,0} multiply(%sub.77, %broadcast.40)
+  %jit_atleast_1d_.207 = c128[65,3]{1,0} call(%mul.449), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.208 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.284 = c128[65,6]{1,0} convert(%jit_atleast_1d_.208)
+  %real.94 = f64[65,3]{1,0} real(%mul.449)
+  %imag.47 = f64[65,3]{1,0} imag(%mul.449)
+  %neg.68 = f64[65,3]{1,0} negate(%imag.47)
+  %complex.47 = c128[65,3]{1,0} complex(%real.94, %neg.68)
+  %jit__flip_.47 = c128[65,3]{1,0} call(%complex.47), to_apply=%_flip.8
+  %jit_atleast_1d_.209 = c128[65,3]{1,0} call(%jit__flip_.47), to_apply=%atleast_1d_42.10
+  %concatenate.73 = c128[65,13]{1,0} concatenate(%convert_element_type.283, %jit_atleast_1d_.207, %convert_element_type.284, %jit_atleast_1d_.209), dimensions={1}
+  %jit_fft_.47 = c128[65,13]{1,0} call(%concatenate.73), to_apply=%fft.12
+  %real.95 = f64[65,13]{1,0} real(%jit_fft_.47)
+  %dot_general.47 = f64[49,13]{1,0} dot(%Arg_16.1, %real.95), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.133 = f64[13,49]{0,1} transpose(%dot_general.47), dimensions={1,0}
+  %broadcast_in_dim_reshape.25 = f64[1,637]{1,0} reshape(%reshape.133)
+  %concatenate.75 = f64[3,637]{1,0} concatenate(%broadcast_in_dim.135, %broadcast_in_dim.136, %broadcast_in_dim_reshape.25), dimensions={0}
+  %transpose.29 = f64[637,3]{0,1} transpose(%concatenate.75), dimensions={1,0}
+  %jit_cross_.23 = f64[637,3]{0,1} call(%transpose.23, %transpose.29), to_apply=%cross.26
+  %mul.463 = f64[637,3]{0,1} multiply(%transpose.24, %jit_cross_.23)
+  %reduce_sum.178 = f64[637]{0} reduce(%mul.463, %constant.92), dimensions={1}, to_apply=%region_36.62
+  %add.170 = f64[637]{0} add(%add.169, %reduce_sum.178)
+  %mul.482 = f64[637]{0} multiply(%neg.74, %add.170)
+  %jit__where_.18 = f64[637]{0} call(%le.7, %constant.91, %mul.482), to_apply=%_where_114.49
+  %jit__where_.19 = f64[637]{0} call(%le.7, %constant.90, %integer_pow.9), to_apply=%_where_114.49
+  %div.21 = f64[637]{0} divide(%jit__where_.18, %jit__where_.19)
+  %lt.69 = pred[225]{0} compare(%Arg_7.1, %broadcast.45), direction=LT
+  %add.150 = s64[225]{0} add(%Arg_7.1, %broadcast.42)
+  %select_n.65 = s64[225]{0} select(%lt.69, %add.150, %Arg_7.1)
+  %convert_element_type.246 = s32[225]{0} convert(%select_n.65)
+  %broadcast_in_dim.119 = s32[225,1]{1,0} reshape(%convert_element_type.246)
+  %scatter.145 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.119, %Arg_28.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_19.32
+  %reshape.114 = f64[65,7]{1,0} reshape(%scatter.145)
+  %rev.60 = f64[65,7]{1,0} reverse(%reshape.114), dimensions={1}
+  %convert_element_type.247 = f64[1,7]{1,0} convert(%Arg_6.1)
+  %mul.385 = f64[1,7]{1,0} broadcast(%convert_element_type.247), dimensions={0,1}
+  %mul.386 = f64[7]{0} reshape(%mul.385)
+  %mul.387 = f64[65,7]{1,0} broadcast(%mul.386), dimensions={1}
+  %mul.388 = f64[65,7]{1,0} multiply(%rev.60, %mul.387)
+  %slice.141 = f64[65,1]{1,0} slice(%mul.388), slice={[0:65], [3:4]}
+  %mul.391 = f64[65,1]{1,0} multiply(%slice.141, %broadcast.39)
+  %jit_atleast_1d_.182 = f64[65,1]{1,0} call(%mul.391), to_apply=%atleast_1d_41.9
+  %convert_element_type.250 = c128[65,1]{1,0} convert(%jit_atleast_1d_.182)
+  %slice.139 = f64[65,3]{1,0} slice(%mul.388), slice={[0:65], [4:7]}
+  %convert_element_type.249 = c128[65,3]{1,0} convert(%slice.139)
+  %slice.140 = f64[65,3]{1,0} slice(%mul.388), slice={[0:65], [0:3]}
+  %rev.61 = f64[65,3]{1,0} reverse(%slice.140), dimensions={1}
+  %convert_element_type.248 = c128[65,3]{1,0} convert(%rev.61)
+  %mul.389 = c128[65,3]{1,0} multiply(%convert_element_type.248, %broadcast.41)
+  %sub.70 = c128[65,3]{1,0} subtract(%convert_element_type.249, %mul.389)
+  %mul.390 = c128[65,3]{1,0} multiply(%sub.70, %broadcast.40)
+  %jit_atleast_1d_.183 = c128[65,3]{1,0} call(%mul.390), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.184 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.251 = c128[65,6]{1,0} convert(%jit_atleast_1d_.184)
+  %real.82 = f64[65,3]{1,0} real(%mul.390)
+  %imag.41 = f64[65,3]{1,0} imag(%mul.390)
+  %neg.59 = f64[65,3]{1,0} negate(%imag.41)
+  %complex.41 = c128[65,3]{1,0} complex(%real.82, %neg.59)
+  %jit__flip_.41 = c128[65,3]{1,0} call(%complex.41), to_apply=%_flip.8
+  %jit_atleast_1d_.185 = c128[65,3]{1,0} call(%jit__flip_.41), to_apply=%atleast_1d_42.10
+  %concatenate.64 = c128[65,13]{1,0} concatenate(%convert_element_type.250, %jit_atleast_1d_.183, %convert_element_type.251, %jit_atleast_1d_.185), dimensions={1}
+  %jit_fft_.41 = c128[65,13]{1,0} call(%concatenate.64), to_apply=%fft.12
+  %real.83 = f64[65,13]{1,0} real(%jit_fft_.41)
+  %dot_general.41 = f64[49,13]{1,0} dot(%Arg_1.21, %real.83), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.115 = f64[13,49]{0,1} transpose(%dot_general.41), dimensions={1,0}
+  %reshape.116 = f64[637]{0} reshape(%reshape.115)
+  %sub.85 = f64[637]{0} subtract(%squeeze.23, %reshape.116)
+  %mul.496 = f64[637]{0} multiply(%div.21, %sub.85)
+  %add.180 = f64[637]{0} add(%mul.495, %mul.496)
+  %broadcast_in_dim.142 = f64[1,637]{1,0} reshape(%add.180)
+  %mul.500 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.142), dimensions={0,1}
+  %mul.501 = f64[637]{0} reshape(%mul.500)
+  %mul.502 = f64[3,637]{1,0} broadcast(%mul.501), dimensions={1}
+  %mul.503 = f64[3,637]{1,0} multiply(%mul.502, %concatenate.60)
+  %sub.72 = f64[637]{0} subtract(%squeeze.23, %reshape.116)
+  %mul.404 = f64[637]{0} multiply(%div.16, %sub.72)
+  %broadcast_in_dim.143 = f64[1,637]{1,0} reshape(%mul.404)
+  %mul.504 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.143), dimensions={0,1}
+  %mul.505 = f64[637]{0} reshape(%mul.504)
+  %mul.506 = f64[3,637]{1,0} broadcast(%mul.505), dimensions={1}
+  %mul.507 = f64[3,637]{1,0} multiply(%mul.506, %concatenate.69)
+  %add.183 = f64[3,637]{1,0} add(%mul.503, %mul.507)
+  %neg.75 = f64[637]{0} negate(%squeeze.23)
+  %mul.485 = f64[637]{0} multiply(%neg.75, %broadcast.43)
+  %lt.78 = pred[225]{0} compare(%Arg_7.1, %broadcast.45), direction=LT
+  %add.172 = s64[225]{0} add(%Arg_7.1, %broadcast.42)
+  %select_n.74 = s64[225]{0} select(%lt.78, %add.172, %Arg_7.1)
+  %convert_element_type.296 = s32[225]{0} convert(%select_n.74)
+  %broadcast_in_dim.138 = s32[225,1]{1,0} reshape(%convert_element_type.296)
+  %scatter.154 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.138, %Arg_28.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_38.64
+  %reshape.140 = f64[65,7]{1,0} reshape(%scatter.154)
+  %rev.73 = f64[65,7]{1,0} reverse(%reshape.140), dimensions={1}
+  %convert_element_type.297 = f64[1,7]{1,0} convert(%Arg_6.1)
+  %mul.467 = f64[1,7]{1,0} broadcast(%convert_element_type.297), dimensions={0,1}
+  %mul.468 = f64[7]{0} reshape(%mul.467)
+  %mul.469 = f64[65,7]{1,0} broadcast(%mul.468), dimensions={1}
+  %mul.470 = f64[65,7]{1,0} multiply(%rev.73, %mul.469)
+  %slice.170 = f64[65,1]{1,0} slice(%mul.470), slice={[0:65], [3:4]}
+  %mul.473 = f64[65,1]{1,0} multiply(%slice.170, %broadcast.39)
+  %jit_atleast_1d_.218 = f64[65,1]{1,0} call(%mul.473), to_apply=%atleast_1d_41.9
+  %convert_element_type.300 = c128[65,1]{1,0} convert(%jit_atleast_1d_.218)
+  %slice.168 = f64[65,3]{1,0} slice(%mul.470), slice={[0:65], [4:7]}
+  %convert_element_type.299 = c128[65,3]{1,0} convert(%slice.168)
+  %slice.169 = f64[65,3]{1,0} slice(%mul.470), slice={[0:65], [0:3]}
+  %rev.74 = f64[65,3]{1,0} reverse(%slice.169), dimensions={1}
+  %convert_element_type.298 = c128[65,3]{1,0} convert(%rev.74)
+  %mul.471 = c128[65,3]{1,0} multiply(%convert_element_type.298, %broadcast.41)
+  %sub.80 = c128[65,3]{1,0} subtract(%convert_element_type.299, %mul.471)
+  %mul.472 = c128[65,3]{1,0} multiply(%sub.80, %broadcast.40)
+  %jit_atleast_1d_.219 = c128[65,3]{1,0} call(%mul.472), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.220 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.301 = c128[65,6]{1,0} convert(%jit_atleast_1d_.220)
+  %real.100 = f64[65,3]{1,0} real(%mul.472)
+  %imag.50 = f64[65,3]{1,0} imag(%mul.472)
+  %neg.72 = f64[65,3]{1,0} negate(%imag.50)
+  %complex.50 = c128[65,3]{1,0} complex(%real.100, %neg.72)
+  %jit__flip_.50 = c128[65,3]{1,0} call(%complex.50), to_apply=%_flip.8
+  %jit_atleast_1d_.221 = c128[65,3]{1,0} call(%jit__flip_.50), to_apply=%atleast_1d_42.10
+  %concatenate.77 = c128[65,13]{1,0} concatenate(%convert_element_type.300, %jit_atleast_1d_.219, %convert_element_type.301, %jit_atleast_1d_.221), dimensions={1}
+  %jit_fft_.50 = c128[65,13]{1,0} call(%concatenate.77), to_apply=%fft.12
+  %real.101 = f64[65,13]{1,0} real(%jit_fft_.50)
+  %dot_general.50 = f64[49,13]{1,0} dot(%Arg_2.11, %real.101), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.141 = f64[13,49]{0,1} transpose(%dot_general.50), dimensions={1,0}
+  %reshape.142 = f64[637]{0} reshape(%reshape.141)
+  %add.174 = f64[637]{0} add(%mul.485, %reshape.142)
+  %mul.486 = f64[637]{0} multiply(%div.16, %add.174)
+  %neg.76 = f64[637]{0} negate(%squeeze.23)
+  %mul.487 = f64[637]{0} multiply(%neg.76, %broadcast.43)
+  %add.175 = f64[637]{0} add(%mul.487, %add.128)
+  %mul.488 = f64[637]{0} multiply(%div.21, %add.175)
+  %add.176 = f64[637]{0} add(%mul.486, %mul.488)
+  %broadcast_in_dim.144 = f64[1,637]{1,0} reshape(%add.176)
+  %mul.508 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.144), dimensions={0,1}
+  %mul.509 = f64[637]{0} reshape(%mul.508)
+  %mul.510 = f64[3,637]{1,0} broadcast(%mul.509), dimensions={1}
+  %mul.511 = f64[3,637]{1,0} multiply(%mul.510, %concatenate.46)
+  %add.184 = f64[3,637]{1,0} add(%add.183, %mul.511)
+  %broadcast_in_dim.145 = f64[1,637]{1,0} reshape(%mul.403)
+  %mul.512 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.145), dimensions={0,1}
+  %mul.513 = f64[637]{0} reshape(%mul.512)
+  %mul.514 = f64[3,637]{1,0} broadcast(%mul.513), dimensions={1}
+  %mul.515 = f64[3,637]{1,0} multiply(%mul.514, %concatenate.75)
+  %add.185 = f64[3,637]{1,0} add(%add.184, %mul.515)
+  %transpose.30 = f64[637,3]{0,1} transpose(%add.185), dimensions={1,0}
+  %mul.562 = f64[637,3]{0,1} multiply(%transpose.30, %transpose.24)
+  %reduce_sum.185 = f64[637]{0} reduce(%mul.562, %constant.92), dimensions={1}, to_apply=%region_46.72
+  %broadcast_in_dim.122 = f64[1,637]{1,0} reshape(%mul.404)
+  %mul.405 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.122), dimensions={0,1}
+  %mul.406 = f64[637]{0} reshape(%mul.405)
+  %mul.407 = f64[3,637]{1,0} broadcast(%mul.406), dimensions={1}
+  %mul.408 = f64[3,637]{1,0} multiply(%mul.407, %concatenate.60)
+  %broadcast_in_dim.123 = f64[1,637]{1,0} reshape(%mul.403)
+  %mul.409 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.123), dimensions={0,1}
+  %mul.410 = f64[637]{0} reshape(%mul.409)
+  %mul.411 = f64[3,637]{1,0} broadcast(%mul.410), dimensions={1}
+  %mul.412 = f64[3,637]{1,0} multiply(%mul.411, %concatenate.46)
+  %add.153 = f64[3,637]{1,0} add(%mul.408, %mul.412)
+  %transpose.25 = f64[637,3]{0,1} transpose(%add.153), dimensions={1,0}
+  %mul.563 = f64[637,3]{0,1} multiply(%transpose.25, %transpose.20)
+  %reduce_sum.186 = f64[637]{0} reduce(%mul.563, %constant.92), dimensions={1}, to_apply=%region_47.73
+  %add.199 = f64[637]{0} add(%reduce_sum.185, %reduce_sum.186)
+  %mul.497 = f64[637]{0} multiply(%squeeze.23, %broadcast.43)
+  %broadcast_in_dim.140 = f64[1,13]{1,0} reshape(%Arg_32.1)
+  %concatenate.79 = f64[2,13]{1,0} concatenate(%broadcast_in_dim.140, %broadcast.33), dimensions={0}
+  %reshape.146 = f64[13,2]{0,1} transpose(%concatenate.79), dimensions={1,0}
+  %reshape.147 = f64[26]{0} reshape(%reshape.146)
+  %rev.76 = f64[26]{0} reverse(%reshape.147), dimensions={0}
+  %jit_atleast_2d_.10 = f64[1,26]{1,0} call(%rev.76), to_apply=%atleast_2d.34
+  %jit__polyder_jax_.4 = f64[1,26]{1,0} call(%jit_atleast_2d_.10, %constant.90), to_apply=%_polyder_jax.42
+  %slice.174 = f64[637,1]{1,0} slice(%Arg_24.1), slice={[0:637], [0:1]}
+  %squeeze.24 = f64[637]{0} reshape(%slice.174)
+  %jit__polyval_jax_.4 = f64[1,637]{1,0} call(%jit__polyder_jax_.4, %squeeze.24), to_apply=%_polyval_jax.48
+  %squeeze.25 = f64[637]{0} reshape(%jit__polyval_jax_.4)
+  %add.181 = f64[637]{0} add(%mul.497, %squeeze.25)
+  %Arg_4.1 = f64[49,65]{1,0} parameter(4)
+  %lt.68 = pred[225]{0} compare(%Arg_7.1, %broadcast.45), direction=LT
+  %add.149 = s64[225]{0} add(%Arg_7.1, %broadcast.42)
+  %select_n.64 = s64[225]{0} select(%lt.68, %add.149, %Arg_7.1)
+  %convert_element_type.240 = s32[225]{0} convert(%select_n.64)
+  %broadcast_in_dim.118 = s32[225,1]{1,0} reshape(%convert_element_type.240)
+  %scatter.144 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.118, %Arg_28.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_18.31
+  %reshape.111 = f64[65,7]{1,0} reshape(%scatter.144)
+  %rev.58 = f64[65,7]{1,0} reverse(%reshape.111), dimensions={1}
+  %convert_element_type.241 = f64[1,7]{1,0} convert(%Arg_6.1)
+  %mul.378 = f64[1,7]{1,0} broadcast(%convert_element_type.241), dimensions={0,1}
+  %mul.379 = f64[7]{0} reshape(%mul.378)
+  %mul.380 = f64[65,7]{1,0} broadcast(%mul.379), dimensions={1}
+  %mul.381 = f64[65,7]{1,0} multiply(%rev.58, %mul.380)
+  %slice.138 = f64[65,1]{1,0} slice(%mul.381), slice={[0:65], [3:4]}
+  %mul.384 = f64[65,1]{1,0} multiply(%slice.138, %broadcast.39)
+  %jit_atleast_1d_.178 = f64[65,1]{1,0} call(%mul.384), to_apply=%atleast_1d_41.9
+  %convert_element_type.244 = c128[65,1]{1,0} convert(%jit_atleast_1d_.178)
+  %slice.136 = f64[65,3]{1,0} slice(%mul.381), slice={[0:65], [4:7]}
+  %convert_element_type.243 = c128[65,3]{1,0} convert(%slice.136)
+  %slice.137 = f64[65,3]{1,0} slice(%mul.381), slice={[0:65], [0:3]}
+  %rev.59 = f64[65,3]{1,0} reverse(%slice.137), dimensions={1}
+  %convert_element_type.242 = c128[65,3]{1,0} convert(%rev.59)
+  %mul.382 = c128[65,3]{1,0} multiply(%convert_element_type.242, %broadcast.41)
+  %sub.69 = c128[65,3]{1,0} subtract(%convert_element_type.243, %mul.382)
+  %mul.383 = c128[65,3]{1,0} multiply(%sub.69, %broadcast.40)
+  %jit_atleast_1d_.179 = c128[65,3]{1,0} call(%mul.383), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.180 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.245 = c128[65,6]{1,0} convert(%jit_atleast_1d_.180)
+  %real.80 = f64[65,3]{1,0} real(%mul.383)
+  %imag.40 = f64[65,3]{1,0} imag(%mul.383)
+  %neg.58 = f64[65,3]{1,0} negate(%imag.40)
+  %complex.40 = c128[65,3]{1,0} complex(%real.80, %neg.58)
+  %jit__flip_.40 = c128[65,3]{1,0} call(%complex.40), to_apply=%_flip.8
+  %jit_atleast_1d_.181 = c128[65,3]{1,0} call(%jit__flip_.40), to_apply=%atleast_1d_42.10
+  %concatenate.63 = c128[65,13]{1,0} concatenate(%convert_element_type.244, %jit_atleast_1d_.179, %convert_element_type.245, %jit_atleast_1d_.181), dimensions={1}
+  %jit_fft_.40 = c128[65,13]{1,0} call(%concatenate.63), to_apply=%fft.12
+  %real.81 = f64[65,13]{1,0} real(%jit_fft_.40)
+  %dot_general.40 = f64[49,13]{1,0} dot(%Arg_4.1, %real.81), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.112 = f64[13,49]{0,1} transpose(%dot_general.40), dimensions={1,0}
+  %reshape.113 = f64[637]{0} reshape(%reshape.112)
+  %sub.86 = f64[637]{0} subtract(%add.181, %reshape.113)
+  %mul.498 = f64[637]{0} multiply(%div.16, %sub.86)
+  %integer_pow.10 = f64[637]{0} multiply(%reduce_sum.172, %reduce_sum.172)
+  %abs.8 = f64[637]{0} abs(%integer_pow.10)
+  %le.8 = pred[637]{0} compare(%abs.8, %broadcast.43), direction=LE
+  %mul.395 = f64[1]{0} broadcast(%Arg_29.1), dimensions={0}
+  %mul.396 = f64[] reshape(%mul.395)
+  %mul.397 = f64[637]{0} broadcast(%mul.396), dimensions={}
+  %div.14 = f64[637]{0} divide(%mul.397, %broadcast.34)
+  %mul.483 = f64[637]{0} multiply(%div.14, %reduce_sum.172)
+  %neg.55 = f64[637]{0} negate(%reshape.82)
+  %mul.362 = f64[637]{0} multiply(%neg.55, %broadcast.43)
+  %Arg_13.1 = f64[49,65]{1,0} parameter(13)
+  %lt.59 = pred[230]{0} compare(%Arg_15.1, %broadcast.37), direction=LT
+  %add.130 = s64[230]{0} add(%Arg_15.1, %broadcast.36)
+  %select_n.55 = s64[230]{0} select(%lt.59, %add.130, %Arg_15.1)
+  %convert_element_type.194 = s32[230]{0} convert(%select_n.55)
+  %broadcast_in_dim.101 = s32[230,1]{1,0} reshape(%convert_element_type.194)
+  %scatter.135 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.101, %Arg_30.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_5.17
+  %reshape.89 = f64[65,7]{1,0} reshape(%scatter.135)
+  %slice.111 = f64[65,1]{1,0} slice(%reshape.89), slice={[0:65], [3:4]}
+  %mul.332 = f64[65,1]{1,0} multiply(%slice.111, %broadcast.39)
+  %jit_atleast_1d_.142 = f64[65,1]{1,0} call(%mul.332), to_apply=%atleast_1d_41.9
+  %convert_element_type.197 = c128[65,1]{1,0} convert(%jit_atleast_1d_.142)
+  %slice.109 = f64[65,3]{1,0} slice(%reshape.89), slice={[0:65], [4:7]}
+  %convert_element_type.196 = c128[65,3]{1,0} convert(%slice.109)
+  %slice.110 = f64[65,3]{1,0} slice(%reshape.89), slice={[0:65], [0:3]}
+  %rev.48 = f64[65,3]{1,0} reverse(%slice.110), dimensions={1}
+  %convert_element_type.195 = c128[65,3]{1,0} convert(%rev.48)
+  %mul.330 = c128[65,3]{1,0} multiply(%convert_element_type.195, %broadcast.41)
+  %sub.60 = c128[65,3]{1,0} subtract(%convert_element_type.196, %mul.330)
+  %mul.331 = c128[65,3]{1,0} multiply(%sub.60, %broadcast.40)
+  %jit_atleast_1d_.143 = c128[65,3]{1,0} call(%mul.331), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.144 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.198 = c128[65,6]{1,0} convert(%jit_atleast_1d_.144)
+  %real.62 = f64[65,3]{1,0} real(%mul.331)
+  %imag.31 = f64[65,3]{1,0} imag(%mul.331)
+  %neg.46 = f64[65,3]{1,0} negate(%imag.31)
+  %complex.31 = c128[65,3]{1,0} complex(%real.62, %neg.46)
+  %jit__flip_.31 = c128[65,3]{1,0} call(%complex.31), to_apply=%_flip.8
+  %jit_atleast_1d_.145 = c128[65,3]{1,0} call(%jit__flip_.31), to_apply=%atleast_1d_42.10
+  %concatenate.49 = c128[65,13]{1,0} concatenate(%convert_element_type.197, %jit_atleast_1d_.143, %convert_element_type.198, %jit_atleast_1d_.145), dimensions={1}
+  %jit_fft_.31 = c128[65,13]{1,0} call(%concatenate.49), to_apply=%fft.12
+  %real.63 = f64[65,13]{1,0} real(%jit_fft_.31)
+  %dot_general.31 = f64[49,13]{1,0} dot(%Arg_13.1, %real.63), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.90 = f64[13,49]{0,1} transpose(%dot_general.31), dimensions={1,0}
+  %reshape.91 = f64[637]{0} reshape(%reshape.90)
+  %add.143 = f64[637]{0} add(%mul.362, %reshape.91)
+  %broadcast_in_dim.112 = f64[1,637]{1,0} reshape(%add.143)
+  %mul.363 = f64[637]{0} multiply(%reshape.94, %broadcast.35)
+  %mul.364 = f64[637]{0} multiply(%mul.363, %broadcast.43)
+  %mul.365 = f64[637]{0} multiply(%reshape.82, %broadcast.43)
+  %add.144 = f64[637]{0} add(%mul.364, %mul.365)
+  %broadcast_in_dim.113 = f64[1,637]{1,0} reshape(%add.144)
+  %Arg_21.1 = f64[49,65]{1,0} parameter(21)
+  %lt.65 = pred[225]{0} compare(%Arg_23.1, %broadcast.45), direction=LT
+  %add.142 = s64[225]{0} add(%Arg_23.1, %broadcast.42)
+  %select_n.61 = s64[225]{0} select(%lt.65, %add.142, %Arg_23.1)
+  %convert_element_type.225 = s32[225]{0} convert(%select_n.61)
+  %broadcast_in_dim.111 = s32[225,1]{1,0} reshape(%convert_element_type.225)
+  %scatter.141 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.111, %Arg_31.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_11.23
+  %reshape.105 = f64[65,7]{1,0} reshape(%scatter.141)
+  %slice.129 = f64[65,1]{1,0} slice(%reshape.105), slice={[0:65], [3:4]}
+  %mul.361 = f64[65,1]{1,0} multiply(%slice.129, %broadcast.39)
+  %jit_atleast_1d_.166 = f64[65,1]{1,0} call(%mul.361), to_apply=%atleast_1d_41.9
+  %convert_element_type.228 = c128[65,1]{1,0} convert(%jit_atleast_1d_.166)
+  %slice.127 = f64[65,3]{1,0} slice(%reshape.105), slice={[0:65], [4:7]}
+  %convert_element_type.227 = c128[65,3]{1,0} convert(%slice.127)
+  %slice.128 = f64[65,3]{1,0} slice(%reshape.105), slice={[0:65], [0:3]}
+  %rev.55 = f64[65,3]{1,0} reverse(%slice.128), dimensions={1}
+  %convert_element_type.226 = c128[65,3]{1,0} convert(%rev.55)
+  %mul.359 = c128[65,3]{1,0} multiply(%convert_element_type.226, %broadcast.41)
+  %sub.66 = c128[65,3]{1,0} subtract(%convert_element_type.227, %mul.359)
+  %mul.360 = c128[65,3]{1,0} multiply(%sub.66, %broadcast.40)
+  %jit_atleast_1d_.167 = c128[65,3]{1,0} call(%mul.360), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.168 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.229 = c128[65,6]{1,0} convert(%jit_atleast_1d_.168)
+  %real.74 = f64[65,3]{1,0} real(%mul.360)
+  %imag.37 = f64[65,3]{1,0} imag(%mul.360)
+  %neg.54 = f64[65,3]{1,0} negate(%imag.37)
+  %complex.37 = c128[65,3]{1,0} complex(%real.74, %neg.54)
+  %jit__flip_.37 = c128[65,3]{1,0} call(%complex.37), to_apply=%_flip.8
+  %jit_atleast_1d_.169 = c128[65,3]{1,0} call(%jit__flip_.37), to_apply=%atleast_1d_42.10
+  %concatenate.57 = c128[65,13]{1,0} concatenate(%convert_element_type.228, %jit_atleast_1d_.167, %convert_element_type.229, %jit_atleast_1d_.169), dimensions={1}
+  %jit_fft_.37 = c128[65,13]{1,0} call(%concatenate.57), to_apply=%fft.12
+  %real.75 = f64[65,13]{1,0} real(%jit_fft_.37)
+  %dot_general.37 = f64[49,13]{1,0} dot(%Arg_21.1, %real.75), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.106 = f64[13,49]{0,1} transpose(%dot_general.37), dimensions={1,0}
+  %broadcast_in_dim_reshape.18 = f64[1,637]{1,0} reshape(%reshape.106)
+  %concatenate.58 = f64[3,637]{1,0} concatenate(%broadcast_in_dim.112, %broadcast_in_dim.113, %broadcast_in_dim_reshape.18), dimensions={0}
+  %transpose.22 = f64[637,3]{0,1} transpose(%concatenate.58), dimensions={1,0}
+  %jit_cross_.13 = f64[637,3]{0,1} call(%transpose.23, %transpose.19), to_apply=%cross.26
+  %mul.374 = f64[637,3]{0,1} multiply(%transpose.22, %jit_cross_.13)
+  %reduce_sum.169 = f64[637]{0} reduce(%mul.374, %constant.92), dimensions={1}, to_apply=%region_14.27
+  %neg.53 = f64[637]{0} negate(%reshape.82)
+  %mul.355 = f64[637]{0} multiply(%neg.53, %broadcast.43)
+  %mul.356 = f64[637]{0} multiply(%mul.355, %broadcast.43)
+  %Arg_12.1 = f64[49,65]{1,0} parameter(12)
+  %lt.62 = pred[230]{0} compare(%Arg_15.1, %broadcast.37), direction=LT
+  %add.133 = s64[230]{0} add(%Arg_15.1, %broadcast.36)
+  %select_n.58 = s64[230]{0} select(%lt.62, %add.133, %Arg_15.1)
+  %convert_element_type.209 = s32[230]{0} convert(%select_n.58)
+  %broadcast_in_dim.104 = s32[230,1]{1,0} reshape(%convert_element_type.209)
+  %scatter.138 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.104, %Arg_30.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_8.20
+  %reshape.98 = f64[65,7]{1,0} reshape(%scatter.138)
+  %slice.120 = f64[65,1]{1,0} slice(%reshape.98), slice={[0:65], [3:4]}
+  %mul.341 = f64[65,1]{1,0} multiply(%slice.120, %broadcast.39)
+  %jit_atleast_1d_.154 = f64[65,1]{1,0} call(%mul.341), to_apply=%atleast_1d_41.9
+  %convert_element_type.212 = c128[65,1]{1,0} convert(%jit_atleast_1d_.154)
+  %slice.118 = f64[65,3]{1,0} slice(%reshape.98), slice={[0:65], [4:7]}
+  %convert_element_type.211 = c128[65,3]{1,0} convert(%slice.118)
+  %slice.119 = f64[65,3]{1,0} slice(%reshape.98), slice={[0:65], [0:3]}
+  %rev.51 = f64[65,3]{1,0} reverse(%slice.119), dimensions={1}
+  %convert_element_type.210 = c128[65,3]{1,0} convert(%rev.51)
+  %mul.339 = c128[65,3]{1,0} multiply(%convert_element_type.210, %broadcast.41)
+  %sub.63 = c128[65,3]{1,0} subtract(%convert_element_type.211, %mul.339)
+  %mul.340 = c128[65,3]{1,0} multiply(%sub.63, %broadcast.40)
+  %jit_atleast_1d_.155 = c128[65,3]{1,0} call(%mul.340), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.156 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.213 = c128[65,6]{1,0} convert(%jit_atleast_1d_.156)
+  %real.68 = f64[65,3]{1,0} real(%mul.340)
+  %imag.34 = f64[65,3]{1,0} imag(%mul.340)
+  %neg.49 = f64[65,3]{1,0} negate(%imag.34)
+  %complex.34 = c128[65,3]{1,0} complex(%real.68, %neg.49)
+  %jit__flip_.34 = c128[65,3]{1,0} call(%complex.34), to_apply=%_flip.8
+  %jit_atleast_1d_.157 = c128[65,3]{1,0} call(%jit__flip_.34), to_apply=%atleast_1d_42.10
+  %concatenate.52 = c128[65,13]{1,0} concatenate(%convert_element_type.212, %jit_atleast_1d_.155, %convert_element_type.213, %jit_atleast_1d_.157), dimensions={1}
+  %jit_fft_.34 = c128[65,13]{1,0} call(%concatenate.52), to_apply=%fft.12
+  %real.69 = f64[65,13]{1,0} real(%jit_fft_.34)
+  %dot_general.34 = f64[49,13]{1,0} dot(%Arg_12.1, %real.69), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.99 = f64[13,49]{0,1} transpose(%dot_general.34), dimensions={1,0}
+  %reshape.100 = f64[637]{0} reshape(%reshape.99)
+  %add.139 = f64[637]{0} add(%mul.356, %reshape.100)
+  %broadcast_in_dim.109 = f64[1,637]{1,0} reshape(%add.139)
+  %mul_broadcast_in_dim.1 = f64[637]{0} multiply(%reshape.94, %broadcast.43)
+  %mul.357 = f64[637]{0} multiply(%reshape.97, %broadcast.43)
+  %add.140 = f64[637]{0} add(%mul_broadcast_in_dim.1, %mul.357)
+  %mul.358 = f64[637]{0} multiply(%reshape.82, %broadcast.43)
+  %add.141 = f64[637]{0} add(%add.140, %mul.358)
+  %broadcast_in_dim.110 = f64[1,637]{1,0} reshape(%add.141)
+  %Arg_20.1 = f64[49,65]{1,0} parameter(20)
+  %lt.64 = pred[225]{0} compare(%Arg_23.1, %broadcast.45), direction=LT
+  %add.138 = s64[225]{0} add(%Arg_23.1, %broadcast.42)
+  %select_n.60 = s64[225]{0} select(%lt.64, %add.138, %Arg_23.1)
+  %convert_element_type.220 = s32[225]{0} convert(%select_n.60)
+  %broadcast_in_dim.108 = s32[225,1]{1,0} reshape(%convert_element_type.220)
+  %scatter.140 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.108, %Arg_31.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_10.22
+  %reshape.103 = f64[65,7]{1,0} reshape(%scatter.140)
+  %slice.126 = f64[65,1]{1,0} slice(%reshape.103), slice={[0:65], [3:4]}
+  %mul.354 = f64[65,1]{1,0} multiply(%slice.126, %broadcast.39)
+  %jit_atleast_1d_.162 = f64[65,1]{1,0} call(%mul.354), to_apply=%atleast_1d_41.9
+  %convert_element_type.223 = c128[65,1]{1,0} convert(%jit_atleast_1d_.162)
+  %slice.124 = f64[65,3]{1,0} slice(%reshape.103), slice={[0:65], [4:7]}
+  %convert_element_type.222 = c128[65,3]{1,0} convert(%slice.124)
+  %slice.125 = f64[65,3]{1,0} slice(%reshape.103), slice={[0:65], [0:3]}
+  %rev.54 = f64[65,3]{1,0} reverse(%slice.125), dimensions={1}
+  %convert_element_type.221 = c128[65,3]{1,0} convert(%rev.54)
+  %mul.352 = c128[65,3]{1,0} multiply(%convert_element_type.221, %broadcast.41)
+  %sub.65 = c128[65,3]{1,0} subtract(%convert_element_type.222, %mul.352)
+  %mul.353 = c128[65,3]{1,0} multiply(%sub.65, %broadcast.40)
+  %jit_atleast_1d_.163 = c128[65,3]{1,0} call(%mul.353), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.164 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.224 = c128[65,6]{1,0} convert(%jit_atleast_1d_.164)
+  %real.72 = f64[65,3]{1,0} real(%mul.353)
+  %imag.36 = f64[65,3]{1,0} imag(%mul.353)
+  %neg.52 = f64[65,3]{1,0} negate(%imag.36)
+  %complex.36 = c128[65,3]{1,0} complex(%real.72, %neg.52)
+  %jit__flip_.36 = c128[65,3]{1,0} call(%complex.36), to_apply=%_flip.8
+  %jit_atleast_1d_.165 = c128[65,3]{1,0} call(%jit__flip_.36), to_apply=%atleast_1d_42.10
+  %concatenate.55 = c128[65,13]{1,0} concatenate(%convert_element_type.223, %jit_atleast_1d_.163, %convert_element_type.224, %jit_atleast_1d_.165), dimensions={1}
+  %jit_fft_.36 = c128[65,13]{1,0} call(%concatenate.55), to_apply=%fft.12
+  %real.73 = f64[65,13]{1,0} real(%jit_fft_.36)
+  %dot_general.36 = f64[49,13]{1,0} dot(%Arg_20.1, %real.73), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.104 = f64[13,49]{0,1} transpose(%dot_general.36), dimensions={1,0}
+  %broadcast_in_dim_reshape.17 = f64[1,637]{1,0} reshape(%reshape.104)
+  %concatenate.56 = f64[3,637]{1,0} concatenate(%broadcast_in_dim.109, %broadcast_in_dim.110, %broadcast_in_dim_reshape.17), dimensions={0}
+  %transpose.21 = f64[637,3]{0,1} transpose(%concatenate.56), dimensions={1,0}
+  %jit_cross_.14 = f64[637,3]{0,1} call(%transpose.21, %transpose.19), to_apply=%cross.26
+  %mul.375 = f64[637,3]{0,1} multiply(%transpose.24, %jit_cross_.14)
+  %reduce_sum.170 = f64[637]{0} reduce(%mul.375, %constant.92), dimensions={1}, to_apply=%region_15.28
+  %add.147 = f64[637]{0} add(%reduce_sum.169, %reduce_sum.170)
+  %jit_cross_.15 = f64[637,3]{0,1} call(%transpose.23, %transpose.20), to_apply=%cross.26
+  %mul.376 = f64[637,3]{0,1} multiply(%transpose.24, %jit_cross_.15)
+  %reduce_sum.171 = f64[637]{0} reduce(%mul.376, %constant.92), dimensions={1}, to_apply=%region_16.29
+  %add.148 = f64[637]{0} add(%add.147, %reduce_sum.171)
+  %mul.484 = f64[637]{0} multiply(%div.15, %add.148)
+  %sub.82 = f64[637]{0} subtract(%mul.483, %mul.484)
+  %jit__where_.20 = f64[637]{0} call(%le.8, %constant.91, %sub.82), to_apply=%_where_114.49
+  %jit__where_.21 = f64[637]{0} call(%le.8, %constant.90, %integer_pow.10), to_apply=%_where_114.49
+  %div.22 = f64[637]{0} divide(%jit__where_.20, %jit__where_.21)
+  %sub.87 = f64[637]{0} subtract(%squeeze.23, %reshape.116)
+  %mul.499 = f64[637]{0} multiply(%div.22, %sub.87)
+  %add.182 = f64[637]{0} add(%mul.498, %mul.499)
+  %broadcast_in_dim.146 = f64[1,637]{1,0} reshape(%add.182)
+  %mul.516 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.146), dimensions={0,1}
+  %mul.517 = f64[637]{0} reshape(%mul.516)
+  %mul.518 = f64[3,637]{1,0} broadcast(%mul.517), dimensions={1}
+  %mul.519 = f64[3,637]{1,0} multiply(%mul.518, %concatenate.60)
+  %broadcast_in_dim.147 = f64[1,637]{1,0} reshape(%mul.404)
+  %mul.520 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.147), dimensions={0,1}
+  %mul.521 = f64[637]{0} reshape(%mul.520)
+  %mul.522 = f64[3,637]{1,0} broadcast(%mul.521), dimensions={1}
+  %mul.523 = f64[3,637]{1,0} multiply(%mul.522, %concatenate.56)
+  %add.186 = f64[3,637]{1,0} add(%mul.519, %mul.523)
+  %neg.77 = f64[637]{0} negate(%squeeze.23)
+  %mul.489 = f64[637]{0} multiply(%neg.77, %broadcast.43)
+  %mul.490 = f64[637]{0} multiply(%squeeze.25, %broadcast.43)
+  %sub.83 = f64[637]{0} subtract(%mul.489, %mul.490)
+  %Arg_5.1 = f64[49,65]{1,0} parameter(5)
+  %lt.70 = pred[225]{0} compare(%Arg_7.1, %broadcast.45), direction=LT
+  %add.151 = s64[225]{0} add(%Arg_7.1, %broadcast.42)
+  %select_n.66 = s64[225]{0} select(%lt.70, %add.151, %Arg_7.1)
+  %convert_element_type.252 = s32[225]{0} convert(%select_n.66)
+  %broadcast_in_dim.120 = s32[225,1]{1,0} reshape(%convert_element_type.252)
+  %scatter.146 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.120, %Arg_28.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_20.33
+  %reshape.117 = f64[65,7]{1,0} reshape(%scatter.146)
+  %slice.144 = f64[65,1]{1,0} slice(%reshape.117), slice={[0:65], [3:4]}
+  %mul.394 = f64[65,1]{1,0} multiply(%slice.144, %broadcast.39)
+  %jit_atleast_1d_.186 = f64[65,1]{1,0} call(%mul.394), to_apply=%atleast_1d_41.9
+  %convert_element_type.255 = c128[65,1]{1,0} convert(%jit_atleast_1d_.186)
+  %slice.142 = f64[65,3]{1,0} slice(%reshape.117), slice={[0:65], [4:7]}
+  %convert_element_type.254 = c128[65,3]{1,0} convert(%slice.142)
+  %slice.143 = f64[65,3]{1,0} slice(%reshape.117), slice={[0:65], [0:3]}
+  %rev.62 = f64[65,3]{1,0} reverse(%slice.143), dimensions={1}
+  %convert_element_type.253 = c128[65,3]{1,0} convert(%rev.62)
+  %mul.392 = c128[65,3]{1,0} multiply(%convert_element_type.253, %broadcast.41)
+  %sub.71 = c128[65,3]{1,0} subtract(%convert_element_type.254, %mul.392)
+  %mul.393 = c128[65,3]{1,0} multiply(%sub.71, %broadcast.40)
+  %jit_atleast_1d_.187 = c128[65,3]{1,0} call(%mul.393), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.188 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.256 = c128[65,6]{1,0} convert(%jit_atleast_1d_.188)
+  %real.84 = f64[65,3]{1,0} real(%mul.393)
+  %imag.42 = f64[65,3]{1,0} imag(%mul.393)
+  %neg.60 = f64[65,3]{1,0} negate(%imag.42)
+  %complex.42 = c128[65,3]{1,0} complex(%real.84, %neg.60)
+  %jit__flip_.42 = c128[65,3]{1,0} call(%complex.42), to_apply=%_flip.8
+  %jit_atleast_1d_.189 = c128[65,3]{1,0} call(%jit__flip_.42), to_apply=%atleast_1d_42.10
+  %concatenate.65 = c128[65,13]{1,0} concatenate(%convert_element_type.255, %jit_atleast_1d_.187, %convert_element_type.256, %jit_atleast_1d_.189), dimensions={1}
+  %jit_fft_.42 = c128[65,13]{1,0} call(%concatenate.65), to_apply=%fft.12
+  %real.85 = f64[65,13]{1,0} real(%jit_fft_.42)
+  %dot_general.42 = f64[49,13]{1,0} dot(%Arg_5.1, %real.85), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.118 = f64[13,49]{0,1} transpose(%dot_general.42), dimensions={1,0}
+  %reshape.119 = f64[637]{0} reshape(%reshape.118)
+  %add.177 = f64[637]{0} add(%sub.83, %reshape.119)
+  %mul.491 = f64[637]{0} multiply(%div.16, %add.177)
+  %neg.78 = f64[637]{0} negate(%squeeze.23)
+  %mul.492 = f64[637]{0} multiply(%neg.78, %broadcast.43)
+  %add.178 = f64[637]{0} add(%mul.492, %add.128)
+  %mul.493 = f64[637]{0} multiply(%div.22, %add.178)
+  %add.179 = f64[637]{0} add(%mul.491, %mul.493)
+  %broadcast_in_dim.148 = f64[1,637]{1,0} reshape(%add.179)
+  %mul.524 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.148), dimensions={0,1}
+  %mul.525 = f64[637]{0} reshape(%mul.524)
+  %mul.526 = f64[3,637]{1,0} broadcast(%mul.525), dimensions={1}
+  %mul.527 = f64[3,637]{1,0} multiply(%mul.526, %concatenate.46)
+  %add.187 = f64[3,637]{1,0} add(%add.186, %mul.527)
+  %broadcast_in_dim.149 = f64[1,637]{1,0} reshape(%mul.403)
+  %mul.528 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.149), dimensions={0,1}
+  %mul.529 = f64[637]{0} reshape(%mul.528)
+  %mul.530 = f64[3,637]{1,0} broadcast(%mul.529), dimensions={1}
+  %mul.531 = f64[3,637]{1,0} multiply(%mul.530, %concatenate.54)
+  %add.188 = f64[3,637]{1,0} add(%add.187, %mul.531)
+  %transpose.31 = f64[637,3]{0,1} transpose(%add.188), dimensions={1,0}
+  %mul.560 = f64[637,3]{0,1} multiply(%transpose.31, %transpose.19)
+  %reduce_sum.183 = f64[637]{0} reduce(%mul.560, %constant.92), dimensions={1}, to_apply=%region_44.70
+  %mul.561 = f64[637,3]{0,1} multiply(%transpose.25, %transpose.20)
+  %reduce_sum.184 = f64[637]{0} reduce(%mul.561, %constant.92), dimensions={1}, to_apply=%region_45.71
+  %add.198 = f64[637]{0} add(%reduce_sum.183, %reduce_sum.184)
+  %sub.90 = f64[637]{0} subtract(%add.199, %add.198)
+  %mul.568 = f64[637]{0} multiply(%mul.403, %sub.90)
+  %mul.566 = f64[637,3]{0,1} multiply(%transpose.31, %transpose.23)
+  %reduce_sum.189 = f64[637]{0} reduce(%mul.566, %constant.92), dimensions={1}, to_apply=%region_50.76
+  %mul.567 = f64[637,3]{0,1} multiply(%transpose.25, %transpose.21)
+  %reduce_sum.190 = f64[637]{0} reduce(%mul.567, %constant.92), dimensions={1}, to_apply=%region_51.77
+  %add.201 = f64[637]{0} add(%reduce_sum.189, %reduce_sum.190)
+  %mul.537 = f64[637]{0} multiply(%squeeze.23, %broadcast.43)
+  %sub.88 = f64[637]{0} subtract(%mul.537, %reshape.142)
+  %mul.538 = f64[637]{0} multiply(%div.16, %sub.88)
+  %integer_pow.11 = f64[637]{0} multiply(%reduce_sum.172, %reduce_sum.172)
+  %abs.9 = f64[637]{0} abs(%integer_pow.11)
+  %le.9 = pred[637]{0} compare(%abs.9, %broadcast.43), direction=LE
+  %neg.79 = f64[637]{0} negate(%div.15)
+  %jit_cross_.18 = f64[637,3]{0,1} call(%transpose.23, %transpose.19), to_apply=%cross.26
+  %mul.440 = f64[637,3]{0,1} multiply(%transpose.21, %jit_cross_.18)
+  %reduce_sum.173 = f64[637]{0} reduce(%mul.440, %constant.92), dimensions={1}, to_apply=%region_29.55
+  %neg.67 = f64[637]{0} negate(%reshape.82)
+  %mul.436 = f64[637]{0} multiply(%neg.67, %broadcast.43)
+  %Arg_10.1 = f64[49,65]{1,0} parameter(10)
+  %lt.74 = pred[230]{0} compare(%Arg_15.1, %broadcast.37), direction=LT
+  %add.160 = s64[230]{0} add(%Arg_15.1, %broadcast.36)
+  %select_n.70 = s64[230]{0} select(%lt.74, %add.160, %Arg_15.1)
+  %convert_element_type.274 = s32[230]{0} convert(%select_n.70)
+  %broadcast_in_dim.130 = s32[230,1]{1,0} reshape(%convert_element_type.274)
+  %scatter.150 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.130, %Arg_30.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_28.54
+  %reshape.129 = f64[65,7]{1,0} reshape(%scatter.150)
+  %slice.158 = f64[65,1]{1,0} slice(%reshape.129), slice={[0:65], [3:4]}
+  %mul.435 = f64[65,1]{1,0} multiply(%slice.158, %broadcast.39)
+  %jit_atleast_1d_.202 = f64[65,1]{1,0} call(%mul.435), to_apply=%atleast_1d_41.9
+  %convert_element_type.277 = c128[65,1]{1,0} convert(%jit_atleast_1d_.202)
+  %slice.156 = f64[65,3]{1,0} slice(%reshape.129), slice={[0:65], [4:7]}
+  %convert_element_type.276 = c128[65,3]{1,0} convert(%slice.156)
+  %slice.157 = f64[65,3]{1,0} slice(%reshape.129), slice={[0:65], [0:3]}
+  %rev.69 = f64[65,3]{1,0} reverse(%slice.157), dimensions={1}
+  %convert_element_type.275 = c128[65,3]{1,0} convert(%rev.69)
+  %mul.433 = c128[65,3]{1,0} multiply(%convert_element_type.275, %broadcast.41)
+  %sub.76 = c128[65,3]{1,0} subtract(%convert_element_type.276, %mul.433)
+  %mul.434 = c128[65,3]{1,0} multiply(%sub.76, %broadcast.40)
+  %jit_atleast_1d_.203 = c128[65,3]{1,0} call(%mul.434), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.204 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.278 = c128[65,6]{1,0} convert(%jit_atleast_1d_.204)
+  %real.92 = f64[65,3]{1,0} real(%mul.434)
+  %imag.46 = f64[65,3]{1,0} imag(%mul.434)
+  %neg.66 = f64[65,3]{1,0} negate(%imag.46)
+  %complex.46 = c128[65,3]{1,0} complex(%real.92, %neg.66)
+  %jit__flip_.46 = c128[65,3]{1,0} call(%complex.46), to_apply=%_flip.8
+  %jit_atleast_1d_.205 = c128[65,3]{1,0} call(%jit__flip_.46), to_apply=%atleast_1d_42.10
+  %concatenate.71 = c128[65,13]{1,0} concatenate(%convert_element_type.277, %jit_atleast_1d_.203, %convert_element_type.278, %jit_atleast_1d_.205), dimensions={1}
+  %jit_fft_.46 = c128[65,13]{1,0} call(%concatenate.71), to_apply=%fft.12
+  %real.93 = f64[65,13]{1,0} real(%jit_fft_.46)
+  %dot_general.46 = f64[49,13]{1,0} dot(%Arg_10.1, %real.93), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.130 = f64[13,49]{0,1} transpose(%dot_general.46), dimensions={1,0}
+  %reshape.131 = f64[637]{0} reshape(%reshape.130)
+  %add.161 = f64[637]{0} add(%mul.436, %reshape.131)
+  %broadcast_in_dim.131 = f64[1,637]{1,0} reshape(%add.161)
+  %mul.437 = f64[637]{0} multiply(%reshape.97, %broadcast.35)
+  %mul.438 = f64[637]{0} multiply(%mul.437, %broadcast.43)
+  %mul.439 = f64[637]{0} multiply(%reshape.82, %broadcast.43)
+  %add.162 = f64[637]{0} add(%mul.438, %mul.439)
+  %broadcast_in_dim.132 = f64[1,637]{1,0} reshape(%add.162)
+  %Arg_18.1 = f64[49,65]{1,0} parameter(18)
+  %lt.73 = pred[225]{0} compare(%Arg_23.1, %broadcast.45), direction=LT
+  %add.159 = s64[225]{0} add(%Arg_23.1, %broadcast.42)
+  %select_n.69 = s64[225]{0} select(%lt.73, %add.159, %Arg_23.1)
+  %convert_element_type.269 = s32[225]{0} convert(%select_n.69)
+  %broadcast_in_dim.129 = s32[225,1]{1,0} reshape(%convert_element_type.269)
+  %scatter.149 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.129, %Arg_31.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_27.53
+  %reshape.127 = f64[65,7]{1,0} reshape(%scatter.149)
+  %slice.155 = f64[65,1]{1,0} slice(%reshape.127), slice={[0:65], [3:4]}
+  %mul.432 = f64[65,1]{1,0} multiply(%slice.155, %broadcast.39)
+  %jit_atleast_1d_.198 = f64[65,1]{1,0} call(%mul.432), to_apply=%atleast_1d_41.9
+  %convert_element_type.272 = c128[65,1]{1,0} convert(%jit_atleast_1d_.198)
+  %slice.153 = f64[65,3]{1,0} slice(%reshape.127), slice={[0:65], [4:7]}
+  %convert_element_type.271 = c128[65,3]{1,0} convert(%slice.153)
+  %slice.154 = f64[65,3]{1,0} slice(%reshape.127), slice={[0:65], [0:3]}
+  %rev.68 = f64[65,3]{1,0} reverse(%slice.154), dimensions={1}
+  %convert_element_type.270 = c128[65,3]{1,0} convert(%rev.68)
+  %mul.430 = c128[65,3]{1,0} multiply(%convert_element_type.270, %broadcast.41)
+  %sub.75 = c128[65,3]{1,0} subtract(%convert_element_type.271, %mul.430)
+  %mul.431 = c128[65,3]{1,0} multiply(%sub.75, %broadcast.40)
+  %jit_atleast_1d_.199 = c128[65,3]{1,0} call(%mul.431), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.200 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.273 = c128[65,6]{1,0} convert(%jit_atleast_1d_.200)
+  %real.90 = f64[65,3]{1,0} real(%mul.431)
+  %imag.45 = f64[65,3]{1,0} imag(%mul.431)
+  %neg.65 = f64[65,3]{1,0} negate(%imag.45)
+  %complex.45 = c128[65,3]{1,0} complex(%real.90, %neg.65)
+  %jit__flip_.45 = c128[65,3]{1,0} call(%complex.45), to_apply=%_flip.8
+  %jit_atleast_1d_.201 = c128[65,3]{1,0} call(%jit__flip_.45), to_apply=%atleast_1d_42.10
+  %concatenate.70 = c128[65,13]{1,0} concatenate(%convert_element_type.272, %jit_atleast_1d_.199, %convert_element_type.273, %jit_atleast_1d_.201), dimensions={1}
+  %jit_fft_.45 = c128[65,13]{1,0} call(%concatenate.70), to_apply=%fft.12
+  %real.91 = f64[65,13]{1,0} real(%jit_fft_.45)
+  %dot_general.45 = f64[49,13]{1,0} dot(%Arg_18.1, %real.91), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.128 = f64[13,49]{0,1} transpose(%dot_general.45), dimensions={1,0}
+  %broadcast_in_dim_reshape.24 = f64[1,637]{1,0} reshape(%reshape.128)
+  %concatenate.72 = f64[3,637]{1,0} concatenate(%broadcast_in_dim.131, %broadcast_in_dim.132, %broadcast_in_dim_reshape.24), dimensions={0}
+  %transpose.28 = f64[637,3]{0,1} transpose(%concatenate.72), dimensions={1,0}
+  %jit_cross_.19 = f64[637,3]{0,1} call(%transpose.28, %transpose.19), to_apply=%cross.26
+  %mul.441 = f64[637,3]{0,1} multiply(%transpose.24, %jit_cross_.19)
+  %reduce_sum.174 = f64[637]{0} reduce(%mul.441, %constant.92), dimensions={1}, to_apply=%region_30.56
+  %add.163 = f64[637]{0} add(%reduce_sum.173, %reduce_sum.174)
+  %jit_cross_.20 = f64[637,3]{0,1} call(%transpose.23, %transpose.27), to_apply=%cross.26
+  %mul.442 = f64[637,3]{0,1} multiply(%transpose.24, %jit_cross_.20)
+  %reduce_sum.175 = f64[637]{0} reduce(%mul.442, %constant.92), dimensions={1}, to_apply=%region_31.57
+  %add.164 = f64[637]{0} add(%add.163, %reduce_sum.175)
+  %mul.532 = f64[637]{0} multiply(%neg.79, %add.164)
+  %jit__where_.22 = f64[637]{0} call(%le.9, %constant.91, %mul.532), to_apply=%_where_114.49
+  %jit__where_.23 = f64[637]{0} call(%le.9, %constant.90, %integer_pow.11), to_apply=%_where_114.49
+  %div.23 = f64[637]{0} divide(%jit__where_.22, %jit__where_.23)
+  %sub.89 = f64[637]{0} subtract(%squeeze.23, %reshape.116)
+  %mul.539 = f64[637]{0} multiply(%div.23, %sub.89)
+  %add.192 = f64[637]{0} add(%mul.538, %mul.539)
+  %broadcast_in_dim.150 = f64[1,637]{1,0} reshape(%add.192)
+  %mul.540 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.150), dimensions={0,1}
+  %mul.541 = f64[637]{0} reshape(%mul.540)
+  %mul.542 = f64[3,637]{1,0} broadcast(%mul.541), dimensions={1}
+  %mul.543 = f64[3,637]{1,0} multiply(%mul.542, %concatenate.60)
+  %broadcast_in_dim.151 = f64[1,637]{1,0} reshape(%mul.404)
+  %mul.544 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.151), dimensions={0,1}
+  %mul.545 = f64[637]{0} reshape(%mul.544)
+  %mul.546 = f64[3,637]{1,0} broadcast(%mul.545), dimensions={1}
+  %mul.547 = f64[3,637]{1,0} multiply(%mul.546, %concatenate.72)
+  %add.193 = f64[3,637]{1,0} add(%mul.543, %mul.547)
+  %neg.80 = f64[637]{0} negate(%squeeze.23)
+  %mul.533 = f64[637]{0} multiply(%neg.80, %broadcast.43)
+  %Arg_3.3 = f64[49,65]{1,0} parameter(3)
+  %lt.77 = pred[225]{0} compare(%Arg_7.1, %broadcast.45), direction=LT
+  %add.171 = s64[225]{0} add(%Arg_7.1, %broadcast.42)
+  %select_n.73 = s64[225]{0} select(%lt.77, %add.171, %Arg_7.1)
+  %convert_element_type.291 = s32[225]{0} convert(%select_n.73)
+  %broadcast_in_dim.137 = s32[225,1]{1,0} reshape(%convert_element_type.291)
+  %scatter.153 = f64[455]{0} scatter(%broadcast.44, %broadcast_in_dim.137, %Arg_28.1), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=%region_37.63
+  %reshape.137 = f64[65,7]{1,0} reshape(%scatter.153)
+  %slice.167 = f64[65,1]{1,0} slice(%reshape.137), slice={[0:65], [3:4]}
+  %mul.466 = f64[65,1]{1,0} multiply(%slice.167, %broadcast.39)
+  %jit_atleast_1d_.214 = f64[65,1]{1,0} call(%mul.466), to_apply=%atleast_1d_41.9
+  %convert_element_type.294 = c128[65,1]{1,0} convert(%jit_atleast_1d_.214)
+  %slice.165 = f64[65,3]{1,0} slice(%reshape.137), slice={[0:65], [4:7]}
+  %convert_element_type.293 = c128[65,3]{1,0} convert(%slice.165)
+  %slice.166 = f64[65,3]{1,0} slice(%reshape.137), slice={[0:65], [0:3]}
+  %rev.72 = f64[65,3]{1,0} reverse(%slice.166), dimensions={1}
+  %convert_element_type.292 = c128[65,3]{1,0} convert(%rev.72)
+  %mul.464 = c128[65,3]{1,0} multiply(%convert_element_type.292, %broadcast.41)
+  %sub.79 = c128[65,3]{1,0} subtract(%convert_element_type.293, %mul.464)
+  %mul.465 = c128[65,3]{1,0} multiply(%sub.79, %broadcast.40)
+  %jit_atleast_1d_.215 = c128[65,3]{1,0} call(%mul.465), to_apply=%atleast_1d_42.10
+  %jit_atleast_1d_.216 = f64[65,6]{1,0} call(%broadcast.38), to_apply=%atleast_1d_43.11
+  %convert_element_type.295 = c128[65,6]{1,0} convert(%jit_atleast_1d_.216)
+  %real.98 = f64[65,3]{1,0} real(%mul.465)
+  %imag.49 = f64[65,3]{1,0} imag(%mul.465)
+  %neg.71 = f64[65,3]{1,0} negate(%imag.49)
+  %complex.49 = c128[65,3]{1,0} complex(%real.98, %neg.71)
+  %jit__flip_.49 = c128[65,3]{1,0} call(%complex.49), to_apply=%_flip.8
+  %jit_atleast_1d_.217 = c128[65,3]{1,0} call(%jit__flip_.49), to_apply=%atleast_1d_42.10
+  %concatenate.76 = c128[65,13]{1,0} concatenate(%convert_element_type.294, %jit_atleast_1d_.215, %convert_element_type.295, %jit_atleast_1d_.217), dimensions={1}
+  %jit_fft_.49 = c128[65,13]{1,0} call(%concatenate.76), to_apply=%fft.12
+  %real.99 = f64[65,13]{1,0} real(%jit_fft_.49)
+  %dot_general.49 = f64[49,13]{1,0} dot(%Arg_3.3, %real.99), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  %reshape.138 = f64[13,49]{0,1} transpose(%dot_general.49), dimensions={1,0}
+  %reshape.139 = f64[637]{0} reshape(%reshape.138)
+  %add.189 = f64[637]{0} add(%mul.533, %reshape.139)
+  %mul.534 = f64[637]{0} multiply(%div.16, %add.189)
+  %neg.81 = f64[637]{0} negate(%squeeze.23)
+  %mul.535 = f64[637]{0} multiply(%neg.81, %broadcast.43)
+  %add.190 = f64[637]{0} add(%mul.535, %add.128)
+  %mul.536 = f64[637]{0} multiply(%div.23, %add.190)
+  %add.191 = f64[637]{0} add(%mul.534, %mul.536)
+  %broadcast_in_dim.152 = f64[1,637]{1,0} reshape(%add.191)
+  %mul.548 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.152), dimensions={0,1}
+  %mul.549 = f64[637]{0} reshape(%mul.548)
+  %mul.550 = f64[3,637]{1,0} broadcast(%mul.549), dimensions={1}
+  %mul.551 = f64[3,637]{1,0} multiply(%mul.550, %concatenate.46)
+  %add.194 = f64[3,637]{1,0} add(%add.193, %mul.551)
+  %broadcast_in_dim.153 = f64[1,637]{1,0} reshape(%mul.403)
+  %mul.552 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.153), dimensions={0,1}
+  %mul.553 = f64[637]{0} reshape(%mul.552)
+  %mul.554 = f64[3,637]{1,0} broadcast(%mul.553), dimensions={1}
+  %mul.555 = f64[3,637]{1,0} multiply(%mul.554, %concatenate.69)
+  %add.195 = f64[3,637]{1,0} add(%add.194, %mul.555)
+  %transpose.32 = f64[637,3]{0,1} transpose(%add.195), dimensions={1,0}
+  %mul.564 = f64[637,3]{0,1} multiply(%transpose.32, %transpose.24)
+  %reduce_sum.187 = f64[637]{0} reduce(%mul.564, %constant.92), dimensions={1}, to_apply=%region_48.74
+  %mul.565 = f64[637,3]{0,1} multiply(%transpose.25, %transpose.21)
+  %reduce_sum.188 = f64[637]{0} reduce(%mul.565, %constant.92), dimensions={1}, to_apply=%region_49.75
+  %add.200 = f64[637]{0} add(%reduce_sum.187, %reduce_sum.188)
+  %sub.91 = f64[637]{0} subtract(%add.201, %add.200)
+  %mul.569 = f64[637]{0} multiply(%mul.404, %sub.91)
+  %sub.92 = f64[637]{0} subtract(%mul.568, %mul.569)
+  %constant.77 = f64[] constant(1.25663706127e-06)
+  %broadcast.31 = f64[637]{0} broadcast(%constant.77), dimensions={}
+  %div.24 = f64[637]{0} divide(%sub.92, %broadcast.31)
+  %Arg_33.1 = f64[13]{0} parameter(33)
+  %broadcast_in_dim.141 = f64[1,13]{1,0} reshape(%Arg_33.1)
+  %concatenate.80 = f64[2,13]{1,0} concatenate(%broadcast_in_dim.141, %broadcast.33), dimensions={0}
+  %reshape.148 = f64[13,2]{0,1} transpose(%concatenate.80), dimensions={1,0}
+  %reshape.149 = f64[26]{0} reshape(%reshape.148)
+  %rev.77 = f64[26]{0} reverse(%reshape.149), dimensions={0}
+  %jit_atleast_2d_.11 = f64[1,26]{1,0} call(%rev.77), to_apply=%atleast_2d.34
+  %jit__polyder_jax_.5 = f64[1,26]{1,0} call(%jit_atleast_2d_.11, %constant.90), to_apply=%_polyder_jax.42
+  %slice.175 = f64[637,1]{1,0} slice(%Arg_24.1), slice={[0:637], [0:1]}
+  %squeeze.26 = f64[637]{0} reshape(%slice.175)
+  %jit__polyval_jax_.5 = f64[1,637]{1,0} call(%jit__polyder_jax_.5, %squeeze.26), to_apply=%_polyval_jax.48
+  %squeeze.27 = f64[637]{0} reshape(%jit__polyval_jax_.5)
+  %sub.93 = f64[637]{0} subtract(%div.24, %squeeze.27)
+  %abs.6 = f64[637]{0} abs(%reduce_sum.172)
+  %le.6 = pred[637]{0} compare(%abs.6, %broadcast.43), direction=LE
+  %jit__where_.16 = f64[3,637]{1,0} call(%le.6, %constant.91, %concatenate.60), to_apply=%_where_120.50
+  %jit__where_.17 = f64[637]{0} call(%le.6, %constant.90, %reduce_sum.172), to_apply=%_where_114.49
+  %broadcast_in_dim.124 = f64[1,637]{1,0} reshape(%jit__where_.17)
+  %div.17 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.124), dimensions={0,1}
+  %div.18 = f64[637]{0} reshape(%div.17)
+  %div.19 = f64[3,637]{1,0} broadcast(%div.18), dimensions={1}
+  %div.20 = f64[3,637]{1,0} divide(%jit__where_.16, %div.19)
+  %transpose.26 = f64[637,3]{0,1} transpose(%div.20), dimensions={1,0}
+  %jit_cross_.17 = f64[637,3]{0,1} call(%transpose.26, %transpose.19), to_apply=%cross.26
+  %mul.579 = f64[637,3]{0,1} multiply(%jit_cross_.17, %jit_cross_.17)
+  %reduce_sum.191 = f64[637]{0} reduce(%mul.579, %constant.92), dimensions={1}, to_apply=%region_53.80
+  %sqrt.3 = f64[637]{0} sqrt(%reduce_sum.191)
+  %mul.580 = f64[637]{0} multiply(%sub.93, %sqrt.3)
+  %mul.581 = f64[637]{0} multiply(%mul.580, %reduce_sum.172)
+  %mul.558 = f64[637,3]{0,1} multiply(%transpose.32, %transpose.19)
+  %reduce_sum.181 = f64[637]{0} reduce(%mul.558, %constant.92), dimensions={1}, to_apply=%region_42.68
+  %mul.559 = f64[637,3]{0,1} multiply(%transpose.25, %transpose.27)
+  %reduce_sum.182 = f64[637]{0} reduce(%mul.559, %constant.92), dimensions={1}, to_apply=%region_43.69
+  %add.197 = f64[637]{0} add(%reduce_sum.181, %reduce_sum.182)
+  %mul.556 = f64[637,3]{0,1} multiply(%transpose.30, %transpose.23)
+  %reduce_sum.179 = f64[637]{0} reduce(%mul.556, %constant.92), dimensions={1}, to_apply=%region_40.66
+  %mul.557 = f64[637,3]{0,1} multiply(%transpose.25, %transpose.27)
+  %reduce_sum.180 = f64[637]{0} reduce(%mul.557, %constant.92), dimensions={1}, to_apply=%region_41.67
+  %add.196 = f64[637]{0} add(%reduce_sum.179, %reduce_sum.180)
+  %sub.94 = f64[637]{0} subtract(%add.197, %add.196)
+  %div.25 = f64[637]{0} divide(%sub.94, %broadcast.31)
+  %broadcast_in_dim.154 = f64[1,637]{1,0} reshape(%mul.403)
+  %mul.570 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.154), dimensions={0,1}
+  %mul.571 = f64[637]{0} reshape(%mul.570)
+  %mul.572 = f64[3,637]{1,0} broadcast(%mul.571), dimensions={1}
+  %jit_cross_.24 = f64[637,3]{0,1} call(%transpose.19, %transpose.24), to_apply=%cross.26
+  %transpose.33 = f64[3,637]{1,0} transpose(%jit_cross_.24), dimensions={1,0}
+  %mul.573 = f64[3,637]{1,0} multiply(%mul.572, %transpose.33)
+  %mul.574 = f64[637]{0} multiply(%reduce_sum.172, %mul.404)
+  %broadcast_in_dim.155 = f64[1,637]{1,0} reshape(%mul.574)
+  %mul.575 = f64[1,637]{1,0} broadcast(%broadcast_in_dim.155), dimensions={0,1}
+  %mul.576 = f64[637]{0} reshape(%mul.575)
+  %mul.577 = f64[3,637]{1,0} broadcast(%mul.576), dimensions={1}
+  %jit_cross_.25 = f64[637,3]{0,1} call(%transpose.24, %transpose.26), to_apply=%cross.26
+  %transpose.34 = f64[3,637]{1,0} transpose(%jit_cross_.25), dimensions={1,0}
+  %mul.578 = f64[3,637]{1,0} multiply(%mul.577, %transpose.34)
+  %sub.95 = f64[3,637]{1,0} subtract(%mul.573, %mul.578)
+  %transpose.35 = f64[637,3]{0,1} transpose(%sub.95), dimensions={1,0}
+  %jit_norm_.1 = f64[637]{0} call(%transpose.35), to_apply=%norm.79
+  %mul.582 = f64[637]{0} multiply(%div.25, %jit_norm_.1)
+  %concatenate.81 = f64[1274]{0} concatenate(%mul.581, %mul.582), dimensions={0}
+  %Arg_26.1 = s64[] parameter(26)
+  %convert_element_type.308 = f64[] convert(%Arg_26.1)
+  %sub.96 = f64[1274]{0} broadcast(%convert_element_type.308), dimensions={}
+  %sub.97 = f64[1274]{0} subtract(%concatenate.81, %sub.96)
+  %jit_atleast_1d_.226 = f64[1274]{0} call(%sub.97), to_apply=%atleast_1d_130.81
+  %Arg_25.1 = f64[] parameter(25)
+  %div.26 = f64[1274]{0} broadcast(%Arg_25.1), dimensions={}
+  %div.27 = f64[1274]{0} divide(%jit_atleast_1d_.226, %div.26)
+  %Arg_0.55 = f64[1274]{0} parameter(0)
+  %mul.583 = f64[1274]{0} multiply(%div.27, %Arg_0.55)
+  %Arg_27.1 = s64[] parameter(27)
+  %convert_element_type.309 = f64[] convert(%Arg_27.1)
+  %mul.584 = f64[1274]{0} broadcast(%convert_element_type.309), dimensions={}
+  %mul.585 = f64[1274]{0} multiply(%mul.583, %mul.584)
+  ROOT %jit_atleast_1d_.227 = f64[1274]{0} call(%mul.585), to_apply=%atleast_1d_130.81
+}
+
+ENTRY %main.83 (self_0____objectives___0__0____constants____quad_weights__.1: f64[1274], self_0____objectives___0__0____constants____transforms____L___0____matrices____fft___0__0_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____L___0____matrices____fft___0__1_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____L___0____matrices____fft___0__2_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____L___0____matrices____fft___1__0_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____L___0____matrices____fft___1__1_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____L___0___dk__.1: s64[1,7], self_0____objectives___0__0____constants____transforms____L___0___fft_index__.1: s64[225], self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___0__0_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___0__1_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___0__2_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___1__0_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___1__1_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___2__0_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____R___0___dk__.1: s64[1,7], self_0____objectives___0__0____constants____transforms____R___0___fft_index__.1: s64[230], self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___0__0_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___0__1_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___0__2_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___1__0_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___1__1_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___2__0_.1: f64[49,65], self_0____objectives___0__0____constants____transforms____Z___0___dk__.1: s64[1,7], self_0____objectives___0__0____constants____transforms____Z___0___fft_index__.1: s64[225], self_0____objectives___0__0____constants____transforms____grid___0____nodes__.1: f64[637,3], self_0____objectives___0__0____normalization__.1: f64[], self_0____objectives___0__0____target__.1: s64[], self_0____objectives___0__0____weight__.1: s64[], x.1: f64[833]) -> f64[1274] {
+  %self_0____objectives___0__0____constants____quad_weights__.1 = f64[1274]{0} parameter(0)
+  %self_0____objectives___0__0____constants____transforms____L___0____matrices____fft___0__0_.1 = f64[49,65]{1,0} parameter(1)
+  %self_0____objectives___0__0____constants____transforms____L___0____matrices____fft___0__1_.1 = f64[49,65]{1,0} parameter(2)
+  %self_0____objectives___0__0____constants____transforms____L___0____matrices____fft___0__2_.1 = f64[49,65]{1,0} parameter(3)
+  %self_0____objectives___0__0____constants____transforms____L___0____matrices____fft___1__0_.1 = f64[49,65]{1,0} parameter(4)
+  %self_0____objectives___0__0____constants____transforms____L___0____matrices____fft___1__1_.1 = f64[49,65]{1,0} parameter(5)
+  %self_0____objectives___0__0____constants____transforms____L___0___dk__.1 = s64[1,7]{1,0} parameter(6)
+  %self_0____objectives___0__0____constants____transforms____L___0___fft_index__.1 = s64[225]{0} parameter(7)
+  %self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___0__0_.1 = f64[49,65]{1,0} parameter(8)
+  %self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___0__1_.1 = f64[49,65]{1,0} parameter(9)
+  %self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___0__2_.1 = f64[49,65]{1,0} parameter(10)
+  %self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___1__0_.1 = f64[49,65]{1,0} parameter(11)
+  %self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___1__1_.1 = f64[49,65]{1,0} parameter(12)
+  %self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___2__0_.1 = f64[49,65]{1,0} parameter(13)
+  %self_0____objectives___0__0____constants____transforms____R___0___dk__.1 = s64[1,7]{1,0} parameter(14)
+  %self_0____objectives___0__0____constants____transforms____R___0___fft_index__.1 = s64[230]{0} parameter(15)
+  %self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___0__0_.1 = f64[49,65]{1,0} parameter(16)
+  %self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___0__1_.1 = f64[49,65]{1,0} parameter(17)
+  %self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___0__2_.1 = f64[49,65]{1,0} parameter(18)
+  %self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___1__0_.1 = f64[49,65]{1,0} parameter(19)
+  %self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___1__1_.1 = f64[49,65]{1,0} parameter(20)
+  %self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___2__0_.1 = f64[49,65]{1,0} parameter(21)
+  %self_0____objectives___0__0____constants____transforms____Z___0___dk__.1 = s64[1,7]{1,0} parameter(22)
+  %self_0____objectives___0__0____constants____transforms____Z___0___fft_index__.1 = s64[225]{0} parameter(23)
+  %self_0____objectives___0__0____constants____transforms____grid___0____nodes__.1 = f64[637,3]{1,0} parameter(24)
+  %self_0____objectives___0__0____normalization__.1 = f64[] parameter(25)
+  %self_0____objectives___0__0____target__.1 = s64[] parameter(26)
+  %self_0____objectives___0__0____weight__.1 = s64[] parameter(27)
+  %x.1 = f64[833]{0} parameter(28)
+  %jit_unpack_state_.7 = (f64[225]{0}, f64[1]{0}, f64[230]{0}, f64[225]{0}, f64[13]{0}, /*index=5*/f64[13]{0}) call(%x.1), to_apply=%unpack_state.6
+  %jit_unpack_state_.8 = f64[225]{0} get-tuple-element(%jit_unpack_state_.7), index=0
+  %jit_unpack_state_.9 = f64[1]{0} get-tuple-element(%jit_unpack_state_.7), index=1
+  %jit_unpack_state_.10 = f64[230]{0} get-tuple-element(%jit_unpack_state_.7), index=2
+  %jit_unpack_state_.11 = f64[225]{0} get-tuple-element(%jit_unpack_state_.7), index=3
+  %jit_unpack_state_.12 = f64[13]{0} get-tuple-element(%jit_unpack_state_.7), index=4
+  %jit_unpack_state_.13 = f64[13]{0} get-tuple-element(%jit_unpack_state_.7), index=5
+  ROOT %jit_compute_scaled_error_.1 = f64[1274]{0} call(%self_0____objectives___0__0____constants____quad_weights__.1, %self_0____objectives___0__0____constants____transforms____L___0____matrices____fft___0__0_.1, %self_0____objectives___0__0____constants____transforms____L___0____matrices____fft___0__1_.1, %self_0____objectives___0__0____constants____transforms____L___0____matrices____fft___0__2_.1, %self_0____objectives___0__0____constants____transforms____L___0____matrices____fft___1__0_.1, /*index=5*/%self_0____objectives___0__0____constants____transforms____L___0____matrices____fft___1__1_.1, %self_0____objectives___0__0____constants____transforms____L___0___dk__.1, %self_0____objectives___0__0____constants____transforms____L___0___fft_index__.1, %self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___0__0_.1, %self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___0__1_.1, /*index=10*/%self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___0__2_.1, %self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___1__0_.1, %self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___1__1_.1, %self_0____objectives___0__0____constants____transforms____R___0____matrices____fft___2__0_.1, %self_0____objectives___0__0____constants____transforms____R___0___dk__.1, /*index=15*/%self_0____objectives___0__0____constants____transforms____R___0___fft_index__.1, %self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___0__0_.1, %self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___0__1_.1, %self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___0__2_.1, %self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___1__0_.1, /*index=20*/%self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___1__1_.1, %self_0____objectives___0__0____constants____transforms____Z___0____matrices____fft___2__0_.1, %self_0____objectives___0__0____constants____transforms____Z___0___dk__.1, %self_0____objectives___0__0____constants____transforms____Z___0___fft_index__.1, %self_0____objectives___0__0____constants____transforms____grid___0____nodes__.1, /*index=25*/%self_0____objectives___0__0____normalization__.1, %self_0____objectives___0__0____target__.1, %self_0____objectives___0__0____weight__.1, %jit_unpack_state_.8, %jit_unpack_state_.9, /*index=30*/%jit_unpack_state_.10, %jit_unpack_state_.11, %jit_unpack_state_.12, %jit_unpack_state_.13), to_apply=%compute_scaled_error.82
+}
+

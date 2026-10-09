@@ -1,0 +1,189 @@
+HloModule jit_f, entry_computation_layout={(f64[24,64,2,64]{3,2,1,0}, f64[2,2]{1,0})->(f64[], f64[6]{0})}
+
+dynamic_index_in_dim.1 {
+  Arg_0.1 = f64[24,64,2,64]{3,2,1,0} parameter(0)
+  Arg_1.1 = s64[] parameter(1)
+  constant.5 = s64[] constant(0)
+  dynamic_slice.1 = f64[1,64,2,64]{3,2,1,0} dynamic-slice(Arg_0.1, Arg_1.1, constant.5, constant.5, constant.5), dynamic_slice_sizes={1,64,2,64}
+  ROOT squeeze.1 = f64[64,2,64]{2,1,0} reshape(dynamic_slice.1)
+}
+
+region_0.2 {
+  arg_tuple.1 = (s64[], f64[64,64]{1,0}, f64[24,64,2,64]{3,2,1,0}, f64[2,2]{1,0}) parameter(0)
+  get-tuple-element.4 = s64[] get-tuple-element(arg_tuple.1), index=0
+  constant.6 = s64[] constant(1)
+  add.1 = s64[] add(get-tuple-element.4, constant.6)
+  get-tuple-element.5 = f64[64,64]{1,0} get-tuple-element(arg_tuple.1), index=1
+  get-tuple-element.6 = f64[24,64,2,64]{3,2,1,0} get-tuple-element(arg_tuple.1), index=2
+  jit_dynamic_index_in_dim_.1 = f64[64,2,64]{2,1,0} call(get-tuple-element.6, get-tuple-element.4), to_apply=dynamic_index_in_dim.1
+  dot_general.3 = f64[64,2,64]{2,1,0} dot(get-tuple-element.5, jit_dynamic_index_in_dim_.1), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  get-tuple-element.7 = f64[2,2]{1,0} get-tuple-element(arg_tuple.1), index=3
+  dot_general.4 = f64[64,64,2]{2,1,0} dot(dot_general.3, get-tuple-element.7), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  transpose.1 = f64[64,2,64]{1,2,0} transpose(dot_general.4), dimensions={0,2,1}
+  dot_general.5 = f64[64,64]{1,0} dot(transpose.1, jit_dynamic_index_in_dim_.1), lhs_contracting_dims={1,0}, rhs_contracting_dims={1,0}
+  ROOT tuple.1 = (s64[], f64[64,64]{1,0}, f64[24,64,2,64]{3,2,1,0}, f64[2,2]{1,0}) tuple(add.1, dot_general.5, get-tuple-element.6, get-tuple-element.7)
+}
+
+region_1.3 {
+  arg_tuple.3 = (s64[], f64[64,64]{1,0}, f64[24,64,2,64]{3,2,1,0}, f64[2,2]{1,0}) parameter(0)
+  get-tuple-element.13 = f64[64,64]{1,0} get-tuple-element(arg_tuple.3), index=1
+  get-tuple-element.14 = f64[24,64,2,64]{3,2,1,0} get-tuple-element(arg_tuple.3), index=2
+  get-tuple-element.15 = f64[2,2]{1,0} get-tuple-element(arg_tuple.3), index=3
+  get-tuple-element.12 = s64[] get-tuple-element(arg_tuple.3), index=0
+  constant.8 = s64[] constant(24)
+  ROOT lt.1 = pred[] compare(get-tuple-element.12, constant.8), direction=LT
+}
+
+_where.4 {
+  Arg_0.3 = pred[6]{0} parameter(0)
+  broadcast_in_dim.6 = pred[6,2,2]{2,1,0} broadcast(Arg_0.3), dimensions={0}
+  Arg_1.3 = f64[2,2]{1,0} parameter(1)
+  broadcast_in_dim.5 = f64[6,2,2]{2,1,0} broadcast(Arg_1.3), dimensions={1,2}
+  Arg_2.1 = f64[2,2]{1,0} parameter(2)
+  broadcast_in_dim.4 = f64[6,2,2]{2,1,0} broadcast(Arg_2.1), dimensions={1,2}
+  ROOT select_n.2 = f64[6,2,2]{2,1,0} select(broadcast_in_dim.6, broadcast_in_dim.5, broadcast_in_dim.4)
+}
+
+region_2.5 {
+  arg_tuple.5 = (s64[], s64[], f64[6,64,64]{2,1,0}, f64[24,64,2,64]{3,2,1,0}, s64[6]{0}, /*index=5*/f64[2,2]{1,0}, f64[2,2]{1,0}) parameter(0)
+  get-tuple-element.23 = s64[] get-tuple-element(arg_tuple.5), index=0
+  constant.14 = s64[] constant(1)
+  add.7 = s64[] add(get-tuple-element.23, constant.14)
+  get-tuple-element.24 = s64[] get-tuple-element(arg_tuple.5), index=1
+  add.5 = s64[] add(get-tuple-element.24, constant.14)
+  get-tuple-element.25 = f64[6,64,64]{2,1,0} get-tuple-element(arg_tuple.5), index=2
+  get-tuple-element.26 = f64[24,64,2,64]{3,2,1,0} get-tuple-element(arg_tuple.5), index=3
+  convert_element_type.4 = s32[] convert(get-tuple-element.24)
+  constant.13 = s32[] constant(0)
+  lt.3 = pred[] compare(convert_element_type.4, constant.13), direction=LT
+  constant.12 = s32[] constant(24)
+  add.6 = s32[] add(convert_element_type.4, constant.12)
+  select_n.3 = s32[] select(lt.3, add.6, convert_element_type.4)
+  dynamic_slice.3 = f64[1,64,2,64]{3,2,1,0} dynamic-slice(get-tuple-element.26, select_n.3, constant.13, constant.13, constant.13), dynamic_slice_sizes={1,64,2,64}
+  squeeze.3 = f64[64,2,64]{2,1,0} reshape(dynamic_slice.3)
+  dot_general.9 = f64[6,64,2,64]{3,2,1,0} dot(get-tuple-element.25, squeeze.3), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  eq.5 = s64[6]{0} broadcast(get-tuple-element.24), dimensions={}
+  get-tuple-element.27 = s64[6]{0} get-tuple-element(arg_tuple.5), index=4
+  eq.6 = pred[6]{0} compare(eq.5, get-tuple-element.27), direction=EQ
+  get-tuple-element.28 = f64[2,2]{1,0} get-tuple-element(arg_tuple.5), index=5
+  get-tuple-element.29 = f64[2,2]{1,0} get-tuple-element(arg_tuple.5), index=6
+  jit__where_.1 = f64[6,2,2]{2,1,0} call(eq.6, get-tuple-element.28, get-tuple-element.29), to_apply=_where.4
+  dot_general.10 = f64[6,64,64,2]{3,2,1,0} dot(dot_general.9, jit__where_.1), lhs_batch_dims={0}, lhs_contracting_dims={2}, rhs_batch_dims={0}, rhs_contracting_dims={1}
+  transpose.3 = f64[6,64,2,64]{2,3,1,0} transpose(dot_general.10), dimensions={0,1,3,2}
+  dot_general.11 = f64[6,64,64]{2,1,0} dot(transpose.3, squeeze.3), lhs_contracting_dims={2,1}, rhs_contracting_dims={1,0}
+  ROOT tuple.3 = (s64[], s64[], f64[6,64,64]{2,1,0}, f64[24,64,2,64]{3,2,1,0}, s64[6]{0}, /*index=5*/f64[2,2]{1,0}, f64[2,2]{1,0}) tuple(add.7, add.5, dot_general.11, get-tuple-element.26, get-tuple-element.27, get-tuple-element.28, get-tuple-element.29)
+}
+
+region_3.6 {
+  arg_tuple.7 = (s64[], s64[], f64[6,64,64]{2,1,0}, f64[24,64,2,64]{3,2,1,0}, s64[6]{0}, /*index=5*/f64[2,2]{1,0}, f64[2,2]{1,0}) parameter(0)
+  get-tuple-element.38 = s64[] get-tuple-element(arg_tuple.7), index=1
+  get-tuple-element.39 = f64[6,64,64]{2,1,0} get-tuple-element(arg_tuple.7), index=2
+  get-tuple-element.40 = f64[24,64,2,64]{3,2,1,0} get-tuple-element(arg_tuple.7), index=3
+  get-tuple-element.41 = s64[6]{0} get-tuple-element(arg_tuple.7), index=4
+  get-tuple-element.42 = f64[2,2]{1,0} get-tuple-element(arg_tuple.7), index=5
+  get-tuple-element.43 = f64[2,2]{1,0} get-tuple-element(arg_tuple.7), index=6
+  get-tuple-element.37 = s64[] get-tuple-element(arg_tuple.7), index=0
+  constant.16 = s64[] constant(24)
+  ROOT lt.5 = pred[] compare(get-tuple-element.37, constant.16), direction=LT
+}
+
+_where_0.7 {
+  Arg_0.6 = pred[64,64]{1,0} parameter(0)
+  broadcast_in_dim.10 = pred[6,64,64]{2,1,0} broadcast(Arg_0.6), dimensions={1,2}
+  Arg_1.5 = f64[6,64,64]{2,1,0} parameter(1)
+  Arg_2.3 = f64[64,64]{1,0} parameter(2)
+  broadcast_in_dim.11 = f64[6,64,64]{2,1,0} broadcast(Arg_2.3), dimensions={1,2}
+  ROOT select_n.5 = f64[6,64,64]{2,1,0} select(broadcast_in_dim.10, Arg_1.5, broadcast_in_dim.11)
+}
+
+region_4.8 {
+  reduce_sum.3 = f64[] parameter(0)
+  reduce_sum.4 = f64[] parameter(1)
+  ROOT reduce_sum.5 = f64[] add(reduce_sum.3, reduce_sum.4)
+}
+
+trace.9 {
+  iota.17 = s64[64]{0} iota(), iota_dimension=0
+  iota.18 = s64[64,64]{1,0} broadcast(iota.17), dimensions={0}
+  iota.19 = s64[64]{0} iota(), iota_dimension=0
+  iota.20 = s64[64,64]{1,0} broadcast(iota.19), dimensions={1}
+  eq.8 = pred[64,64]{1,0} compare(iota.18, iota.20), direction=EQ
+  Arg_0.7 = f64[6,64,64]{2,1,0} parameter(0)
+  constant.19 = f64[] constant(0)
+  broadcast_in_dim.12 = f64[64,64]{1,0} broadcast(constant.19), dimensions={}
+  jit__where_.3 = f64[6,64,64]{2,1,0} call(eq.8, Arg_0.7, broadcast_in_dim.12), to_apply=_where_0.7
+  constant.20 = f64[] constant(0)
+  ROOT reduce_sum.7 = f64[6]{0} reduce(jit__where_.3, constant.20), dimensions={1,2}, to_apply=region_4.8
+}
+
+_where_2.10 {
+  Arg_0.10 = pred[64,64]{1,0} parameter(0)
+  Arg_1.7 = f64[64,64]{1,0} parameter(1)
+  Arg_2.5 = f64[64,64]{1,0} parameter(2)
+  ROOT select_n.7 = f64[64,64]{1,0} select(Arg_0.10, Arg_1.7, Arg_2.5)
+}
+
+region_5.11 {
+  reduce_sum.11 = f64[] parameter(0)
+  reduce_sum.12 = f64[] parameter(1)
+  ROOT reduce_sum.13 = f64[] add(reduce_sum.11, reduce_sum.12)
+}
+
+trace_1.12 {
+  iota.25 = s64[64]{0} iota(), iota_dimension=0
+  iota.26 = s64[64,64]{1,0} broadcast(iota.25), dimensions={0}
+  iota.27 = s64[64]{0} iota(), iota_dimension=0
+  iota.28 = s64[64,64]{1,0} broadcast(iota.27), dimensions={1}
+  eq.10 = pred[64,64]{1,0} compare(iota.26, iota.28), direction=EQ
+  Arg_0.11 = f64[64,64]{1,0} parameter(0)
+  constant.23 = f64[] constant(0)
+  broadcast_in_dim.14 = f64[64,64]{1,0} broadcast(constant.23), dimensions={}
+  jit__where_.5 = f64[64,64]{1,0} call(eq.10, Arg_0.11, broadcast_in_dim.14), to_apply=_where_2.10
+  constant.24 = f64[] constant(0)
+  ROOT reduce_sum.15 = f64[] reduce(jit__where_.5, constant.24), dimensions={0,1}, to_apply=region_5.11
+}
+
+ENTRY main.13 {
+  constant.26 = s64[] constant(0)
+  iota.33 = s64[64]{0} iota(), iota_dimension=0
+  iota.34 = s64[64,64]{1,0} broadcast(iota.33), dimensions={0}
+  iota.35 = s64[64]{0} iota(), iota_dimension=0
+  iota.36 = s64[64,64]{1,0} broadcast(iota.35), dimensions={1}
+  eq.12 = pred[64,64]{1,0} compare(iota.34, iota.36), direction=EQ
+  convert_element_type.6 = f64[64,64]{1,0} convert(eq.12)
+  A.1 = f64[24,64,2,64]{3,2,1,0} parameter(0)
+  constant.27 = f64[] constant(11.313708498984761)
+  div.2 = f64[24,64,2,64]{3,2,1,0} broadcast(constant.27), dimensions={}
+  div.3 = f64[24,64,2,64]{3,2,1,0} divide(A.1, div.2)
+  iota.29 = s64[2]{0} iota(), iota_dimension=0
+  iota.30 = s64[2,2]{1,0} broadcast(iota.29), dimensions={0}
+  iota.31 = s64[2]{0} iota(), iota_dimension=0
+  iota.32 = s64[2,2]{1,0} broadcast(iota.31), dimensions={1}
+  eq.11 = pred[2,2]{1,0} compare(iota.30, iota.32), direction=EQ
+  convert_element_type.5 = f64[2,2]{1,0} convert(eq.11)
+  while.9 = (s64[], f64[64,64]{1,0}, f64[24,64,2,64]{3,2,1,0}, f64[2,2]{1,0}) tuple(constant.26, convert_element_type.6, div.3, convert_element_type.5)
+  while.10 = (s64[], f64[64,64]{1,0}, f64[24,64,2,64]{3,2,1,0}, f64[2,2]{1,0}) while(while.9), condition=region_1.3, body=region_0.2
+  while.11 = s64[] get-tuple-element(while.10), index=0
+  iota.38 = s64[64]{0} iota(), iota_dimension=0
+  iota.39 = s64[64,64]{1,0} broadcast(iota.38), dimensions={0}
+  iota.40 = s64[64]{0} iota(), iota_dimension=0
+  iota.41 = s64[64,64]{1,0} broadcast(iota.40), dimensions={1}
+  eq.13 = pred[64,64]{1,0} compare(iota.39, iota.41), direction=EQ
+  convert_element_type.7 = f64[64,64]{1,0} convert(eq.13)
+  broadcast_in_dim.15 = f64[6,64,64]{2,1,0} broadcast(convert_element_type.7), dimensions={1,2}
+  iota.37 = s64[6]{0} iota(), iota_dimension=0
+  constant.25 = s64[] constant(4)
+  broadcast.1 = s64[6]{0} broadcast(constant.25), dimensions={}
+  mul.1 = s64[6]{0} multiply(iota.37, broadcast.1)
+  H.1 = f64[2,2]{1,0} parameter(1)
+  while.13 = (s64[], s64[], f64[6,64,64]{2,1,0}, f64[24,64,2,64]{3,2,1,0}, s64[6]{0}, /*index=5*/f64[2,2]{1,0}, f64[2,2]{1,0}) tuple(constant.26, constant.26, broadcast_in_dim.15, div.3, mul.1, H.1, convert_element_type.5)
+  while.14 = (s64[], s64[], f64[6,64,64]{2,1,0}, f64[24,64,2,64]{3,2,1,0}, s64[6]{0}, /*index=5*/f64[2,2]{1,0}, f64[2,2]{1,0}) while(while.13), condition=region_3.6, body=region_2.5
+  while.15 = s64[] get-tuple-element(while.14), index=0
+  while.16 = s64[] get-tuple-element(while.14), index=1
+  while.12 = f64[64,64]{1,0} get-tuple-element(while.10), index=1
+  jit_trace_.1 = f64[] call(while.12), to_apply=trace_1.12
+  while.17 = f64[6,64,64]{2,1,0} get-tuple-element(while.14), index=2
+  vmap_jit_trace__.1 = f64[6]{0} call(while.17), to_apply=trace.9
+  ROOT tuple.5 = (f64[], f64[6]{0}) tuple(jit_trace_.1, vmap_jit_trace__.1)
+}
+

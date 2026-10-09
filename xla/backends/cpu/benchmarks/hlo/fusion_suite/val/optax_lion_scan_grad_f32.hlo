@@ -1,0 +1,94 @@
+HloModule jit_f, entry_computation_layout={(f32[256,256]{1,0}, f32[4096,256]{1,0}, f32[4096,256]{1,0})->(f32[256,256]{1,0}, f32[])}
+
+region_0.1 {
+  arg_tuple.1 = (s64[], f32[256,256]{1,0}, f32[256,256]{1,0}, f32[4096,256]{1,0}, f32[4096,256]{1,0}) parameter(0)
+  get-tuple-element.5 = s64[] get-tuple-element(arg_tuple.1), index=0
+  constant.14 = s64[] constant(1)
+  add.11 = s64[] add(get-tuple-element.5, constant.14)
+  get-tuple-element.6 = f32[256,256]{1,0} get-tuple-element(arg_tuple.1), index=1
+  get-tuple-element.8 = f32[4096,256]{1,0} get-tuple-element(arg_tuple.1), index=3
+  dot_general.2 = f32[4096,256]{1,0} dot(get-tuple-element.8, get-tuple-element.6), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  tanh.1 = f32[4096,256]{1,0} tanh(dot_general.2)
+  get-tuple-element.9 = f32[4096,256]{1,0} get-tuple-element(arg_tuple.1), index=4
+  sub.3 = f32[4096,256]{1,0} subtract(tanh.1, get-tuple-element.9)
+  constant.22 = f32[] constant(2)
+  broadcast.16 = f32[4096,256]{1,0} broadcast(constant.22), dimensions={}
+  mul.10 = f32[4096,256]{1,0} multiply(sub.3, broadcast.16)
+  constant.21 = f32[] constant(9.53674316e-07)
+  broadcast.15 = f32[4096,256]{1,0} broadcast(constant.21), dimensions={}
+  broadcast_in_dim.2 = f32[4096,256]{1,0} multiply(mul.10, broadcast.15)
+  constant.23 = f32[] constant(1)
+  broadcast.17 = f32[4096,256]{1,0} broadcast(constant.23), dimensions={}
+  add.6 = f32[4096,256]{1,0} add(tanh.1, broadcast.17)
+  sub.2 = f32[4096,256]{1,0} subtract(broadcast.17, tanh.1)
+  mul.9 = f32[4096,256]{1,0} multiply(add.6, sub.2)
+  mul.11 = f32[4096,256]{1,0} multiply(broadcast_in_dim.2, mul.9)
+  dot_general.3 = f32[256,256]{1,0} dot(mul.11, get-tuple-element.8), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  transpose.1 = f32[256,256]{0,1} transpose(dot_general.3), dimensions={1,0}
+  constant.20 = f32[] constant(0.1)
+  broadcast.14 = f32[256,256]{1,0} broadcast(constant.20), dimensions={}
+  mul.12 = f32[256,256]{0,1} multiply(transpose.1, broadcast.14)
+  get-tuple-element.7 = f32[256,256]{1,0} get-tuple-element(arg_tuple.1), index=2
+  constant.19 = f32[] constant(0.9)
+  broadcast.13 = f32[256,256]{1,0} broadcast(constant.19), dimensions={}
+  mul.13 = f32[256,256]{1,0} multiply(get-tuple-element.7, broadcast.13)
+  add.7 = f32[256,256]{0,1} add(mul.12, mul.13)
+  sign.1 = f32[256,256]{0,1} sign(add.7)
+  constant.16 = f32[] constant(0.001)
+  broadcast.10 = f32[256,256]{1,0} broadcast(constant.16), dimensions={}
+  mul.16 = f32[256,256]{1,0} multiply(get-tuple-element.6, broadcast.10)
+  add.9 = f32[256,256]{0,1} add(sign.1, mul.16)
+  constant.15 = f32[] constant(-0.001)
+  broadcast.9 = f32[256,256]{1,0} broadcast(constant.15), dimensions={}
+  mul.17 = f32[256,256]{0,1} multiply(add.9, broadcast.9)
+  add.10 = f32[256,256]{1,0} add(get-tuple-element.6, mul.17)
+  constant.18 = f32[] constant(0.01)
+  broadcast.12 = f32[256,256]{1,0} broadcast(constant.18), dimensions={}
+  mul.14 = f32[256,256]{0,1} multiply(transpose.1, broadcast.12)
+  constant.17 = f32[] constant(0.99)
+  broadcast.11 = f32[256,256]{1,0} broadcast(constant.17), dimensions={}
+  mul.15 = f32[256,256]{1,0} multiply(get-tuple-element.7, broadcast.11)
+  add.8 = f32[256,256]{0,1} add(mul.14, mul.15)
+  ROOT tuple.1 = (s64[], f32[256,256]{1,0}, f32[256,256]{0,1}, f32[4096,256]{1,0}, f32[4096,256]{1,0}) tuple(add.11, add.10, add.8, get-tuple-element.8, get-tuple-element.9)
+}
+
+region_1.2 {
+  arg_tuple.3 = (s64[], f32[256,256]{1,0}, f32[256,256]{1,0}, f32[4096,256]{1,0}, f32[4096,256]{1,0}) parameter(0)
+  get-tuple-element.16 = f32[256,256]{1,0} get-tuple-element(arg_tuple.3), index=1
+  get-tuple-element.17 = f32[256,256]{1,0} get-tuple-element(arg_tuple.3), index=2
+  get-tuple-element.18 = f32[4096,256]{1,0} get-tuple-element(arg_tuple.3), index=3
+  get-tuple-element.19 = f32[4096,256]{1,0} get-tuple-element(arg_tuple.3), index=4
+  get-tuple-element.15 = s64[] get-tuple-element(arg_tuple.3), index=0
+  constant.25 = s64[] constant(30)
+  ROOT lt.1 = pred[] compare(get-tuple-element.15, constant.25), direction=LT
+}
+
+region_2.3 {
+  reduce_sum.3 = f32[] parameter(0)
+  reduce_sum.4 = f32[] parameter(1)
+  ROOT reduce_sum.5 = f32[] add(reduce_sum.3, reduce_sum.4)
+}
+
+ENTRY main.4 {
+  constant.27 = s64[] constant(0)
+  w.1 = f32[256,256]{1,0} parameter(0)
+  constant.29 = f32[] constant(0)
+  broadcast_in_dim.3 = f32[256,256]{1,0} broadcast(constant.29), dimensions={}
+  X.1 = f32[4096,256]{1,0} parameter(1)
+  y.1 = f32[4096,256]{1,0} parameter(2)
+  while.5 = (s64[], f32[256,256]{1,0}, f32[256,256]{1,0}, f32[4096,256]{1,0}, f32[4096,256]{1,0}) tuple(constant.27, w.1, broadcast_in_dim.3, X.1, y.1)
+  while.6 = (s64[], f32[256,256]{1,0}, f32[256,256]{1,0}, f32[4096,256]{1,0}, f32[4096,256]{1,0}) while(while.5), condition=region_1.2, body=region_0.1
+  while.7 = s64[] get-tuple-element(while.6), index=0
+  while.9 = f32[256,256]{1,0} get-tuple-element(while.6), index=2
+  while.8 = f32[256,256]{1,0} get-tuple-element(while.6), index=1
+  dot_general.5 = f32[4096,256]{1,0} dot(X.1, while.8), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  tanh.3 = f32[4096,256]{1,0} tanh(dot_general.5)
+  sub.5 = f32[4096,256]{1,0} subtract(tanh.3, y.1)
+  integer_pow.1 = f32[4096,256]{1,0} multiply(sub.5, sub.5)
+  constant.28 = f32[] constant(0)
+  reduce_sum.7 = f32[] reduce(integer_pow.1, constant.28), dimensions={0,1}, to_apply=region_2.3
+  constant.26 = f32[] constant(1048576)
+  div.1 = f32[] divide(reduce_sum.7, constant.26)
+  ROOT tuple.3 = (f32[256,256]{1,0}, f32[]) tuple(while.8, div.1)
+}
+

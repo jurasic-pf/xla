@@ -1,0 +1,273 @@
+HloModule jit_f, entry_computation_layout={(f64[1048576]{0}, f64[1048576]{0})->f64[1048576]{0}}
+
+_where.1 {
+  Arg_0.2 = pred[] parameter(0)
+  Arg_1.2 = f64[] parameter(1)
+  Arg_2.1 = f64[] parameter(2)
+  ROOT select_n.1 = f64[] select(Arg_0.2, Arg_1.2, Arg_2.1)
+}
+
+_where_0.2 {
+  Arg_0.5 = pred[] parameter(0)
+  Arg_1.5 = s64[] parameter(1)
+  Arg_2.3 = s64[] parameter(2)
+  ROOT select_n.3 = s64[] select(Arg_0.5, Arg_1.5, Arg_2.3)
+}
+
+remainder.3 {
+  Arg_0.6 = s64[] parameter(0)
+  Arg_1.6 = s64[] parameter(1)
+  constant.23 = s64[] constant(0)
+  eq.1 = pred[] compare(Arg_1.6, constant.23), direction=EQ
+  constant.22 = s64[] constant(1)
+  jit__where_.2 = s64[] call(eq.1, constant.22, Arg_1.6), to_apply=_where_0.2
+  rem.1 = s64[] remainder(Arg_0.6, jit__where_.2)
+  lt.2 = pred[] compare(rem.1, constant.23), direction=LT
+  lt.3 = pred[] compare(jit__where_.2, constant.23), direction=LT
+  ne.3 = pred[] compare(lt.2, lt.3), direction=NE
+  ne.2 = pred[] compare(rem.1, constant.23), direction=NE
+  and.1 = pred[] and(ne.3, ne.2)
+  add.6 = s64[] add(rem.1, jit__where_.2)
+  ROOT select_n.5 = s64[] select(and.1, add.6, rem.1)
+}
+
+region_1.4 {
+  arg_tuple.2 = (f64[], f64[1048576]{0}, f64[1048576]{0}) parameter(0)
+  get-tuple-element.14 = f64[1048576]{0} get-tuple-element(arg_tuple.2), index=2
+  get-tuple-element.12 = f64[] get-tuple-element(arg_tuple.2), index=0
+  mul.10 = f64[1048576]{0} broadcast(get-tuple-element.12), dimensions={}
+  get-tuple-element.13 = f64[1048576]{0} get-tuple-element(arg_tuple.2), index=1
+  mul.11 = f64[1048576]{0} multiply(mul.10, get-tuple-element.13)
+  ROOT sub.6 = f64[1048576]{0} subtract(get-tuple-element.14, mul.11)
+}
+
+region_2.5 {
+  arg_tuple.4 = (f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}) parameter(0)
+  get-tuple-element.20 = f64[1048576]{0} get-tuple-element(arg_tuple.4), index=2
+  get-tuple-element.19 = f64[1048576]{0} get-tuple-element(arg_tuple.4), index=1
+  constant.26 = f64[] constant(2)
+  broadcast.5 = f64[1048576]{0} broadcast(constant.26), dimensions={}
+  add.8 = f64[1048576]{0} add(get-tuple-element.19, broadcast.5)
+  get-tuple-element.18 = f64[1048576]{0} get-tuple-element(arg_tuple.4), index=0
+  mul.17 = f64[1048576]{0} multiply(add.8, get-tuple-element.18)
+  slice.8 = f64[1]{0} slice(get-tuple-element.18), slice={[0:1]}
+  constant.27 = f64[1]{0} constant({0})
+  mul.15 = f64[1]{0} multiply(slice.8, constant.27)
+  slice.9 = f64[1048575]{0} slice(get-tuple-element.18), slice={[0:1048575]}
+  concatenate.6 = f64[1048576]{0} concatenate(mul.15, slice.9), dimensions={0}
+  sub.10 = f64[1048576]{0} subtract(mul.17, concatenate.6)
+  slice.10 = f64[1048575]{0} slice(get-tuple-element.18), slice={[1:1048576]}
+  slice.11 = f64[1]{0} slice(get-tuple-element.18), slice={[0:1]}
+  mul.16 = f64[1]{0} multiply(slice.11, constant.27)
+  concatenate.7 = f64[1048576]{0} concatenate(slice.10, mul.16), dimensions={0}
+  sub.11 = f64[1048576]{0} subtract(sub.10, concatenate.7)
+  ROOT sub.12 = f64[1048576]{0} subtract(get-tuple-element.20, sub.11)
+}
+
+region_0.6 {
+  arg_tuple.5 = (f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}, f64[], /*index=5*/s64[], f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}) parameter(0)
+  get-tuple-element.21 = f64[1048576]{0} get-tuple-element(arg_tuple.5), index=0
+  get-tuple-element.28 = f64[1048576]{0} get-tuple-element(arg_tuple.5), index=7
+  constant.33 = f64[] constant(2)
+  broadcast.6 = f64[1048576]{0} broadcast(constant.33), dimensions={}
+  add.10 = f64[1048576]{0} add(get-tuple-element.28, broadcast.6)
+  get-tuple-element.24 = f64[1048576]{0} get-tuple-element(arg_tuple.5), index=3
+  mul.22 = f64[1048576]{0} multiply(add.10, get-tuple-element.24)
+  slice.12 = f64[1]{0} slice(get-tuple-element.24), slice={[0:1]}
+  constant.34 = f64[1]{0} constant({0})
+  mul.20 = f64[1]{0} multiply(slice.12, constant.34)
+  slice.13 = f64[1048575]{0} slice(get-tuple-element.24), slice={[0:1048575]}
+  concatenate.8 = f64[1048576]{0} concatenate(mul.20, slice.13), dimensions={0}
+  sub.13 = f64[1048576]{0} subtract(mul.22, concatenate.8)
+  slice.14 = f64[1048575]{0} slice(get-tuple-element.24), slice={[1:1048576]}
+  slice.15 = f64[1]{0} slice(get-tuple-element.24), slice={[0:1]}
+  mul.21 = f64[1]{0} multiply(slice.15, constant.34)
+  concatenate.9 = f64[1048576]{0} concatenate(slice.14, mul.21), dimensions={0}
+  sub.14 = f64[1048576]{0} subtract(sub.13, concatenate.9)
+  dot_general.3 = f64[] dot(sub.14, get-tuple-element.24), lhs_contracting_dims={0}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  abs.3 = f64[] abs(dot_general.3)
+  get-tuple-element.25 = f64[] get-tuple-element(arg_tuple.5), index=4
+  abs.4 = f64[] abs(get-tuple-element.25)
+  constant.32 = f64[] constant(4.6566128730773926e-08)
+  mul.23 = f64[] multiply(abs.4, constant.32)
+  gt.1 = pred[] compare(abs.3, mul.23), direction=GT
+  div.2 = f64[] divide(get-tuple-element.25, dot_general.3)
+  constant.31 = f64[] constant(nan)
+  jit__where_.3 = f64[] call(gt.1, div.2, constant.31), to_apply=_where.1
+  mul.24 = f64[1048576]{0} broadcast(jit__where_.3), dimensions={}
+  mul.25 = f64[1048576]{0} multiply(mul.24, get-tuple-element.24)
+  get-tuple-element.22 = f64[1048576]{0} get-tuple-element(arg_tuple.5), index=1
+  add.11 = f64[1048576]{0} add(get-tuple-element.22, mul.25)
+  get-tuple-element.26 = s64[] get-tuple-element(arg_tuple.5), index=5
+  constant.30 = s64[] constant(1)
+  add.12 = s64[] add(get-tuple-element.26, constant.30)
+  constant.29 = s64[] constant(10)
+  jit_remainder_.1 = s64[] call(add.12, constant.29), to_apply=remainder.3
+  constant.28 = s64[] constant(0)
+  eq.3 = pred[] compare(jit_remainder_.1, constant.28), direction=EQ
+  convert_element_type.1 = s32[] convert(eq.3)
+  get-tuple-element.23 = f64[1048576]{0} get-tuple-element(arg_tuple.5), index=2
+  cond.3 = (f64[], f64[1048576]{0}, f64[1048576]{0}) tuple(jit__where_.3, sub.14, get-tuple-element.23)
+  get-tuple-element.29 = f64[1048576]{0} get-tuple-element(arg_tuple.5), index=8
+  cond.4 = (f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}) tuple(add.11, get-tuple-element.28, get-tuple-element.29)
+  cond.5 = f64[1048576]{0} conditional(convert_element_type.1, cond.3, cond.4), branch_computations={region_1.4, region_2.5}
+  dot_general.4 = f64[] dot(cond.5, cond.5), lhs_contracting_dims={0}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  div.3 = f64[] divide(dot_general.4, get-tuple-element.25)
+  mul.26 = f64[1048576]{0} broadcast(div.3), dimensions={}
+  mul.27 = f64[1048576]{0} multiply(mul.26, get-tuple-element.24)
+  add.13 = f64[1048576]{0} add(cond.5, mul.27)
+  get-tuple-element.27 = f64[1048576]{0} get-tuple-element(arg_tuple.5), index=6
+  ROOT tuple.1 = (f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}, f64[], /*index=5*/s64[], f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}) tuple(mul.25, add.11, cond.5, add.13, dot_general.4, add.12, get-tuple-element.27, get-tuple-element.28, get-tuple-element.29)
+}
+
+region_4.7 {
+  reduce_max.3 = f64[] parameter(0)
+  reduce_max.4 = f64[] parameter(1)
+  ROOT reduce_max.5 = f64[] maximum(reduce_max.3, reduce_max.4)
+}
+
+region_5.8 {
+  reduce_max.10 = f64[] parameter(0)
+  reduce_max.11 = f64[] parameter(1)
+  ROOT reduce_max.12 = f64[] maximum(reduce_max.10, reduce_max.11)
+}
+
+region_3.9 {
+  arg_tuple.7 = (f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}, f64[], /*index=5*/s64[], f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}) parameter(0)
+  get-tuple-element.42 = f64[1048576]{0} get-tuple-element(arg_tuple.7), index=3
+  get-tuple-element.46 = f64[1048576]{0} get-tuple-element(arg_tuple.7), index=7
+  get-tuple-element.47 = f64[1048576]{0} get-tuple-element(arg_tuple.7), index=8
+  get-tuple-element.43 = f64[] get-tuple-element(arg_tuple.7), index=4
+  constant.44 = f64[] constant(0)
+  gt.5 = pred[] compare(get-tuple-element.43, constant.44), direction=GT
+  get-tuple-element.44 = s64[] get-tuple-element(arg_tuple.7), index=5
+  constant.43 = s64[] constant(300)
+  lt.5 = pred[] compare(get-tuple-element.44, constant.43), direction=LT
+  and.4 = pred[] and(gt.5, lt.5)
+  get-tuple-element.41 = f64[1048576]{0} get-tuple-element(arg_tuple.7), index=2
+  get-tuple-element.45 = f64[1048576]{0} get-tuple-element(arg_tuple.7), index=6
+  div.6 = f64[1048576]{0} divide(get-tuple-element.41, get-tuple-element.45)
+  abs.9 = f64[1048576]{0} abs(div.6)
+  constant.41 = f64[] constant(-inf)
+  reduce_max.14 = f64[] reduce(abs.9, constant.41), dimensions={0}, to_apply=region_4.7
+  constant.40 = f64[] constant(1)
+  gt.6 = pred[] compare(reduce_max.14, constant.40), direction=GT
+  get-tuple-element.39 = f64[1048576]{0} get-tuple-element(arg_tuple.7), index=0
+  get-tuple-element.40 = f64[1048576]{0} get-tuple-element(arg_tuple.7), index=1
+  abs.8 = f64[1048576]{0} abs(get-tuple-element.40)
+  constant.42 = f64[] constant(1e-10)
+  broadcast.8 = f64[1048576]{0} broadcast(constant.42), dimensions={}
+  mul.29 = f64[1048576]{0} multiply(abs.8, broadcast.8)
+  add.15 = f64[1048576]{0} add(mul.29, broadcast.8)
+  div.7 = f64[1048576]{0} divide(get-tuple-element.39, add.15)
+  abs.10 = f64[1048576]{0} abs(div.7)
+  reduce_max.15 = f64[] reduce(abs.10, constant.41), dimensions={0}, to_apply=region_5.8
+  gt.7 = pred[] compare(reduce_max.15, constant.40), direction=GT
+  or.1 = pred[] or(gt.6, gt.7)
+  ROOT and.5 = pred[] and(and.4, or.1)
+}
+
+_where_1.10 {
+  Arg_0.8 = pred[] parameter(0)
+  Arg_1.8 = s32[] parameter(1)
+  Arg_2.5 = s32[] parameter(2)
+  ROOT select_n.7 = s32[] select(Arg_0.8, Arg_1.8, Arg_2.5)
+}
+
+region_6.11 {
+  reduce_or.3 = pred[] parameter(0)
+  reduce_or.4 = pred[] parameter(1)
+  ROOT reduce_or.5 = pred[] or(reduce_or.3, reduce_or.4)
+}
+
+region_7.12 {
+  reduce_or.10 = pred[] parameter(0)
+  reduce_or.11 = pred[] parameter(1)
+  ROOT reduce_or.12 = pred[] or(reduce_or.10, reduce_or.11)
+}
+
+_where_2.13 {
+  Arg_0.10 = pred[] parameter(0)
+  Arg_1.10 = s32[] parameter(1)
+  Arg_2.7 = s32[] parameter(2)
+  ROOT select_n.9 = s32[] select(Arg_0.10, Arg_1.10, Arg_2.7)
+}
+
+region_8.14 {
+  reduce_or.17 = pred[] parameter(0)
+  reduce_or.18 = pred[] parameter(1)
+  ROOT reduce_or.19 = pred[] or(reduce_or.17, reduce_or.18)
+}
+
+region_9.15 {
+  reduce_or.24 = pred[] parameter(0)
+  reduce_or.25 = pred[] parameter(1)
+  ROOT reduce_or.26 = pred[] or(reduce_or.24, reduce_or.25)
+}
+
+linear_solve.16 {
+  constant.46 = f64[] constant(inf)
+  broadcast_in_dim.2 = f64[1048576]{0} broadcast(constant.46), dimensions={}
+  constant.55 = f64[] constant(0)
+  broadcast_in_dim.3 = f64[1048576]{0} broadcast(constant.55), dimensions={}
+  Arg_1.11 = f64[1048576]{0} parameter(1)
+  Arg_0.11 = f64[1048576]{0} parameter(0)
+  constant.47 = f64[] constant(2)
+  broadcast.10 = f64[1048576]{0} broadcast(constant.47), dimensions={}
+  add.16 = f64[1048576]{0} add(Arg_0.11, broadcast.10)
+  mul.30 = f64[1048576]{0} multiply(add.16, broadcast_in_dim.3)
+  constant.56 = f64[1]{0} constant({0})
+  constant.57 = f64[] constant(0)
+  broadcast.11 = f64[1048575]{0} broadcast(constant.57), dimensions={}
+  concatenate.10 = f64[1048576]{0} concatenate(constant.56, broadcast.11), dimensions={0}
+  sub.15 = f64[1048576]{0} subtract(mul.30, concatenate.10)
+  concatenate.11 = f64[1048576]{0} concatenate(broadcast.11, constant.56), dimensions={0}
+  sub.16 = f64[1048576]{0} subtract(sub.15, concatenate.11)
+  sub.17 = f64[1048576]{0} subtract(Arg_1.11, sub.16)
+  dot_general.5 = f64[] dot(sub.17, sub.17), lhs_contracting_dims={0}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  constant.54 = s64[] constant(0)
+  abs.11 = f64[1048576]{0} abs(Arg_1.11)
+  constant.45 = f64[] constant(1e-10)
+  broadcast.9 = f64[1048576]{0} broadcast(constant.45), dimensions={}
+  mul.31 = f64[1048576]{0} multiply(abs.11, broadcast.9)
+  add.17 = f64[1048576]{0} add(mul.31, broadcast.9)
+  while.8 = (f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}, f64[], /*index=5*/s64[], f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}) tuple(broadcast_in_dim.2, broadcast_in_dim.3, sub.17, sub.17, dot_general.5, constant.54, add.17, Arg_0.11, Arg_1.11)
+  while.9 = (f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}, f64[], /*index=5*/s64[], f64[1048576]{0}, f64[1048576]{0}, f64[1048576]{0}) while(while.8), condition=region_3.9, body=region_0.6
+  while.10 = f64[1048576]{0} get-tuple-element(while.9), index=0
+  while.12 = f64[1048576]{0} get-tuple-element(while.9), index=2
+  while.13 = f64[1048576]{0} get-tuple-element(while.9), index=3
+  while.14 = f64[] get-tuple-element(while.9), index=4
+  while.15 = s64[] get-tuple-element(while.9), index=5
+  constant.53 = s64[] constant(300)
+  eq.7 = pred[] compare(while.15, constant.53), direction=EQ
+  constant.51 = s32[] constant(1)
+  constant.50 = s32[] constant(0)
+  jit__where_.7 = s32[] call(eq.7, constant.51, constant.50), to_apply=_where_1.10
+  eq.8 = pred[] compare(jit__where_.7, constant.50), direction=EQ
+  ROOT while.11 = f64[1048576]{0} get-tuple-element(while.9), index=1
+  is_finite.2 = pred[1048576]{0} is-finite(while.11)
+  not.2 = pred[1048576]{0} not(is_finite.2)
+  constant.52 = pred[] constant(false)
+  reduce_or.28 = pred[] reduce(not.2, constant.52), dimensions={0}, to_apply=region_6.11
+  stack.2 = pred[1]{0} reshape(reduce_or.28)
+  reduce_or.29 = pred[] reduce(stack.2, constant.52), dimensions={0}, to_apply=region_7.12
+  and.8 = pred[] and(eq.8, reduce_or.29)
+  constant.49 = s32[] constant(2)
+  jit__where_.8 = s32[] call(and.8, constant.49, jit__where_.7), to_apply=_where_2.13
+  eq.9 = pred[] compare(jit__where_.8, constant.49), direction=EQ
+  is_finite.3 = pred[1048576]{0} is-finite(Arg_1.11)
+  not.3 = pred[1048576]{0} not(is_finite.3)
+  reduce_or.30 = pred[] reduce(not.3, constant.52), dimensions={0}, to_apply=region_8.14
+  stack.3 = pred[1]{0} reshape(reduce_or.30)
+  reduce_or.31 = pred[] reduce(stack.3, constant.52), dimensions={0}, to_apply=region_9.15
+  and.9 = pred[] and(eq.9, reduce_or.31)
+  constant.48 = s32[] constant(6)
+  jit__where_.9 = s32[] call(and.9, constant.48, jit__where_.8), to_apply=_where_2.13
+}
+
+ENTRY main.17 {
+  diag.1 = f64[1048576]{0} parameter(0)
+  b.1 = f64[1048576]{0} parameter(1)
+  ROOT jit_linear_solve_.1 = f64[1048576]{0} call(diag.1, b.1), to_apply=linear_solve.16
+}
+

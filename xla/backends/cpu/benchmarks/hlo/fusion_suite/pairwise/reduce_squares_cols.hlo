@@ -1,0 +1,14 @@
+HloModule reduce_squares_cols
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  x = f32[1048576,64] parameter(0)
+  m = f32[1048576,64] multiply(x, x)
+  c = f32[] constant(0)
+  ROOT r = f32[64] reduce(m, c), dimensions={0}, to_apply=add
+}

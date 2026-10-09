@@ -1,0 +1,183 @@
+HloModule tiny_kernels_loop_k32
+
+%body {
+  %p = (s32[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[]) parameter(0)
+  %i = s32[] get-tuple-element(%p), index=0
+  %one = s32[] constant(1)
+  %i1 = s32[] add(%i, %one)
+  %c = f64[] constant(0.999)
+  %x0 = f64[] get-tuple-element(%p), index=1
+  %sn0 = f64[] sine(%x0)
+  %m0 = f64[] multiply(%sn0, %c)
+  %y0 = f64[] add(%m0, %x0)
+  %x1 = f64[] get-tuple-element(%p), index=2
+  %sn1 = f64[] sine(%x1)
+  %m1 = f64[] multiply(%sn1, %c)
+  %y1 = f64[] add(%m1, %x1)
+  %x2 = f64[] get-tuple-element(%p), index=3
+  %sn2 = f64[] sine(%x2)
+  %m2 = f64[] multiply(%sn2, %c)
+  %y2 = f64[] add(%m2, %x2)
+  %x3 = f64[] get-tuple-element(%p), index=4
+  %sn3 = f64[] sine(%x3)
+  %m3 = f64[] multiply(%sn3, %c)
+  %y3 = f64[] add(%m3, %x3)
+  %x4 = f64[] get-tuple-element(%p), index=5
+  %sn4 = f64[] sine(%x4)
+  %m4 = f64[] multiply(%sn4, %c)
+  %y4 = f64[] add(%m4, %x4)
+  %x5 = f64[] get-tuple-element(%p), index=6
+  %sn5 = f64[] sine(%x5)
+  %m5 = f64[] multiply(%sn5, %c)
+  %y5 = f64[] add(%m5, %x5)
+  %x6 = f64[] get-tuple-element(%p), index=7
+  %sn6 = f64[] sine(%x6)
+  %m6 = f64[] multiply(%sn6, %c)
+  %y6 = f64[] add(%m6, %x6)
+  %x7 = f64[] get-tuple-element(%p), index=8
+  %sn7 = f64[] sine(%x7)
+  %m7 = f64[] multiply(%sn7, %c)
+  %y7 = f64[] add(%m7, %x7)
+  %x8 = f64[] get-tuple-element(%p), index=9
+  %sn8 = f64[] sine(%x8)
+  %m8 = f64[] multiply(%sn8, %c)
+  %y8 = f64[] add(%m8, %x8)
+  %x9 = f64[] get-tuple-element(%p), index=10
+  %sn9 = f64[] sine(%x9)
+  %m9 = f64[] multiply(%sn9, %c)
+  %y9 = f64[] add(%m9, %x9)
+  %x10 = f64[] get-tuple-element(%p), index=11
+  %sn10 = f64[] sine(%x10)
+  %m10 = f64[] multiply(%sn10, %c)
+  %y10 = f64[] add(%m10, %x10)
+  %x11 = f64[] get-tuple-element(%p), index=12
+  %sn11 = f64[] sine(%x11)
+  %m11 = f64[] multiply(%sn11, %c)
+  %y11 = f64[] add(%m11, %x11)
+  %x12 = f64[] get-tuple-element(%p), index=13
+  %sn12 = f64[] sine(%x12)
+  %m12 = f64[] multiply(%sn12, %c)
+  %y12 = f64[] add(%m12, %x12)
+  %x13 = f64[] get-tuple-element(%p), index=14
+  %sn13 = f64[] sine(%x13)
+  %m13 = f64[] multiply(%sn13, %c)
+  %y13 = f64[] add(%m13, %x13)
+  %x14 = f64[] get-tuple-element(%p), index=15
+  %sn14 = f64[] sine(%x14)
+  %m14 = f64[] multiply(%sn14, %c)
+  %y14 = f64[] add(%m14, %x14)
+  %x15 = f64[] get-tuple-element(%p), index=16
+  %sn15 = f64[] sine(%x15)
+  %m15 = f64[] multiply(%sn15, %c)
+  %y15 = f64[] add(%m15, %x15)
+  %x16 = f64[] get-tuple-element(%p), index=17
+  %sn16 = f64[] sine(%x16)
+  %m16 = f64[] multiply(%sn16, %c)
+  %y16 = f64[] add(%m16, %x16)
+  %x17 = f64[] get-tuple-element(%p), index=18
+  %sn17 = f64[] sine(%x17)
+  %m17 = f64[] multiply(%sn17, %c)
+  %y17 = f64[] add(%m17, %x17)
+  %x18 = f64[] get-tuple-element(%p), index=19
+  %sn18 = f64[] sine(%x18)
+  %m18 = f64[] multiply(%sn18, %c)
+  %y18 = f64[] add(%m18, %x18)
+  %x19 = f64[] get-tuple-element(%p), index=20
+  %sn19 = f64[] sine(%x19)
+  %m19 = f64[] multiply(%sn19, %c)
+  %y19 = f64[] add(%m19, %x19)
+  %x20 = f64[] get-tuple-element(%p), index=21
+  %sn20 = f64[] sine(%x20)
+  %m20 = f64[] multiply(%sn20, %c)
+  %y20 = f64[] add(%m20, %x20)
+  %x21 = f64[] get-tuple-element(%p), index=22
+  %sn21 = f64[] sine(%x21)
+  %m21 = f64[] multiply(%sn21, %c)
+  %y21 = f64[] add(%m21, %x21)
+  %x22 = f64[] get-tuple-element(%p), index=23
+  %sn22 = f64[] sine(%x22)
+  %m22 = f64[] multiply(%sn22, %c)
+  %y22 = f64[] add(%m22, %x22)
+  %x23 = f64[] get-tuple-element(%p), index=24
+  %sn23 = f64[] sine(%x23)
+  %m23 = f64[] multiply(%sn23, %c)
+  %y23 = f64[] add(%m23, %x23)
+  %x24 = f64[] get-tuple-element(%p), index=25
+  %sn24 = f64[] sine(%x24)
+  %m24 = f64[] multiply(%sn24, %c)
+  %y24 = f64[] add(%m24, %x24)
+  %x25 = f64[] get-tuple-element(%p), index=26
+  %sn25 = f64[] sine(%x25)
+  %m25 = f64[] multiply(%sn25, %c)
+  %y25 = f64[] add(%m25, %x25)
+  %x26 = f64[] get-tuple-element(%p), index=27
+  %sn26 = f64[] sine(%x26)
+  %m26 = f64[] multiply(%sn26, %c)
+  %y26 = f64[] add(%m26, %x26)
+  %x27 = f64[] get-tuple-element(%p), index=28
+  %sn27 = f64[] sine(%x27)
+  %m27 = f64[] multiply(%sn27, %c)
+  %y27 = f64[] add(%m27, %x27)
+  %x28 = f64[] get-tuple-element(%p), index=29
+  %sn28 = f64[] sine(%x28)
+  %m28 = f64[] multiply(%sn28, %c)
+  %y28 = f64[] add(%m28, %x28)
+  %x29 = f64[] get-tuple-element(%p), index=30
+  %sn29 = f64[] sine(%x29)
+  %m29 = f64[] multiply(%sn29, %c)
+  %y29 = f64[] add(%m29, %x29)
+  %x30 = f64[] get-tuple-element(%p), index=31
+  %sn30 = f64[] sine(%x30)
+  %m30 = f64[] multiply(%sn30, %c)
+  %y30 = f64[] add(%m30, %x30)
+  %x31 = f64[] get-tuple-element(%p), index=32
+  %sn31 = f64[] sine(%x31)
+  %m31 = f64[] multiply(%sn31, %c)
+  %y31 = f64[] add(%m31, %x31)
+  ROOT %t = (s32[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[]) tuple(%i1, %y0, %y1, %y2, %y3, %y4, %y5, %y6, %y7, %y8, %y9, %y10, %y11, %y12, %y13, %y14, %y15, %y16, %y17, %y18, %y19, %y20, %y21, %y22, %y23, %y24, %y25, %y26, %y27, %y28, %y29, %y30, %y31)
+}
+
+%cond {
+  %p = (s32[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[]) parameter(0)
+  %i = s32[] get-tuple-element(%p), index=0
+  %n = s32[] constant(10000)
+  ROOT %lt = pred[] compare(%i, %n), direction=LT
+}
+
+ENTRY main {
+  %a0 = f64[] parameter(0)
+  %a1 = f64[] parameter(1)
+  %a2 = f64[] parameter(2)
+  %a3 = f64[] parameter(3)
+  %a4 = f64[] parameter(4)
+  %a5 = f64[] parameter(5)
+  %a6 = f64[] parameter(6)
+  %a7 = f64[] parameter(7)
+  %a8 = f64[] parameter(8)
+  %a9 = f64[] parameter(9)
+  %a10 = f64[] parameter(10)
+  %a11 = f64[] parameter(11)
+  %a12 = f64[] parameter(12)
+  %a13 = f64[] parameter(13)
+  %a14 = f64[] parameter(14)
+  %a15 = f64[] parameter(15)
+  %a16 = f64[] parameter(16)
+  %a17 = f64[] parameter(17)
+  %a18 = f64[] parameter(18)
+  %a19 = f64[] parameter(19)
+  %a20 = f64[] parameter(20)
+  %a21 = f64[] parameter(21)
+  %a22 = f64[] parameter(22)
+  %a23 = f64[] parameter(23)
+  %a24 = f64[] parameter(24)
+  %a25 = f64[] parameter(25)
+  %a26 = f64[] parameter(26)
+  %a27 = f64[] parameter(27)
+  %a28 = f64[] parameter(28)
+  %a29 = f64[] parameter(29)
+  %a30 = f64[] parameter(30)
+  %a31 = f64[] parameter(31)
+  %z = s32[] constant(0)
+  %init = (s32[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[]) tuple(%z, %a0, %a1, %a2, %a3, %a4, %a5, %a6, %a7, %a8, %a9, %a10, %a11, %a12, %a13, %a14, %a15, %a16, %a17, %a18, %a19, %a20, %a21, %a22, %a23, %a24, %a25, %a26, %a27, %a28, %a29, %a30, %a31)
+  ROOT %w = (s32[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[]) while(%init), condition=%cond, body=%body
+}

@@ -1,0 +1,184 @@
+HloModule jit_expensive_multi_consumer, entry_computation_layout={(f32[4096,3]{1,0}, f32[4096,3]{1,0})->f32[4096,8]{1,0}}
+
+region_0.1 {
+  reduce_sum.3 = f32[] parameter(0)
+  reduce_sum.4 = f32[] parameter(1)
+  ROOT reduce_sum.5 = f32[] add(reduce_sum.3, reduce_sum.4)
+}
+
+norm.2 {
+  Arg_0.1 = f32[4096,4096,3]{2,1,0} parameter(0)
+  mul.1 = f32[4096,4096,3]{2,1,0} multiply(Arg_0.1, Arg_0.1)
+  constant.10 = f32[] constant(0)
+  reduce_sum.7 = f32[4096,4096]{1,0} reduce(mul.1, constant.10), dimensions={2}, to_apply=region_0.1
+  ROOT sqrt.1 = f32[4096,4096]{1,0} sqrt(reduce_sum.7)
+}
+
+region_1.3 {
+  reduce_sum.11 = f32[] parameter(0)
+  reduce_sum.12 = f32[] parameter(1)
+  ROOT reduce_sum.13 = f32[] add(reduce_sum.11, reduce_sum.12)
+}
+
+region_2.4 {
+  reduce_sum.18 = f32[] parameter(0)
+  reduce_sum.19 = f32[] parameter(1)
+  ROOT reduce_sum.20 = f32[] add(reduce_sum.18, reduce_sum.19)
+}
+
+region_3.5 {
+  reduce_sum.25 = f32[] parameter(0)
+  reduce_sum.26 = f32[] parameter(1)
+  ROOT reduce_sum.27 = f32[] add(reduce_sum.25, reduce_sum.26)
+}
+
+region_4.6 {
+  reduce_sum.32 = f32[] parameter(0)
+  reduce_sum.33 = f32[] parameter(1)
+  ROOT reduce_sum.34 = f32[] add(reduce_sum.32, reduce_sum.33)
+}
+
+region_5.7 {
+  reduce_sum.39 = f32[] parameter(0)
+  reduce_sum.40 = f32[] parameter(1)
+  ROOT reduce_sum.41 = f32[] add(reduce_sum.39, reduce_sum.40)
+}
+
+region_6.8 {
+  reduce_sum.46 = f32[] parameter(0)
+  reduce_sum.47 = f32[] parameter(1)
+  ROOT reduce_sum.48 = f32[] add(reduce_sum.46, reduce_sum.47)
+}
+
+region_7.9 {
+  reduce_sum.53 = f32[] parameter(0)
+  reduce_sum.54 = f32[] parameter(1)
+  ROOT reduce_sum.55 = f32[] add(reduce_sum.53, reduce_sum.54)
+}
+
+region_8.10 {
+  reduce_sum.60 = f32[] parameter(0)
+  reduce_sum.61 = f32[] parameter(1)
+  ROOT reduce_sum.62 = f32[] add(reduce_sum.60, reduce_sum.61)
+}
+
+ENTRY main.11 {
+  pos.1 = f32[4096,3]{1,0} parameter(0)
+  broadcast_in_dim.2 = f32[4096,1,3]{2,1,0} reshape(pos.1)
+  sub.7 = f32[4096,1,3]{2,1,0} broadcast(broadcast_in_dim.2), dimensions={0,1,2}
+  sub.8 = f32[4096,3]{1,0} reshape(sub.7)
+  sub.9 = f32[4096,4096,3]{2,1,0} broadcast(sub.8), dimensions={0,2}
+  src.1 = f32[4096,3]{1,0} parameter(1)
+  broadcast_in_dim.3 = f32[1,4096,3]{2,1,0} reshape(src.1)
+  sub.10 = f32[1,4096,3]{2,1,0} broadcast(broadcast_in_dim.3), dimensions={0,1,2}
+  sub.11 = f32[4096,3]{1,0} reshape(sub.10)
+  sub.12 = f32[4096,4096,3]{2,1,0} broadcast(sub.11), dimensions={1,2}
+  sub.13 = f32[4096,4096,3]{2,1,0} subtract(sub.9, sub.12)
+  jit_norm_.1 = f32[4096,4096]{1,0} call(sub.13), to_apply=norm.2
+  sin.8 = f32[4096,4096]{1,0} sine(jit_norm_.1)
+  neg.8 = f32[4096,4096]{1,0} negate(jit_norm_.1)
+  constant.18 = f32[] constant(1)
+  div.17 = f32[4096,4096]{1,0} broadcast(constant.18), dimensions={}
+  div.18 = f32[4096,4096]{1,0} divide(neg.8, div.17)
+  exp.8 = f32[4096,4096]{1,0} exponential(div.18)
+  mul.24 = f32[4096,4096]{1,0} multiply(sin.8, exp.8)
+  mul.25 = f32[4096,4096]{1,0} multiply(jit_norm_.1, jit_norm_.1)
+  log1p.8 = f32[4096,4096]{1,0} log-plus-one(mul.25)
+  add.8 = f32[4096,4096]{1,0} add(mul.24, log1p.8)
+  sin.9 = f32[4096,4096]{1,0} sine(add.8)
+  neg.9 = f32[4096,4096]{1,0} negate(add.8)
+  constant.17 = f32[] constant(2)
+  broadcast.5 = f32[4096,4096]{1,0} broadcast(constant.17), dimensions={}
+  div.19 = f32[4096,4096]{1,0} divide(neg.9, broadcast.5)
+  exp.9 = f32[4096,4096]{1,0} exponential(div.19)
+  mul.26 = f32[4096,4096]{1,0} multiply(sin.9, exp.9)
+  mul.27 = f32[4096,4096]{1,0} multiply(add.8, add.8)
+  log1p.9 = f32[4096,4096]{1,0} log-plus-one(mul.27)
+  add.9 = f32[4096,4096]{1,0} add(mul.26, log1p.9)
+  sin.10 = f32[4096,4096]{1,0} sine(add.9)
+  neg.10 = f32[4096,4096]{1,0} negate(add.9)
+  constant.16 = f32[] constant(3)
+  broadcast.4 = f32[4096,4096]{1,0} broadcast(constant.16), dimensions={}
+  div.20 = f32[4096,4096]{1,0} divide(neg.10, broadcast.4)
+  exp.10 = f32[4096,4096]{1,0} exponential(div.20)
+  mul.28 = f32[4096,4096]{1,0} multiply(sin.10, exp.10)
+  mul.29 = f32[4096,4096]{1,0} multiply(add.9, add.9)
+  log1p.10 = f32[4096,4096]{1,0} log-plus-one(mul.29)
+  add.10 = f32[4096,4096]{1,0} add(mul.28, log1p.10)
+  sin.11 = f32[4096,4096]{1,0} sine(add.10)
+  neg.11 = f32[4096,4096]{1,0} negate(add.10)
+  constant.15 = f32[] constant(4)
+  broadcast.3 = f32[4096,4096]{1,0} broadcast(constant.15), dimensions={}
+  div.21 = f32[4096,4096]{1,0} divide(neg.11, broadcast.3)
+  exp.11 = f32[4096,4096]{1,0} exponential(div.21)
+  mul.30 = f32[4096,4096]{1,0} multiply(sin.11, exp.11)
+  mul.31 = f32[4096,4096]{1,0} multiply(add.10, add.10)
+  log1p.11 = f32[4096,4096]{1,0} log-plus-one(mul.31)
+  add.11 = f32[4096,4096]{1,0} add(mul.30, log1p.11)
+  sin.12 = f32[4096,4096]{1,0} sine(add.11)
+  neg.12 = f32[4096,4096]{1,0} negate(add.11)
+  constant.14 = f32[] constant(5)
+  div.16 = f32[4096,4096]{1,0} broadcast(constant.14), dimensions={}
+  div.22 = f32[4096,4096]{1,0} divide(neg.12, div.16)
+  exp.12 = f32[4096,4096]{1,0} exponential(div.22)
+  mul.32 = f32[4096,4096]{1,0} multiply(sin.12, exp.12)
+  mul.33 = f32[4096,4096]{1,0} multiply(add.11, add.11)
+  log1p.12 = f32[4096,4096]{1,0} log-plus-one(mul.33)
+  add.12 = f32[4096,4096]{1,0} add(mul.32, log1p.12)
+  sin.13 = f32[4096,4096]{1,0} sine(add.12)
+  neg.13 = f32[4096,4096]{1,0} negate(add.12)
+  constant.13 = f32[] constant(6)
+  div.15 = f32[4096,4096]{1,0} broadcast(constant.13), dimensions={}
+  div.23 = f32[4096,4096]{1,0} divide(neg.13, div.15)
+  exp.13 = f32[4096,4096]{1,0} exponential(div.23)
+  mul.34 = f32[4096,4096]{1,0} multiply(sin.13, exp.13)
+  mul.35 = f32[4096,4096]{1,0} multiply(add.12, add.12)
+  log1p.13 = f32[4096,4096]{1,0} log-plus-one(mul.35)
+  add.13 = f32[4096,4096]{1,0} add(mul.34, log1p.13)
+  sin.14 = f32[4096,4096]{1,0} sine(add.13)
+  neg.14 = f32[4096,4096]{1,0} negate(add.13)
+  constant.12 = f32[] constant(7)
+  div.14 = f32[4096,4096]{1,0} broadcast(constant.12), dimensions={}
+  div.24 = f32[4096,4096]{1,0} divide(neg.14, div.14)
+  exp.14 = f32[4096,4096]{1,0} exponential(div.24)
+  mul.36 = f32[4096,4096]{1,0} multiply(sin.14, exp.14)
+  mul.37 = f32[4096,4096]{1,0} multiply(add.13, add.13)
+  log1p.14 = f32[4096,4096]{1,0} log-plus-one(mul.37)
+  add.14 = f32[4096,4096]{1,0} add(mul.36, log1p.14)
+  sin.15 = f32[4096,4096]{1,0} sine(add.14)
+  neg.15 = f32[4096,4096]{1,0} negate(add.14)
+  constant.11 = f32[] constant(8)
+  div.13 = f32[4096,4096]{1,0} broadcast(constant.11), dimensions={}
+  div.25 = f32[4096,4096]{1,0} divide(neg.15, div.13)
+  exp.15 = f32[4096,4096]{1,0} exponential(div.25)
+  mul.38 = f32[4096,4096]{1,0} multiply(sin.15, exp.15)
+  mul.39 = f32[4096,4096]{1,0} multiply(add.14, add.14)
+  log1p.15 = f32[4096,4096]{1,0} log-plus-one(mul.39)
+  add.15 = f32[4096,4096]{1,0} add(mul.38, log1p.15)
+  constant.19 = f32[] constant(0)
+  reduce_sum.64 = f32[4096]{0} reduce(add.15, constant.19), dimensions={1}, to_apply=region_1.3
+  stack.9 = f32[4096,1]{1,0} reshape(reduce_sum.64)
+  mul.40 = f32[4096,4096]{1,0} multiply(add.15, broadcast.5)
+  reduce_sum.65 = f32[4096]{0} reduce(mul.40, constant.19), dimensions={1}, to_apply=region_2.4
+  stack.10 = f32[4096,1]{1,0} reshape(reduce_sum.65)
+  mul.41 = f32[4096,4096]{1,0} multiply(add.15, broadcast.4)
+  reduce_sum.66 = f32[4096]{0} reduce(mul.41, constant.19), dimensions={1}, to_apply=region_3.5
+  stack.11 = f32[4096,1]{1,0} reshape(reduce_sum.66)
+  mul.42 = f32[4096,4096]{1,0} multiply(add.15, broadcast.3)
+  reduce_sum.67 = f32[4096]{0} reduce(mul.42, constant.19), dimensions={1}, to_apply=region_4.6
+  stack.12 = f32[4096,1]{1,0} reshape(reduce_sum.67)
+  reduce_sum.68 = f32[4096]{0} reduce(add.15, constant.19), dimensions={0}, to_apply=region_5.7
+  stack.13 = f32[4096,1]{1,0} reshape(reduce_sum.68)
+  mul.43 = f32[4096,4096]{1,0} multiply(add.15, broadcast.5)
+  reduce_sum.69 = f32[4096]{0} reduce(mul.43, constant.19), dimensions={0}, to_apply=region_6.8
+  stack.14 = f32[4096,1]{1,0} reshape(reduce_sum.69)
+  mul.44 = f32[4096,4096]{1,0} multiply(add.15, broadcast.4)
+  reduce_sum.70 = f32[4096]{0} reduce(mul.44, constant.19), dimensions={0}, to_apply=region_7.9
+  stack.15 = f32[4096,1]{1,0} reshape(reduce_sum.70)
+  mul.45 = f32[4096,4096]{1,0} multiply(add.15, broadcast.3)
+  reduce_sum.71 = f32[4096]{0} reduce(mul.45, constant.19), dimensions={0}, to_apply=region_8.10
+  stack.16 = f32[4096,1]{1,0} reshape(reduce_sum.71)
+  ROOT stack.17 = f32[4096,8]{1,0} concatenate(stack.9, stack.10, stack.11, stack.12, stack.13, stack.14, stack.15, stack.16), dimensions={1}
+}
+
+

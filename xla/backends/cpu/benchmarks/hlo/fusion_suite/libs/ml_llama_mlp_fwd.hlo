@@ -1,0 +1,53 @@
+HloModule jit_block, entry_computation_layout={(f32[1024,2816]{1,0}, f32[1024,2816]{1,0}, f32[2816,1024]{1,0}, f32[1024]{0}, f32[4096,1024]{1,0})->f32[4096,1024]{1,0}}
+
+region_0.1 {
+  reduce_sum.3 = f32[] parameter(0)
+  reduce_sum.4 = f32[] parameter(1)
+  ROOT reduce_sum.5 = f32[] add(reduce_sum.3, reduce_sum.4)
+}
+
+silu.2 {
+  Arg_0.1 = f32[4096,2816]{1,0} parameter(0)
+  constant.4 = f32[] constant(1)
+  broadcast.1 = f32[4096,2816]{1,0} broadcast(constant.4), dimensions={}
+  neg.1 = f32[4096,2816]{1,0} negate(Arg_0.1)
+  exp.1 = f32[4096,2816]{1,0} exponential(neg.1)
+  add.3 = f32[4096,2816]{1,0} add(exp.1, broadcast.1)
+  div.3 = f32[4096,2816]{1,0} divide(broadcast.1, add.3)
+  ROOT mul.10 = f32[4096,2816]{1,0} multiply(Arg_0.1, div.3)
+}
+
+ENTRY main.3 {
+  x.1 = f32[4096,1024]{1,0} parameter(4)
+  mul.12 = f32[4096,1024]{1,0} multiply(x.1, x.1)
+  constant.7 = f32[] constant(0)
+  reduce_sum.7 = f32[4096]{0} reduce(mul.12, constant.7), dimensions={1}, to_apply=region_0.1
+  broadcast_in_dim.2 = f32[4096,1]{1,0} reshape(reduce_sum.7)
+  constant.6 = f32[] constant(1024)
+  div.4 = f32[4096,1]{1,0} broadcast(constant.6), dimensions={}
+  div.5 = f32[4096,1]{1,0} divide(broadcast_in_dim.2, div.4)
+  constant.5 = f32[] constant(1e-06)
+  add.5 = f32[4096,1]{1,0} broadcast(constant.5), dimensions={}
+  add.6 = f32[4096,1]{1,0} add(div.5, add.5)
+  rsqrt.1 = f32[4096,1]{1,0} rsqrt(add.6)
+  mul.13 = f32[4096,1]{1,0} broadcast(rsqrt.1), dimensions={0,1}
+  mul.14 = f32[4096]{0} reshape(mul.13)
+  mul.15 = f32[4096,1024]{1,0} broadcast(mul.14), dimensions={0}
+  mul.16 = f32[4096,1024]{1,0} multiply(x.1, mul.15)
+  W_3_.1 = f32[1024]{0} parameter(3)
+  broadcast_in_dim.3 = f32[1,1024]{1,0} reshape(W_3_.1)
+  mul.17 = f32[1,1024]{1,0} broadcast(broadcast_in_dim.3), dimensions={0,1}
+  mul.18 = f32[1024]{0} reshape(mul.17)
+  mul.19 = f32[4096,1024]{1,0} broadcast(mul.18), dimensions={1}
+  mul.20 = f32[4096,1024]{1,0} multiply(mul.16, mul.19)
+  W_0_.1 = f32[1024,2816]{1,0} parameter(0)
+  dot_general.3 = f32[4096,2816]{1,0} dot(mul.20, W_0_.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  jit_silu_.1 = f32[4096,2816]{1,0} call(dot_general.3), to_apply=silu.2
+  W_1_.1 = f32[1024,2816]{1,0} parameter(1)
+  dot_general.4 = f32[4096,2816]{1,0} dot(mul.20, W_1_.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  mul.21 = f32[4096,2816]{1,0} multiply(jit_silu_.1, dot_general.4)
+  W_2_.1 = f32[2816,1024]{1,0} parameter(2)
+  dot_general.5 = f32[4096,1024]{1,0} dot(mul.21, W_2_.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  ROOT add.7 = f32[4096,1024]{1,0} add(x.1, dot_general.5)
+}
+

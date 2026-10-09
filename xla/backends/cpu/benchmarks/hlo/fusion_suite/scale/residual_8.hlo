@@ -1,0 +1,143 @@
+HloModule residual_8
+
+add_f32 {
+  a = f32[] parameter(0)
+  b = f32[] parameter(1)
+  ROOT s = f32[] add(a, b)
+}
+
+ENTRY main {
+  x0 = bf16[11,1152]{1,0} parameter(0)
+  zero = f32[] constant(0)
+  invd = f32[] constant(0.0008680555555555555)
+  eps = f32[] constant(1e-6)
+  l0_w = bf16[1152,1152]{1,0} parameter(1)
+  l0_xf = f32[11,1152]{1,0} convert(x0)
+  l0_sq = f32[11,1152]{1,0} multiply(l0_xf, l0_xf)
+  l0_ss = f32[11]{0} reduce(l0_sq, zero), dimensions={1}, to_apply=add_f32
+  l0_bi = f32[11]{0} broadcast(invd), dimensions={}
+  l0_ms = f32[11]{0} multiply(l0_ss, l0_bi)
+  l0_be = f32[11]{0} broadcast(eps), dimensions={}
+  l0_me = f32[11]{0} add(l0_ms, l0_be)
+  l0_r = f32[11]{0} rsqrt(l0_me)
+  l0_br = f32[11,1152]{1,0} broadcast(l0_r), dimensions={0}
+  l0_n = f32[11,1152]{1,0} multiply(l0_xf, l0_br)
+  l0_nb = bf16[11,1152]{1,0} convert(l0_n)
+  l0_y = bf16[11,1152]{1,0} dot(l0_nb, l0_w), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  l0_yf = f32[11,1152]{1,0} convert(l0_y)
+  l0_xs = f32[11,1152]{1,0} add(l0_xf, l0_yf)
+  l0_x = bf16[11,1152]{1,0} convert(l0_xs)
+  l1_w = bf16[1152,1152]{1,0} parameter(2)
+  l1_xf = f32[11,1152]{1,0} convert(l0_x)
+  l1_sq = f32[11,1152]{1,0} multiply(l1_xf, l1_xf)
+  l1_ss = f32[11]{0} reduce(l1_sq, zero), dimensions={1}, to_apply=add_f32
+  l1_bi = f32[11]{0} broadcast(invd), dimensions={}
+  l1_ms = f32[11]{0} multiply(l1_ss, l1_bi)
+  l1_be = f32[11]{0} broadcast(eps), dimensions={}
+  l1_me = f32[11]{0} add(l1_ms, l1_be)
+  l1_r = f32[11]{0} rsqrt(l1_me)
+  l1_br = f32[11,1152]{1,0} broadcast(l1_r), dimensions={0}
+  l1_n = f32[11,1152]{1,0} multiply(l1_xf, l1_br)
+  l1_nb = bf16[11,1152]{1,0} convert(l1_n)
+  l1_y = bf16[11,1152]{1,0} dot(l1_nb, l1_w), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  l1_yf = f32[11,1152]{1,0} convert(l1_y)
+  l1_xs = f32[11,1152]{1,0} add(l1_xf, l1_yf)
+  l1_x = bf16[11,1152]{1,0} convert(l1_xs)
+  l2_w = bf16[1152,1152]{1,0} parameter(3)
+  l2_xf = f32[11,1152]{1,0} convert(l1_x)
+  l2_sq = f32[11,1152]{1,0} multiply(l2_xf, l2_xf)
+  l2_ss = f32[11]{0} reduce(l2_sq, zero), dimensions={1}, to_apply=add_f32
+  l2_bi = f32[11]{0} broadcast(invd), dimensions={}
+  l2_ms = f32[11]{0} multiply(l2_ss, l2_bi)
+  l2_be = f32[11]{0} broadcast(eps), dimensions={}
+  l2_me = f32[11]{0} add(l2_ms, l2_be)
+  l2_r = f32[11]{0} rsqrt(l2_me)
+  l2_br = f32[11,1152]{1,0} broadcast(l2_r), dimensions={0}
+  l2_n = f32[11,1152]{1,0} multiply(l2_xf, l2_br)
+  l2_nb = bf16[11,1152]{1,0} convert(l2_n)
+  l2_y = bf16[11,1152]{1,0} dot(l2_nb, l2_w), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  l2_yf = f32[11,1152]{1,0} convert(l2_y)
+  l2_xs = f32[11,1152]{1,0} add(l2_xf, l2_yf)
+  l2_x = bf16[11,1152]{1,0} convert(l2_xs)
+  l3_w = bf16[1152,1152]{1,0} parameter(4)
+  l3_xf = f32[11,1152]{1,0} convert(l2_x)
+  l3_sq = f32[11,1152]{1,0} multiply(l3_xf, l3_xf)
+  l3_ss = f32[11]{0} reduce(l3_sq, zero), dimensions={1}, to_apply=add_f32
+  l3_bi = f32[11]{0} broadcast(invd), dimensions={}
+  l3_ms = f32[11]{0} multiply(l3_ss, l3_bi)
+  l3_be = f32[11]{0} broadcast(eps), dimensions={}
+  l3_me = f32[11]{0} add(l3_ms, l3_be)
+  l3_r = f32[11]{0} rsqrt(l3_me)
+  l3_br = f32[11,1152]{1,0} broadcast(l3_r), dimensions={0}
+  l3_n = f32[11,1152]{1,0} multiply(l3_xf, l3_br)
+  l3_nb = bf16[11,1152]{1,0} convert(l3_n)
+  l3_y = bf16[11,1152]{1,0} dot(l3_nb, l3_w), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  l3_yf = f32[11,1152]{1,0} convert(l3_y)
+  l3_xs = f32[11,1152]{1,0} add(l3_xf, l3_yf)
+  l3_x = bf16[11,1152]{1,0} convert(l3_xs)
+  l4_w = bf16[1152,1152]{1,0} parameter(5)
+  l4_xf = f32[11,1152]{1,0} convert(l3_x)
+  l4_sq = f32[11,1152]{1,0} multiply(l4_xf, l4_xf)
+  l4_ss = f32[11]{0} reduce(l4_sq, zero), dimensions={1}, to_apply=add_f32
+  l4_bi = f32[11]{0} broadcast(invd), dimensions={}
+  l4_ms = f32[11]{0} multiply(l4_ss, l4_bi)
+  l4_be = f32[11]{0} broadcast(eps), dimensions={}
+  l4_me = f32[11]{0} add(l4_ms, l4_be)
+  l4_r = f32[11]{0} rsqrt(l4_me)
+  l4_br = f32[11,1152]{1,0} broadcast(l4_r), dimensions={0}
+  l4_n = f32[11,1152]{1,0} multiply(l4_xf, l4_br)
+  l4_nb = bf16[11,1152]{1,0} convert(l4_n)
+  l4_y = bf16[11,1152]{1,0} dot(l4_nb, l4_w), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  l4_yf = f32[11,1152]{1,0} convert(l4_y)
+  l4_xs = f32[11,1152]{1,0} add(l4_xf, l4_yf)
+  l4_x = bf16[11,1152]{1,0} convert(l4_xs)
+  l5_w = bf16[1152,1152]{1,0} parameter(6)
+  l5_xf = f32[11,1152]{1,0} convert(l4_x)
+  l5_sq = f32[11,1152]{1,0} multiply(l5_xf, l5_xf)
+  l5_ss = f32[11]{0} reduce(l5_sq, zero), dimensions={1}, to_apply=add_f32
+  l5_bi = f32[11]{0} broadcast(invd), dimensions={}
+  l5_ms = f32[11]{0} multiply(l5_ss, l5_bi)
+  l5_be = f32[11]{0} broadcast(eps), dimensions={}
+  l5_me = f32[11]{0} add(l5_ms, l5_be)
+  l5_r = f32[11]{0} rsqrt(l5_me)
+  l5_br = f32[11,1152]{1,0} broadcast(l5_r), dimensions={0}
+  l5_n = f32[11,1152]{1,0} multiply(l5_xf, l5_br)
+  l5_nb = bf16[11,1152]{1,0} convert(l5_n)
+  l5_y = bf16[11,1152]{1,0} dot(l5_nb, l5_w), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  l5_yf = f32[11,1152]{1,0} convert(l5_y)
+  l5_xs = f32[11,1152]{1,0} add(l5_xf, l5_yf)
+  l5_x = bf16[11,1152]{1,0} convert(l5_xs)
+  l6_w = bf16[1152,1152]{1,0} parameter(7)
+  l6_xf = f32[11,1152]{1,0} convert(l5_x)
+  l6_sq = f32[11,1152]{1,0} multiply(l6_xf, l6_xf)
+  l6_ss = f32[11]{0} reduce(l6_sq, zero), dimensions={1}, to_apply=add_f32
+  l6_bi = f32[11]{0} broadcast(invd), dimensions={}
+  l6_ms = f32[11]{0} multiply(l6_ss, l6_bi)
+  l6_be = f32[11]{0} broadcast(eps), dimensions={}
+  l6_me = f32[11]{0} add(l6_ms, l6_be)
+  l6_r = f32[11]{0} rsqrt(l6_me)
+  l6_br = f32[11,1152]{1,0} broadcast(l6_r), dimensions={0}
+  l6_n = f32[11,1152]{1,0} multiply(l6_xf, l6_br)
+  l6_nb = bf16[11,1152]{1,0} convert(l6_n)
+  l6_y = bf16[11,1152]{1,0} dot(l6_nb, l6_w), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  l6_yf = f32[11,1152]{1,0} convert(l6_y)
+  l6_xs = f32[11,1152]{1,0} add(l6_xf, l6_yf)
+  l6_x = bf16[11,1152]{1,0} convert(l6_xs)
+  l7_w = bf16[1152,1152]{1,0} parameter(8)
+  l7_xf = f32[11,1152]{1,0} convert(l6_x)
+  l7_sq = f32[11,1152]{1,0} multiply(l7_xf, l7_xf)
+  l7_ss = f32[11]{0} reduce(l7_sq, zero), dimensions={1}, to_apply=add_f32
+  l7_bi = f32[11]{0} broadcast(invd), dimensions={}
+  l7_ms = f32[11]{0} multiply(l7_ss, l7_bi)
+  l7_be = f32[11]{0} broadcast(eps), dimensions={}
+  l7_me = f32[11]{0} add(l7_ms, l7_be)
+  l7_r = f32[11]{0} rsqrt(l7_me)
+  l7_br = f32[11,1152]{1,0} broadcast(l7_r), dimensions={0}
+  l7_n = f32[11,1152]{1,0} multiply(l7_xf, l7_br)
+  l7_nb = bf16[11,1152]{1,0} convert(l7_n)
+  l7_y = bf16[11,1152]{1,0} dot(l7_nb, l7_w), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  l7_yf = f32[11,1152]{1,0} convert(l7_y)
+  l7_xs = f32[11,1152]{1,0} add(l7_xf, l7_yf)
+  l7_x = bf16[11,1152]{1,0} convert(l7_xs)
+  ROOT out = bf16[11,1152]{1,0} copy(l7_x)
+}

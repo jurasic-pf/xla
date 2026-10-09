@@ -1,0 +1,16 @@
+HloModule reduce_sqrt_rows
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  x = f32[64,1048576] parameter(0)
+  y = f32[64,1048576] parameter(1)
+  m = f32[64,1048576] multiply(x, y)
+  s = f32[64,1048576] sqrt(m)
+  c = f32[] constant(0)
+  ROOT r = f32[64] reduce(s, c), dimensions={1}, to_apply=add
+}

@@ -1,0 +1,112 @@
+HloModule jit_f, entry_computation_layout={(f32[1024,1024]{1,0})->(s64[], s8[1024,1024]{1,0})}
+
+_roll_static.1 {
+  Arg_0.1 = s8[1024,1024]{1,0} parameter(0)
+  slice.2 = s8[1023,1024]{1,0} slice(Arg_0.1), slice={[1:1024], [0:1024]}
+  slice.3 = s8[1,1024]{1,0} slice(Arg_0.1), slice={[0:1], [0:1024]}
+  ROOT concatenate.1 = s8[1024,1024]{1,0} concatenate(slice.2, slice.3), dimensions={0}
+}
+
+_roll_static_0.2 {
+  Arg_0.3 = s8[1024,1024]{1,0} parameter(0)
+  slice.6 = s8[1024,1023]{1,0} slice(Arg_0.3), slice={[0:1024], [1:1024]}
+  slice.7 = s8[1024,1]{1,0} slice(Arg_0.3), slice={[0:1024], [0:1]}
+  ROOT concatenate.3 = s8[1024,1024]{1,0} concatenate(slice.6, slice.7), dimensions={1}
+}
+
+_roll_static_1.3 {
+  ROOT Arg_0.5 = s8[1024,1024]{1,0} parameter(0)
+}
+
+_roll_static_2.4 {
+  Arg_0.7 = s8[1024,1024]{1,0} parameter(0)
+  slice.10 = s8[1024,1]{1,0} slice(Arg_0.7), slice={[0:1024], [1023:1024]}
+  slice.11 = s8[1024,1023]{1,0} slice(Arg_0.7), slice={[0:1024], [0:1023]}
+  ROOT concatenate.5 = s8[1024,1024]{1,0} concatenate(slice.10, slice.11), dimensions={1}
+}
+
+_roll_static_3.5 {
+  ROOT Arg_0.9 = s8[1024,1024]{1,0} parameter(0)
+}
+
+_roll_static_4.6 {
+  Arg_0.11 = s8[1024,1024]{1,0} parameter(0)
+  slice.14 = s8[1,1024]{1,0} slice(Arg_0.11), slice={[1023:1024], [0:1024]}
+  slice.15 = s8[1023,1024]{1,0} slice(Arg_0.11), slice={[0:1023], [0:1024]}
+  ROOT concatenate.7 = s8[1024,1024]{1,0} concatenate(slice.14, slice.15), dimensions={0}
+}
+
+region_0.7 {
+  arg_tuple.1 = (s64[], s8[1024,1024]{1,0}) parameter(0)
+  get-tuple-element.2 = s64[] get-tuple-element(arg_tuple.1), index=0
+  constant.6 = s64[] constant(1)
+  add.15 = s64[] add(get-tuple-element.2, constant.6)
+  get-tuple-element.3 = s8[1024,1024]{1,0} get-tuple-element(arg_tuple.1), index=1
+  jit__roll_static_.16 = s8[1024,1024]{1,0} call(get-tuple-element.3), to_apply=_roll_static.1
+  jit__roll_static_.17 = s8[1024,1024]{1,0} call(jit__roll_static_.16), to_apply=_roll_static_0.2
+  jit__roll_static_.18 = s8[1024,1024]{1,0} call(get-tuple-element.3), to_apply=_roll_static.1
+  jit__roll_static_.19 = s8[1024,1024]{1,0} call(jit__roll_static_.18), to_apply=_roll_static_1.3
+  add.8 = s8[1024,1024]{1,0} add(jit__roll_static_.17, jit__roll_static_.19)
+  jit__roll_static_.20 = s8[1024,1024]{1,0} call(get-tuple-element.3), to_apply=_roll_static.1
+  jit__roll_static_.21 = s8[1024,1024]{1,0} call(jit__roll_static_.20), to_apply=_roll_static_2.4
+  add.9 = s8[1024,1024]{1,0} add(add.8, jit__roll_static_.21)
+  jit__roll_static_.22 = s8[1024,1024]{1,0} call(get-tuple-element.3), to_apply=_roll_static_3.5
+  jit__roll_static_.23 = s8[1024,1024]{1,0} call(jit__roll_static_.22), to_apply=_roll_static_0.2
+  add.10 = s8[1024,1024]{1,0} add(add.9, jit__roll_static_.23)
+  jit__roll_static_.24 = s8[1024,1024]{1,0} call(get-tuple-element.3), to_apply=_roll_static_3.5
+  jit__roll_static_.25 = s8[1024,1024]{1,0} call(jit__roll_static_.24), to_apply=_roll_static_2.4
+  add.11 = s8[1024,1024]{1,0} add(add.10, jit__roll_static_.25)
+  jit__roll_static_.26 = s8[1024,1024]{1,0} call(get-tuple-element.3), to_apply=_roll_static_4.6
+  jit__roll_static_.27 = s8[1024,1024]{1,0} call(jit__roll_static_.26), to_apply=_roll_static_0.2
+  add.12 = s8[1024,1024]{1,0} add(add.11, jit__roll_static_.27)
+  jit__roll_static_.28 = s8[1024,1024]{1,0} call(get-tuple-element.3), to_apply=_roll_static_4.6
+  jit__roll_static_.29 = s8[1024,1024]{1,0} call(jit__roll_static_.28), to_apply=_roll_static_1.3
+  add.13 = s8[1024,1024]{1,0} add(add.12, jit__roll_static_.29)
+  jit__roll_static_.30 = s8[1024,1024]{1,0} call(get-tuple-element.3), to_apply=_roll_static_4.6
+  jit__roll_static_.31 = s8[1024,1024]{1,0} call(jit__roll_static_.30), to_apply=_roll_static_2.4
+  add.14 = s8[1024,1024]{1,0} add(add.13, jit__roll_static_.31)
+  constant.9 = s8[] constant(3)
+  broadcast.5 = s8[1024,1024]{1,0} broadcast(constant.9), dimensions={}
+  eq.3 = pred[1024,1024]{1,0} compare(add.14, broadcast.5), direction=EQ
+  constant.8 = s8[] constant(1)
+  broadcast.4 = s8[1024,1024]{1,0} broadcast(constant.8), dimensions={}
+  eq.4 = pred[1024,1024]{1,0} compare(get-tuple-element.3, broadcast.4), direction=EQ
+  constant.7 = s8[] constant(2)
+  broadcast.3 = s8[1024,1024]{1,0} broadcast(constant.7), dimensions={}
+  eq.5 = pred[1024,1024]{1,0} compare(add.14, broadcast.3), direction=EQ
+  and.1 = pred[1024,1024]{1,0} and(eq.4, eq.5)
+  or.1 = pred[1024,1024]{1,0} or(eq.3, and.1)
+  convert_element_type.2 = s8[1024,1024]{1,0} convert(or.1)
+  ROOT tuple.1 = (s64[], s8[1024,1024]{1,0}) tuple(add.15, convert_element_type.2)
+}
+
+region_1.8 {
+  arg_tuple.3 = (s64[], s8[1024,1024]{1,0}) parameter(0)
+  get-tuple-element.7 = s8[1024,1024]{1,0} get-tuple-element(arg_tuple.3), index=1
+  get-tuple-element.6 = s64[] get-tuple-element(arg_tuple.3), index=0
+  constant.11 = s64[] constant(60)
+  ROOT lt.1 = pred[] compare(get-tuple-element.6, constant.11), direction=LT
+}
+
+region_2.9 {
+  reduce_sum.3 = s64[] parameter(0)
+  reduce_sum.4 = s64[] parameter(1)
+  ROOT reduce_sum.5 = s64[] add(reduce_sum.3, reduce_sum.4)
+}
+
+ENTRY main.10 {
+  constant.12 = s64[] constant(0)
+  x.1 = f32[1024,1024]{1,0} parameter(0)
+  constant.13 = f32[] constant(1)
+  gt.2 = f32[1024,1024]{1,0} broadcast(constant.13), dimensions={}
+  gt.3 = pred[1024,1024]{1,0} compare(x.1, gt.2), direction=GT
+  convert_element_type.4 = s8[1024,1024]{1,0} convert(gt.3)
+  while.4 = (s64[], s8[1024,1024]{1,0}) tuple(constant.12, convert_element_type.4)
+  while.5 = (s64[], s8[1024,1024]{1,0}) while(while.4), condition=region_1.8, body=region_0.7
+  while.6 = s64[] get-tuple-element(while.5), index=0
+  while.7 = s8[1024,1024]{1,0} get-tuple-element(while.5), index=1
+  convert_element_type.5 = s64[1024,1024]{1,0} convert(while.7)
+  reduce_sum.7 = s64[] reduce(convert_element_type.5, constant.12), dimensions={0,1}, to_apply=region_2.9
+  ROOT tuple.3 = (s64[], s8[1024,1024]{1,0}) tuple(reduce_sum.7, while.7)
+}
+

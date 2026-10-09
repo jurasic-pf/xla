@@ -1,0 +1,71 @@
+HloModule jit_heat, entry_computation_layout={(f32[1024,1024]{1,0})->f32[1024,1024]{1,0}}
+
+_roll_static.1 {
+  Arg_0.1 = f32[1024,1024]{1,0} parameter(0)
+  slice.2 = f32[1,1024]{1,0} slice(Arg_0.1), slice={[1023:1024], [0:1024]}
+  slice.3 = f32[1023,1024]{1,0} slice(Arg_0.1), slice={[0:1023], [0:1024]}
+  ROOT concatenate.1 = f32[1024,1024]{1,0} concatenate(slice.2, slice.3), dimensions={0}
+}
+
+_roll_static_0.2 {
+  Arg_0.3 = f32[1024,1024]{1,0} parameter(0)
+  slice.6 = f32[1023,1024]{1,0} slice(Arg_0.3), slice={[1:1024], [0:1024]}
+  slice.7 = f32[1,1024]{1,0} slice(Arg_0.3), slice={[0:1], [0:1024]}
+  ROOT concatenate.3 = f32[1024,1024]{1,0} concatenate(slice.6, slice.7), dimensions={0}
+}
+
+_roll_static_1.3 {
+  Arg_0.5 = f32[1024,1024]{1,0} parameter(0)
+  slice.10 = f32[1024,1]{1,0} slice(Arg_0.5), slice={[0:1024], [1023:1024]}
+  slice.11 = f32[1024,1023]{1,0} slice(Arg_0.5), slice={[0:1024], [0:1023]}
+  ROOT concatenate.5 = f32[1024,1024]{1,0} concatenate(slice.10, slice.11), dimensions={1}
+}
+
+_roll_static_2.4 {
+  Arg_0.7 = f32[1024,1024]{1,0} parameter(0)
+  slice.14 = f32[1024,1023]{1,0} slice(Arg_0.7), slice={[0:1024], [1:1024]}
+  slice.15 = f32[1024,1]{1,0} slice(Arg_0.7), slice={[0:1024], [0:1]}
+  ROOT concatenate.7 = f32[1024,1024]{1,0} concatenate(slice.14, slice.15), dimensions={1}
+}
+
+region_0.5 {
+  arg_tuple.1 = (s32[], f32[1024,1024]{1,0}) parameter(0)
+  get-tuple-element.2 = s32[] get-tuple-element(arg_tuple.1), index=0
+  constant.4 = s32[] constant(1)
+  add.9 = s32[] add(get-tuple-element.2, constant.4)
+  get-tuple-element.3 = f32[1024,1024]{1,0} get-tuple-element(arg_tuple.1), index=1
+  jit__roll_static_.4 = f32[1024,1024]{1,0} call(get-tuple-element.3), to_apply=_roll_static.1
+  jit__roll_static_.5 = f32[1024,1024]{1,0} call(get-tuple-element.3), to_apply=_roll_static_0.2
+  add.5 = f32[1024,1024]{1,0} add(jit__roll_static_.4, jit__roll_static_.5)
+  jit__roll_static_.6 = f32[1024,1024]{1,0} call(get-tuple-element.3), to_apply=_roll_static_1.3
+  add.6 = f32[1024,1024]{1,0} add(add.5, jit__roll_static_.6)
+  jit__roll_static_.7 = f32[1024,1024]{1,0} call(get-tuple-element.3), to_apply=_roll_static_2.4
+  add.7 = f32[1024,1024]{1,0} add(add.6, jit__roll_static_.7)
+  constant.6 = f32[] constant(4)
+  broadcast.3 = f32[1024,1024]{1,0} broadcast(constant.6), dimensions={}
+  mul.2 = f32[1024,1024]{1,0} multiply(get-tuple-element.3, broadcast.3)
+  sub.1 = f32[1024,1024]{1,0} subtract(add.7, mul.2)
+  constant.5 = f32[] constant(0.2)
+  broadcast.2 = f32[1024,1024]{1,0} broadcast(constant.5), dimensions={}
+  mul.3 = f32[1024,1024]{1,0} multiply(sub.1, broadcast.2)
+  add.8 = f32[1024,1024]{1,0} add(get-tuple-element.3, mul.3)
+  ROOT tuple.1 = (s32[], f32[1024,1024]{1,0}) tuple(add.9, add.8)
+}
+
+region_1.6 {
+  arg_tuple.3 = (s32[], f32[1024,1024]{1,0}) parameter(0)
+  get-tuple-element.7 = f32[1024,1024]{1,0} get-tuple-element(arg_tuple.3), index=1
+  get-tuple-element.6 = s32[] get-tuple-element(arg_tuple.3), index=0
+  constant.8 = s32[] constant(50)
+  ROOT lt.1 = pred[] compare(get-tuple-element.6, constant.8), direction=LT
+}
+
+ENTRY main.7 {
+  constant.9 = s32[] constant(0)
+  u.1 = f32[1024,1024]{1,0} parameter(0)
+  while.4 = (s32[], f32[1024,1024]{1,0}) tuple(constant.9, u.1)
+  while.5 = (s32[], f32[1024,1024]{1,0}) while(while.4), condition=region_1.6, body=region_0.5
+  while.6 = s32[] get-tuple-element(while.5), index=0
+  ROOT while.7 = f32[1024,1024]{1,0} get-tuple-element(while.5), index=1
+}
+

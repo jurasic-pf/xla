@@ -1,0 +1,367 @@
+HloModule jit_f, entry_computation_layout={(f32[4096]{0}, f32[8192,256]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, /*index=5*/f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, f32[4096]{0}, f32[8192,256]{1,0}, /*index=10*/f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, /*index=15*/f32[1024,1024]{1,0}, f32[4096]{0}, f32[8192,256]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, /*index=20*/f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, f32[4096]{0}, /*index=25*/f32[8192,256]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, /*index=30*/f32[1024,1024]{1,0}, f32[1024,1024]{1,0})->(f32[4096]{0}, f32[8192,256]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, /*index=5*/f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0})}
+
+region_0.1 {
+  reduce_sum.3 = f32[] parameter(0)
+  reduce_sum.4 = f32[] parameter(1)
+  ROOT reduce_sum.5 = f32[] add(reduce_sum.3, reduce_sum.4)
+}
+
+region_1.2 {
+  reduce_sum.10 = f32[] parameter(0)
+  reduce_sum.11 = f32[] parameter(1)
+  ROOT reduce_sum.12 = f32[] add(reduce_sum.10, reduce_sum.11)
+}
+
+region_2.3 {
+  reduce_sum.17 = f32[] parameter(0)
+  reduce_sum.18 = f32[] parameter(1)
+  ROOT reduce_sum.19 = f32[] add(reduce_sum.17, reduce_sum.18)
+}
+
+region_3.4 {
+  reduce_sum.24 = f32[] parameter(0)
+  reduce_sum.25 = f32[] parameter(1)
+  ROOT reduce_sum.26 = f32[] add(reduce_sum.24, reduce_sum.25)
+}
+
+region_4.5 {
+  reduce_sum.31 = f32[] parameter(0)
+  reduce_sum.32 = f32[] parameter(1)
+  ROOT reduce_sum.33 = f32[] add(reduce_sum.31, reduce_sum.32)
+}
+
+region_5.6 {
+  reduce_sum.38 = f32[] parameter(0)
+  reduce_sum.39 = f32[] parameter(1)
+  ROOT reduce_sum.40 = f32[] add(reduce_sum.38, reduce_sum.39)
+}
+
+region_6.7 {
+  reduce_sum.45 = f32[] parameter(0)
+  reduce_sum.46 = f32[] parameter(1)
+  ROOT reduce_sum.47 = f32[] add(reduce_sum.45, reduce_sum.46)
+}
+
+region_7.8 {
+  reduce_sum.52 = f32[] parameter(0)
+  reduce_sum.53 = f32[] parameter(1)
+  ROOT reduce_sum.54 = f32[] add(reduce_sum.52, reduce_sum.53)
+}
+
+_where.9 {
+  Arg_0.1 = pred[] parameter(0)
+  Arg_1.1 = s32[] parameter(1)
+  Arg_2.1 = s32[] parameter(2)
+  ROOT select_n.17 = s32[] select(Arg_0.1, Arg_1.1, Arg_2.1)
+}
+
+ENTRY main.10 {
+  params__b__.1 = f32[4096]{0} parameter(0)
+  grads__b__.1 = f32[4096]{0} parameter(8)
+  square.8 = f32[4096]{0} multiply(grads__b__.1, grads__b__.1)
+  constant.57 = f32[] constant(0)
+  reduce_sum.56 = f32[] reduce(square.8, constant.57), dimensions={0}, to_apply=region_0.1
+  grads__emb__.1 = f32[8192,256]{1,0} parameter(9)
+  square.9 = f32[8192,256]{1,0} multiply(grads__emb__.1, grads__emb__.1)
+  reduce_sum.57 = f32[] reduce(square.9, constant.57), dimensions={0,1}, to_apply=region_1.2
+  add.51 = f32[] add(reduce_sum.56, reduce_sum.57)
+  grads__w0__.1 = f32[1024,1024]{1,0} parameter(10)
+  square.10 = f32[1024,1024]{1,0} multiply(grads__w0__.1, grads__w0__.1)
+  reduce_sum.58 = f32[] reduce(square.10, constant.57), dimensions={0,1}, to_apply=region_2.3
+  add.52 = f32[] add(add.51, reduce_sum.58)
+  grads__w1__.1 = f32[1024,1024]{1,0} parameter(11)
+  square.11 = f32[1024,1024]{1,0} multiply(grads__w1__.1, grads__w1__.1)
+  reduce_sum.59 = f32[] reduce(square.11, constant.57), dimensions={0,1}, to_apply=region_3.4
+  add.53 = f32[] add(add.52, reduce_sum.59)
+  grads__w2__.1 = f32[1024,1024]{1,0} parameter(12)
+  square.12 = f32[1024,1024]{1,0} multiply(grads__w2__.1, grads__w2__.1)
+  reduce_sum.60 = f32[] reduce(square.12, constant.57), dimensions={0,1}, to_apply=region_4.5
+  add.54 = f32[] add(add.53, reduce_sum.60)
+  grads__w3__.1 = f32[1024,1024]{1,0} parameter(13)
+  square.13 = f32[1024,1024]{1,0} multiply(grads__w3__.1, grads__w3__.1)
+  reduce_sum.61 = f32[] reduce(square.13, constant.57), dimensions={0,1}, to_apply=region_5.6
+  add.55 = f32[] add(add.54, reduce_sum.61)
+  grads__w4__.1 = f32[1024,1024]{1,0} parameter(14)
+  square.14 = f32[1024,1024]{1,0} multiply(grads__w4__.1, grads__w4__.1)
+  reduce_sum.62 = f32[] reduce(square.14, constant.57), dimensions={0,1}, to_apply=region_6.7
+  add.56 = f32[] add(add.55, reduce_sum.62)
+  grads__w5__.1 = f32[1024,1024]{1,0} parameter(15)
+  square.15 = f32[1024,1024]{1,0} multiply(grads__w5__.1, grads__w5__.1)
+  reduce_sum.63 = f32[] reduce(square.15, constant.57), dimensions={0,1}, to_apply=region_7.8
+  add.57 = f32[] add(add.56, reduce_sum.63)
+  sqrt.9 = f32[] sqrt(add.57)
+  constant.56 = f32[] constant(1)
+  lt.1 = pred[] compare(sqrt.9, constant.56), direction=LT
+  select_n.18 = pred[4096]{0} broadcast(lt.1), dimensions={}
+  div.56 = f32[4096]{0} broadcast(sqrt.9), dimensions={}
+  div.57 = f32[4096]{0} divide(grads__b__.1, div.56)
+  select_n.19 = f32[4096]{0} select(select_n.18, grads__b__.1, div.57)
+  constant.51 = f32[] constant(0.1)
+  mul.71 = f32[4096]{0} broadcast(constant.51), dimensions={}
+  mul.72 = f32[4096]{0} multiply(select_n.19, mul.71)
+  mu__b__.1 = f32[4096]{0} parameter(16)
+  constant.50 = f32[] constant(0.9)
+  mul.70 = f32[4096]{0} broadcast(constant.50), dimensions={}
+  mul.73 = f32[4096]{0} multiply(mu__b__.1, mul.70)
+  add.58 = f32[4096]{0} add(mul.72, mul.73)
+  constant.53 = f64[] constant(1)
+  constant.54 = f64[] constant(0.9)
+  constant.39 = pred[] constant(true)
+  constant.38 = s32[] constant(11)
+  constant.55 = s32[] constant(2147483647)
+  jit__where_.1 = s32[] call(constant.39, constant.38, constant.55), to_apply=_where.9
+  pow.4 = f64[] convert(jit__where_.1)
+  pow.5 = f64[] power(constant.54, pow.4)
+  sub.2 = f64[] subtract(constant.53, pow.5)
+  convert_element_type.16 = f32[] convert(sub.2)
+  div.72 = f32[4096]{0} broadcast(convert_element_type.16), dimensions={}
+  div.73 = f32[4096]{0} divide(add.58, div.72)
+  integer_pow.8 = f32[4096]{0} multiply(select_n.19, select_n.19)
+  constant.45 = f32[] constant(0.001)
+  mul.67 = f32[4096]{0} broadcast(constant.45), dimensions={}
+  mul.88 = f32[4096]{0} multiply(integer_pow.8, mul.67)
+  nu__b__.1 = f32[4096]{0} parameter(24)
+  constant.44 = f32[] constant(0.999)
+  mul.66 = f32[4096]{0} broadcast(constant.44), dimensions={}
+  mul.89 = f32[4096]{0} multiply(nu__b__.1, mul.66)
+  add.66 = f32[4096]{0} add(mul.88, mul.89)
+  constant.52 = f64[] constant(0.999)
+  pow.6 = f64[] convert(jit__where_.1)
+  pow.7 = f64[] power(constant.52, pow.6)
+  sub.3 = f64[] subtract(constant.53, pow.7)
+  convert_element_type.24 = f32[] convert(sub.3)
+  div.88 = f32[4096]{0} broadcast(convert_element_type.24), dimensions={}
+  div.89 = f32[4096]{0} divide(add.66, div.88)
+  sqrt.10 = f32[4096]{0} sqrt(div.89)
+  constant.37 = f32[] constant(1e-08)
+  add.50 = f32[4096]{0} broadcast(constant.37), dimensions={}
+  add.74 = f32[4096]{0} add(sqrt.10, add.50)
+  div.104 = f32[4096]{0} divide(div.73, add.74)
+  constant.34 = f32[] constant(0.01)
+  mul.63 = f32[4096]{0} broadcast(constant.34), dimensions={}
+  mul.104 = f32[4096]{0} multiply(params__b__.1, mul.63)
+  add.82 = f32[4096]{0} add(div.104, mul.104)
+  constant.31 = f32[] constant(-0.001)
+  mul.61 = f32[4096]{0} broadcast(constant.31), dimensions={}
+  mul.112 = f32[4096]{0} multiply(add.82, mul.61)
+  add.90 = f32[4096]{0} add(params__b__.1, mul.112)
+  params__emb__.1 = f32[8192,256]{1,0} parameter(1)
+  select_n.20 = pred[8192,256]{1,0} broadcast(lt.1), dimensions={}
+  div.58 = f32[8192,256]{1,0} broadcast(sqrt.9), dimensions={}
+  div.59 = f32[8192,256]{1,0} divide(grads__emb__.1, div.58)
+  select_n.21 = f32[8192,256]{1,0} select(select_n.20, grads__emb__.1, div.59)
+  constant.49 = f32[] constant(0.1)
+  mul.69 = f32[8192,256]{1,0} broadcast(constant.49), dimensions={}
+  mul.74 = f32[8192,256]{1,0} multiply(select_n.21, mul.69)
+  mu__emb__.1 = f32[8192,256]{1,0} parameter(17)
+  constant.48 = f32[] constant(0.9)
+  mul.68 = f32[8192,256]{1,0} broadcast(constant.48), dimensions={}
+  mul.75 = f32[8192,256]{1,0} multiply(mu__emb__.1, mul.68)
+  add.59 = f32[8192,256]{1,0} add(mul.74, mul.75)
+  convert_element_type.17 = f32[] convert(sub.2)
+  div.74 = f32[8192,256]{1,0} broadcast(convert_element_type.17), dimensions={}
+  div.75 = f32[8192,256]{1,0} divide(add.59, div.74)
+  integer_pow.9 = f32[8192,256]{1,0} multiply(select_n.21, select_n.21)
+  constant.43 = f32[] constant(0.001)
+  mul.65 = f32[8192,256]{1,0} broadcast(constant.43), dimensions={}
+  mul.90 = f32[8192,256]{1,0} multiply(integer_pow.9, mul.65)
+  nu__emb__.1 = f32[8192,256]{1,0} parameter(25)
+  constant.42 = f32[] constant(0.999)
+  mul.64 = f32[8192,256]{1,0} broadcast(constant.42), dimensions={}
+  mul.91 = f32[8192,256]{1,0} multiply(nu__emb__.1, mul.64)
+  add.67 = f32[8192,256]{1,0} add(mul.90, mul.91)
+  convert_element_type.25 = f32[] convert(sub.3)
+  div.90 = f32[8192,256]{1,0} broadcast(convert_element_type.25), dimensions={}
+  div.91 = f32[8192,256]{1,0} divide(add.67, div.90)
+  sqrt.11 = f32[8192,256]{1,0} sqrt(div.91)
+  constant.36 = f32[] constant(1e-08)
+  add.49 = f32[8192,256]{1,0} broadcast(constant.36), dimensions={}
+  add.75 = f32[8192,256]{1,0} add(sqrt.11, add.49)
+  div.105 = f32[8192,256]{1,0} divide(div.75, add.75)
+  constant.33 = f32[] constant(0.01)
+  mul.62 = f32[8192,256]{1,0} broadcast(constant.33), dimensions={}
+  mul.105 = f32[8192,256]{1,0} multiply(params__emb__.1, mul.62)
+  add.83 = f32[8192,256]{1,0} add(div.105, mul.105)
+  constant.30 = f32[] constant(-0.001)
+  mul.60 = f32[8192,256]{1,0} broadcast(constant.30), dimensions={}
+  mul.113 = f32[8192,256]{1,0} multiply(add.83, mul.60)
+  add.91 = f32[8192,256]{1,0} add(params__emb__.1, mul.113)
+  params__w0__.1 = f32[1024,1024]{1,0} parameter(2)
+  select_n.22 = pred[1024,1024]{1,0} broadcast(lt.1), dimensions={}
+  div.60 = f32[1024,1024]{1,0} broadcast(sqrt.9), dimensions={}
+  div.61 = f32[1024,1024]{1,0} divide(grads__w0__.1, div.60)
+  select_n.23 = f32[1024,1024]{1,0} select(select_n.22, grads__w0__.1, div.61)
+  constant.47 = f32[] constant(0.1)
+  broadcast.13 = f32[1024,1024]{1,0} broadcast(constant.47), dimensions={}
+  mul.76 = f32[1024,1024]{1,0} multiply(select_n.23, broadcast.13)
+  mu__w0__.1 = f32[1024,1024]{1,0} parameter(18)
+  constant.46 = f32[] constant(0.9)
+  broadcast.12 = f32[1024,1024]{1,0} broadcast(constant.46), dimensions={}
+  mul.77 = f32[1024,1024]{1,0} multiply(mu__w0__.1, broadcast.12)
+  add.60 = f32[1024,1024]{1,0} add(mul.76, mul.77)
+  convert_element_type.18 = f32[] convert(sub.2)
+  div.76 = f32[1024,1024]{1,0} broadcast(convert_element_type.18), dimensions={}
+  div.77 = f32[1024,1024]{1,0} divide(add.60, div.76)
+  integer_pow.10 = f32[1024,1024]{1,0} multiply(select_n.23, select_n.23)
+  constant.41 = f32[] constant(0.001)
+  broadcast.11 = f32[1024,1024]{1,0} broadcast(constant.41), dimensions={}
+  mul.92 = f32[1024,1024]{1,0} multiply(integer_pow.10, broadcast.11)
+  nu__w0__.1 = f32[1024,1024]{1,0} parameter(26)
+  constant.40 = f32[] constant(0.999)
+  broadcast.10 = f32[1024,1024]{1,0} broadcast(constant.40), dimensions={}
+  mul.93 = f32[1024,1024]{1,0} multiply(nu__w0__.1, broadcast.10)
+  add.68 = f32[1024,1024]{1,0} add(mul.92, mul.93)
+  convert_element_type.26 = f32[] convert(sub.3)
+  div.92 = f32[1024,1024]{1,0} broadcast(convert_element_type.26), dimensions={}
+  div.93 = f32[1024,1024]{1,0} divide(add.68, div.92)
+  sqrt.12 = f32[1024,1024]{1,0} sqrt(div.93)
+  constant.35 = f32[] constant(1e-08)
+  broadcast.9 = f32[1024,1024]{1,0} broadcast(constant.35), dimensions={}
+  add.76 = f32[1024,1024]{1,0} add(sqrt.12, broadcast.9)
+  div.106 = f32[1024,1024]{1,0} divide(div.77, add.76)
+  constant.32 = f32[] constant(0.01)
+  broadcast.8 = f32[1024,1024]{1,0} broadcast(constant.32), dimensions={}
+  mul.106 = f32[1024,1024]{1,0} multiply(params__w0__.1, broadcast.8)
+  add.84 = f32[1024,1024]{1,0} add(div.106, mul.106)
+  constant.29 = f32[] constant(-0.001)
+  broadcast.7 = f32[1024,1024]{1,0} broadcast(constant.29), dimensions={}
+  mul.114 = f32[1024,1024]{1,0} multiply(add.84, broadcast.7)
+  add.92 = f32[1024,1024]{1,0} add(params__w0__.1, mul.114)
+  params__w1__.1 = f32[1024,1024]{1,0} parameter(3)
+  select_n.24 = pred[1024,1024]{1,0} broadcast(lt.1), dimensions={}
+  div.62 = f32[1024,1024]{1,0} broadcast(sqrt.9), dimensions={}
+  div.63 = f32[1024,1024]{1,0} divide(grads__w1__.1, div.62)
+  select_n.25 = f32[1024,1024]{1,0} select(select_n.24, grads__w1__.1, div.63)
+  mul.78 = f32[1024,1024]{1,0} multiply(select_n.25, broadcast.13)
+  mu__w1__.1 = f32[1024,1024]{1,0} parameter(19)
+  mul.79 = f32[1024,1024]{1,0} multiply(mu__w1__.1, broadcast.12)
+  add.61 = f32[1024,1024]{1,0} add(mul.78, mul.79)
+  convert_element_type.19 = f32[] convert(sub.2)
+  div.78 = f32[1024,1024]{1,0} broadcast(convert_element_type.19), dimensions={}
+  div.79 = f32[1024,1024]{1,0} divide(add.61, div.78)
+  integer_pow.11 = f32[1024,1024]{1,0} multiply(select_n.25, select_n.25)
+  mul.94 = f32[1024,1024]{1,0} multiply(integer_pow.11, broadcast.11)
+  nu__w1__.1 = f32[1024,1024]{1,0} parameter(27)
+  mul.95 = f32[1024,1024]{1,0} multiply(nu__w1__.1, broadcast.10)
+  add.69 = f32[1024,1024]{1,0} add(mul.94, mul.95)
+  convert_element_type.27 = f32[] convert(sub.3)
+  div.94 = f32[1024,1024]{1,0} broadcast(convert_element_type.27), dimensions={}
+  div.95 = f32[1024,1024]{1,0} divide(add.69, div.94)
+  sqrt.13 = f32[1024,1024]{1,0} sqrt(div.95)
+  add.77 = f32[1024,1024]{1,0} add(sqrt.13, broadcast.9)
+  div.107 = f32[1024,1024]{1,0} divide(div.79, add.77)
+  mul.107 = f32[1024,1024]{1,0} multiply(params__w1__.1, broadcast.8)
+  add.85 = f32[1024,1024]{1,0} add(div.107, mul.107)
+  mul.115 = f32[1024,1024]{1,0} multiply(add.85, broadcast.7)
+  add.93 = f32[1024,1024]{1,0} add(params__w1__.1, mul.115)
+  params__w2__.1 = f32[1024,1024]{1,0} parameter(4)
+  select_n.26 = pred[1024,1024]{1,0} broadcast(lt.1), dimensions={}
+  div.64 = f32[1024,1024]{1,0} broadcast(sqrt.9), dimensions={}
+  div.65 = f32[1024,1024]{1,0} divide(grads__w2__.1, div.64)
+  select_n.27 = f32[1024,1024]{1,0} select(select_n.26, grads__w2__.1, div.65)
+  mul.80 = f32[1024,1024]{1,0} multiply(select_n.27, broadcast.13)
+  mu__w2__.1 = f32[1024,1024]{1,0} parameter(20)
+  mul.81 = f32[1024,1024]{1,0} multiply(mu__w2__.1, broadcast.12)
+  add.62 = f32[1024,1024]{1,0} add(mul.80, mul.81)
+  convert_element_type.20 = f32[] convert(sub.2)
+  div.80 = f32[1024,1024]{1,0} broadcast(convert_element_type.20), dimensions={}
+  div.81 = f32[1024,1024]{1,0} divide(add.62, div.80)
+  integer_pow.12 = f32[1024,1024]{1,0} multiply(select_n.27, select_n.27)
+  mul.96 = f32[1024,1024]{1,0} multiply(integer_pow.12, broadcast.11)
+  nu__w2__.1 = f32[1024,1024]{1,0} parameter(28)
+  mul.97 = f32[1024,1024]{1,0} multiply(nu__w2__.1, broadcast.10)
+  add.70 = f32[1024,1024]{1,0} add(mul.96, mul.97)
+  convert_element_type.28 = f32[] convert(sub.3)
+  div.96 = f32[1024,1024]{1,0} broadcast(convert_element_type.28), dimensions={}
+  div.97 = f32[1024,1024]{1,0} divide(add.70, div.96)
+  sqrt.14 = f32[1024,1024]{1,0} sqrt(div.97)
+  add.78 = f32[1024,1024]{1,0} add(sqrt.14, broadcast.9)
+  div.108 = f32[1024,1024]{1,0} divide(div.81, add.78)
+  mul.108 = f32[1024,1024]{1,0} multiply(params__w2__.1, broadcast.8)
+  add.86 = f32[1024,1024]{1,0} add(div.108, mul.108)
+  mul.116 = f32[1024,1024]{1,0} multiply(add.86, broadcast.7)
+  add.94 = f32[1024,1024]{1,0} add(params__w2__.1, mul.116)
+  params__w3__.1 = f32[1024,1024]{1,0} parameter(5)
+  select_n.28 = pred[1024,1024]{1,0} broadcast(lt.1), dimensions={}
+  div.66 = f32[1024,1024]{1,0} broadcast(sqrt.9), dimensions={}
+  div.67 = f32[1024,1024]{1,0} divide(grads__w3__.1, div.66)
+  select_n.29 = f32[1024,1024]{1,0} select(select_n.28, grads__w3__.1, div.67)
+  mul.82 = f32[1024,1024]{1,0} multiply(select_n.29, broadcast.13)
+  mu__w3__.1 = f32[1024,1024]{1,0} parameter(21)
+  mul.83 = f32[1024,1024]{1,0} multiply(mu__w3__.1, broadcast.12)
+  add.63 = f32[1024,1024]{1,0} add(mul.82, mul.83)
+  convert_element_type.21 = f32[] convert(sub.2)
+  div.82 = f32[1024,1024]{1,0} broadcast(convert_element_type.21), dimensions={}
+  div.83 = f32[1024,1024]{1,0} divide(add.63, div.82)
+  integer_pow.13 = f32[1024,1024]{1,0} multiply(select_n.29, select_n.29)
+  mul.98 = f32[1024,1024]{1,0} multiply(integer_pow.13, broadcast.11)
+  nu__w3__.1 = f32[1024,1024]{1,0} parameter(29)
+  mul.99 = f32[1024,1024]{1,0} multiply(nu__w3__.1, broadcast.10)
+  add.71 = f32[1024,1024]{1,0} add(mul.98, mul.99)
+  convert_element_type.29 = f32[] convert(sub.3)
+  div.98 = f32[1024,1024]{1,0} broadcast(convert_element_type.29), dimensions={}
+  div.99 = f32[1024,1024]{1,0} divide(add.71, div.98)
+  sqrt.15 = f32[1024,1024]{1,0} sqrt(div.99)
+  add.79 = f32[1024,1024]{1,0} add(sqrt.15, broadcast.9)
+  div.109 = f32[1024,1024]{1,0} divide(div.83, add.79)
+  mul.109 = f32[1024,1024]{1,0} multiply(params__w3__.1, broadcast.8)
+  add.87 = f32[1024,1024]{1,0} add(div.109, mul.109)
+  mul.117 = f32[1024,1024]{1,0} multiply(add.87, broadcast.7)
+  add.95 = f32[1024,1024]{1,0} add(params__w3__.1, mul.117)
+  params__w4__.1 = f32[1024,1024]{1,0} parameter(6)
+  select_n.30 = pred[1024,1024]{1,0} broadcast(lt.1), dimensions={}
+  div.68 = f32[1024,1024]{1,0} broadcast(sqrt.9), dimensions={}
+  div.69 = f32[1024,1024]{1,0} divide(grads__w4__.1, div.68)
+  select_n.31 = f32[1024,1024]{1,0} select(select_n.30, grads__w4__.1, div.69)
+  mul.84 = f32[1024,1024]{1,0} multiply(select_n.31, broadcast.13)
+  mu__w4__.1 = f32[1024,1024]{1,0} parameter(22)
+  mul.85 = f32[1024,1024]{1,0} multiply(mu__w4__.1, broadcast.12)
+  add.64 = f32[1024,1024]{1,0} add(mul.84, mul.85)
+  convert_element_type.22 = f32[] convert(sub.2)
+  div.84 = f32[1024,1024]{1,0} broadcast(convert_element_type.22), dimensions={}
+  div.85 = f32[1024,1024]{1,0} divide(add.64, div.84)
+  integer_pow.14 = f32[1024,1024]{1,0} multiply(select_n.31, select_n.31)
+  mul.100 = f32[1024,1024]{1,0} multiply(integer_pow.14, broadcast.11)
+  nu__w4__.1 = f32[1024,1024]{1,0} parameter(30)
+  mul.101 = f32[1024,1024]{1,0} multiply(nu__w4__.1, broadcast.10)
+  add.72 = f32[1024,1024]{1,0} add(mul.100, mul.101)
+  convert_element_type.30 = f32[] convert(sub.3)
+  div.100 = f32[1024,1024]{1,0} broadcast(convert_element_type.30), dimensions={}
+  div.101 = f32[1024,1024]{1,0} divide(add.72, div.100)
+  sqrt.16 = f32[1024,1024]{1,0} sqrt(div.101)
+  add.80 = f32[1024,1024]{1,0} add(sqrt.16, broadcast.9)
+  div.110 = f32[1024,1024]{1,0} divide(div.85, add.80)
+  mul.110 = f32[1024,1024]{1,0} multiply(params__w4__.1, broadcast.8)
+  add.88 = f32[1024,1024]{1,0} add(div.110, mul.110)
+  mul.118 = f32[1024,1024]{1,0} multiply(add.88, broadcast.7)
+  add.96 = f32[1024,1024]{1,0} add(params__w4__.1, mul.118)
+  params__w5__.1 = f32[1024,1024]{1,0} parameter(7)
+  select_n.32 = pred[1024,1024]{1,0} broadcast(lt.1), dimensions={}
+  div.70 = f32[1024,1024]{1,0} broadcast(sqrt.9), dimensions={}
+  div.71 = f32[1024,1024]{1,0} divide(grads__w5__.1, div.70)
+  select_n.33 = f32[1024,1024]{1,0} select(select_n.32, grads__w5__.1, div.71)
+  mul.86 = f32[1024,1024]{1,0} multiply(select_n.33, broadcast.13)
+  mu__w5__.1 = f32[1024,1024]{1,0} parameter(23)
+  mul.87 = f32[1024,1024]{1,0} multiply(mu__w5__.1, broadcast.12)
+  add.65 = f32[1024,1024]{1,0} add(mul.86, mul.87)
+  convert_element_type.23 = f32[] convert(sub.2)
+  div.86 = f32[1024,1024]{1,0} broadcast(convert_element_type.23), dimensions={}
+  div.87 = f32[1024,1024]{1,0} divide(add.65, div.86)
+  integer_pow.15 = f32[1024,1024]{1,0} multiply(select_n.33, select_n.33)
+  mul.102 = f32[1024,1024]{1,0} multiply(integer_pow.15, broadcast.11)
+  nu__w5__.1 = f32[1024,1024]{1,0} parameter(31)
+  mul.103 = f32[1024,1024]{1,0} multiply(nu__w5__.1, broadcast.10)
+  add.73 = f32[1024,1024]{1,0} add(mul.102, mul.103)
+  convert_element_type.31 = f32[] convert(sub.3)
+  div.102 = f32[1024,1024]{1,0} broadcast(convert_element_type.31), dimensions={}
+  div.103 = f32[1024,1024]{1,0} divide(add.73, div.102)
+  sqrt.17 = f32[1024,1024]{1,0} sqrt(div.103)
+  add.81 = f32[1024,1024]{1,0} add(sqrt.17, broadcast.9)
+  div.111 = f32[1024,1024]{1,0} divide(div.87, add.81)
+  mul.111 = f32[1024,1024]{1,0} multiply(params__w5__.1, broadcast.8)
+  add.89 = f32[1024,1024]{1,0} add(div.111, mul.111)
+  mul.119 = f32[1024,1024]{1,0} multiply(add.89, broadcast.7)
+  add.97 = f32[1024,1024]{1,0} add(params__w5__.1, mul.119)
+  ROOT tuple.1 = (f32[4096]{0}, f32[8192,256]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, /*index=5*/f32[1024,1024]{1,0}, f32[1024,1024]{1,0}, f32[1024,1024]{1,0}) tuple(add.90, add.91, add.92, add.93, add.94, add.95, add.96, add.97)
+}
+

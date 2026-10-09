@@ -1,0 +1,406 @@
+HloModule jit_ot_cost, entry_computation_layout={(f32[4096,3]{1,0}, f32[4096,3]{1,0})->f32[4096,3]{1,0}}
+
+_where.1 {
+  Arg_0.1 = pred[4096]{0} parameter(0)
+  Arg_1.1 = f32[4096]{0} parameter(1)
+  Arg_2.1 = f32[] parameter(2)
+  broadcast_in_dim.2 = f32[4096]{0} broadcast(Arg_2.1), dimensions={}
+  ROOT select_n.1 = f32[4096]{0} select(Arg_0.1, Arg_1.1, broadcast_in_dim.2)
+}
+
+region_2.2 {
+  reduce_sum.3 = f32[] parameter(0)
+  reduce_sum.4 = f32[] parameter(1)
+  ROOT reduce_sum.5 = f32[] add(reduce_sum.3, reduce_sum.4)
+}
+
+region_3.3 {
+  reduce_sum.10 = f32[] parameter(0)
+  reduce_sum.11 = f32[] parameter(1)
+  ROOT reduce_sum.12 = f32[] add(reduce_sum.10, reduce_sum.11)
+}
+
+region_4.4 {
+  reduce_max.3 = f32[] parameter(0)
+  reduce_max.4 = f32[] parameter(1)
+  ROOT reduce_max.5 = f32[] maximum(reduce_max.3, reduce_max.4)
+}
+
+region_5.5 {
+  reduce_sum.17 = f32[] parameter(0)
+  reduce_sum.18 = f32[] parameter(1)
+  ROOT reduce_sum.19 = f32[] add(reduce_sum.17, reduce_sum.18)
+}
+
+_where_0.6 {
+  Arg_0.3 = pred[4096]{0} parameter(0)
+  Arg_1.3 = f32[4096]{0} parameter(1)
+  Arg_2.3 = s32[] parameter(2)
+  convert_element_type.1 = f32[] convert(Arg_2.3)
+  broadcast_in_dim.9 = f32[4096]{0} broadcast(convert_element_type.1), dimensions={}
+  ROOT select_n.4 = f32[4096]{0} select(Arg_0.3, Arg_1.3, broadcast_in_dim.9)
+}
+
+region_6.7 {
+  reduce_sum.24 = f32[] parameter(0)
+  reduce_sum.25 = f32[] parameter(1)
+  ROOT reduce_sum.26 = f32[] add(reduce_sum.24, reduce_sum.25)
+}
+
+region_7.8 {
+  reduce_sum.31 = f32[] parameter(0)
+  reduce_sum.32 = f32[] parameter(1)
+  ROOT reduce_sum.33 = f32[] add(reduce_sum.31, reduce_sum.32)
+}
+
+region_8.9 {
+  reduce_max.10 = f32[] parameter(0)
+  reduce_max.11 = f32[] parameter(1)
+  ROOT reduce_max.12 = f32[] maximum(reduce_max.10, reduce_max.11)
+}
+
+region_9.10 {
+  reduce_sum.38 = f32[] parameter(0)
+  reduce_sum.39 = f32[] parameter(1)
+  ROOT reduce_sum.40 = f32[] add(reduce_sum.38, reduce_sum.39)
+}
+
+region_1.11 {
+  arg_tuple.2 = (s32[], s32[], f32[4096]{0}, f32[4096]{0}, f32[4096,3]{1,0}, /*index=5*/f32[4096,3]{1,0}) parameter(0)
+  get-tuple-element.12 = s32[] get-tuple-element(arg_tuple.2), index=0
+  constant.23 = s32[] constant(1)
+  add.71 = s32[] add(get-tuple-element.12, constant.23)
+  get-tuple-element.13 = s32[] get-tuple-element(arg_tuple.2), index=1
+  add.70 = s32[] add(get-tuple-element.13, constant.23)
+  get-tuple-element.14 = f32[4096]{0} get-tuple-element(arg_tuple.2), index=2
+  is_finite.15 = pred[4096]{0} is-finite(get-tuple-element.14)
+  constant.29 = f32[] constant(0)
+  jit__where_.11 = f32[4096]{0} call(is_finite.15, get-tuple-element.14, constant.29), to_apply=_where.1
+  constant.26 = f32[] constant(0)
+  broadcast.11 = f32[4096]{0} broadcast(constant.26), dimensions={}
+  mul.28 = f32[4096]{0} multiply(jit__where_.11, broadcast.11)
+  constant.32 = f32[] constant(1)
+  pow.6 = f32[] convert(get-tuple-element.13)
+  pow.7 = f32[] power(constant.32, pow.6)
+  max.6 = f32[] maximum(pow.7, constant.32)
+  constant.31 = f32[] constant(0.05)
+  mul.22 = f32[] multiply(max.6, constant.31)
+  mul.26 = f32[4096]{0} broadcast(mul.22), dimensions={}
+  constant.24 = f32[] constant(-8.31776619)
+  broadcast.10 = f32[4096]{0} broadcast(constant.24), dimensions={}
+  mul.27 = f32[4096]{0} multiply(mul.26, broadcast.10)
+  mul.24 = f32[4096]{0} broadcast(mul.22), dimensions={}
+  broadcast_in_dim.20 = f32[4096,1]{1,0} reshape(get-tuple-element.14)
+  add.53 = f32[4096,1]{1,0} broadcast(broadcast_in_dim.20), dimensions={0,1}
+  add.54 = f32[4096]{0} reshape(add.53)
+  add.55 = f32[4096,4096]{1,0} broadcast(add.54), dimensions={0}
+  get-tuple-element.15 = f32[4096]{0} get-tuple-element(arg_tuple.2), index=3
+  is_finite.11 = pred[4096]{0} is-finite(get-tuple-element.15)
+  jit__where_.8 = f32[4096]{0} call(is_finite.11, get-tuple-element.15, constant.29), to_apply=_where.1
+  mul.21 = f32[4096]{0} multiply(jit__where_.8, broadcast.11)
+  pow.4 = f32[] convert(get-tuple-element.13)
+  pow.5 = f32[] power(constant.32, pow.4)
+  max.4 = f32[] maximum(pow.5, constant.32)
+  mul.15 = f32[] multiply(max.4, constant.31)
+  mul.19 = f32[4096]{0} broadcast(mul.15), dimensions={}
+  mul.20 = f32[4096]{0} multiply(mul.19, broadcast.10)
+  mul.17 = f32[4096]{0} broadcast(mul.15), dimensions={}
+  broadcast_in_dim.15 = f32[4096,1]{1,0} reshape(get-tuple-element.14)
+  add.36 = f32[4096,1]{1,0} broadcast(broadcast_in_dim.15), dimensions={0,1}
+  add.37 = f32[4096]{0} reshape(add.36)
+  add.38 = f32[4096,4096]{1,0} broadcast(add.37), dimensions={0}
+  broadcast_in_dim.16 = f32[1,4096]{1,0} reshape(get-tuple-element.15)
+  add.39 = f32[1,4096]{1,0} broadcast(broadcast_in_dim.16), dimensions={0,1}
+  add.40 = f32[4096]{0} reshape(add.39)
+  add.41 = f32[4096,4096]{1,0} broadcast(add.40), dimensions={1}
+  add.42 = f32[4096,4096]{1,0} add(add.38, add.41)
+  get-tuple-element.16 = f32[4096,3]{1,0} get-tuple-element(arg_tuple.2), index=4
+  integer_pow.4 = f32[4096,3]{1,0} multiply(get-tuple-element.16, get-tuple-element.16)
+  reduce_sum.42 = f32[4096]{0} reduce(integer_pow.4, constant.29), dimensions={1}, to_apply=region_2.2
+  broadcast_in_dim.18 = f32[4096,1]{1,0} reshape(reduce_sum.42)
+  add.43 = f32[4096,1]{1,0} broadcast(broadcast_in_dim.18), dimensions={0,1}
+  add.44 = f32[4096]{0} reshape(add.43)
+  add.45 = f32[4096,4096]{1,0} broadcast(add.44), dimensions={0}
+  get-tuple-element.17 = f32[4096,3]{1,0} get-tuple-element(arg_tuple.2), index=5
+  integer_pow.5 = f32[4096,3]{1,0} multiply(get-tuple-element.17, get-tuple-element.17)
+  reduce_sum.43 = f32[4096]{0} reduce(integer_pow.5, constant.29), dimensions={1}, to_apply=region_3.3
+  broadcast_in_dim.17 = f32[1,4096]{1,0} reshape(reduce_sum.43)
+  add.46 = f32[1,4096]{1,0} broadcast(broadcast_in_dim.17), dimensions={0,1}
+  add.47 = f32[4096]{0} reshape(add.46)
+  add.48 = f32[4096,4096]{1,0} broadcast(add.47), dimensions={1}
+  add.49 = f32[4096,4096]{1,0} add(add.45, add.48)
+  dot_general.2 = f32[4096,4096]{1,0} dot(get-tuple-element.16, get-tuple-element.17), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  constant.30 = f32[] constant(-2)
+  broadcast.13 = f32[4096,4096]{1,0} broadcast(constant.30), dimensions={}
+  mul.16 = f32[4096,4096]{1,0} multiply(dot_general.2, broadcast.13)
+  add.50 = f32[4096,4096]{1,0} add(add.49, mul.16)
+  sub.14 = f32[4096,4096]{1,0} subtract(add.42, add.50)
+  div.4 = f32[4096,4096]{1,0} broadcast(mul.15), dimensions={}
+  div.5 = f32[4096,4096]{1,0} divide(sub.14, div.4)
+  constant.28 = f32[] constant(-inf)
+  reduce_max.14 = f32[4096]{0} reduce(div.5, constant.28), dimensions={0}, to_apply=region_4.4
+  constant.27 = f32[] constant(-inf)
+  broadcast.12 = f32[4096]{0} broadcast(constant.27), dimensions={}
+  max.5 = f32[4096]{0} maximum(reduce_max.14, broadcast.12)
+  is_finite.8 = pred[4096]{0} is-finite(max.5)
+  select_n.6 = f32[4096]{0} select(is_finite.8, max.5, broadcast.11)
+  broadcast_in_dim.19 = f32[1,4096]{1,0} reshape(select_n.6)
+  sub.15 = f32[1,4096]{1,0} broadcast(broadcast_in_dim.19), dimensions={0,1}
+  sub.16 = f32[4096]{0} reshape(sub.15)
+  sub.17 = f32[4096,4096]{1,0} broadcast(sub.16), dimensions={1}
+  sub.18 = f32[4096,4096]{1,0} subtract(div.5, sub.17)
+  exp.2 = f32[4096,4096]{1,0} exponential(sub.18)
+  reduce_sum.44 = f32[4096]{0} reduce(exp.2, constant.29), dimensions={0}, to_apply=region_5.5
+  abs.2 = f32[4096]{0} abs(reduce_sum.44)
+  log.2 = f32[4096]{0} log(abs.2)
+  add.51 = f32[4096]{0} add(log.2, select_n.6)
+  mul.18 = f32[4096]{0} multiply(mul.17, add.51)
+  is_finite.9 = pred[4096]{0} is-finite(get-tuple-element.15)
+  constant.25 = s32[] constant(0)
+  jit__where_.6 = f32[4096]{0} call(is_finite.9, get-tuple-element.15, constant.25), to_apply=_where_0.6
+  sub.19 = f32[4096]{0} subtract(mul.18, jit__where_.6)
+  is_finite.10 = pred[4096]{0} is-finite(sub.19)
+  jit__where_.7 = f32[4096]{0} call(is_finite.10, sub.19, constant.25), to_apply=_where_0.6
+  sub.20 = f32[4096]{0} subtract(mul.20, jit__where_.7)
+  add.52 = f32[4096]{0} add(mul.21, sub.20)
+  broadcast_in_dim.21 = f32[1,4096]{1,0} reshape(add.52)
+  add.56 = f32[1,4096]{1,0} broadcast(broadcast_in_dim.21), dimensions={0,1}
+  add.57 = f32[4096]{0} reshape(add.56)
+  add.58 = f32[4096,4096]{1,0} broadcast(add.57), dimensions={1}
+  add.59 = f32[4096,4096]{1,0} add(add.55, add.58)
+  integer_pow.6 = f32[4096,3]{1,0} multiply(get-tuple-element.16, get-tuple-element.16)
+  reduce_sum.45 = f32[4096]{0} reduce(integer_pow.6, constant.29), dimensions={1}, to_apply=region_6.7
+  broadcast_in_dim.23 = f32[4096,1]{1,0} reshape(reduce_sum.45)
+  add.60 = f32[4096,1]{1,0} broadcast(broadcast_in_dim.23), dimensions={0,1}
+  add.61 = f32[4096]{0} reshape(add.60)
+  add.62 = f32[4096,4096]{1,0} broadcast(add.61), dimensions={0}
+  integer_pow.7 = f32[4096,3]{1,0} multiply(get-tuple-element.17, get-tuple-element.17)
+  reduce_sum.46 = f32[4096]{0} reduce(integer_pow.7, constant.29), dimensions={1}, to_apply=region_7.8
+  broadcast_in_dim.22 = f32[1,4096]{1,0} reshape(reduce_sum.46)
+  add.63 = f32[1,4096]{1,0} broadcast(broadcast_in_dim.22), dimensions={0,1}
+  add.64 = f32[4096]{0} reshape(add.63)
+  add.65 = f32[4096,4096]{1,0} broadcast(add.64), dimensions={1}
+  add.66 = f32[4096,4096]{1,0} add(add.62, add.65)
+  dot_general.3 = f32[4096,4096]{1,0} dot(get-tuple-element.16, get-tuple-element.17), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  mul.23 = f32[4096,4096]{1,0} multiply(dot_general.3, broadcast.13)
+  add.67 = f32[4096,4096]{1,0} add(add.66, mul.23)
+  sub.21 = f32[4096,4096]{1,0} subtract(add.59, add.67)
+  div.6 = f32[4096,4096]{1,0} broadcast(mul.22), dimensions={}
+  div.7 = f32[4096,4096]{1,0} divide(sub.21, div.6)
+  reduce_max.15 = f32[4096]{0} reduce(div.7, constant.28), dimensions={1}, to_apply=region_8.9
+  max.7 = f32[4096]{0} maximum(reduce_max.15, broadcast.12)
+  is_finite.12 = pred[4096]{0} is-finite(max.7)
+  select_n.7 = f32[4096]{0} select(is_finite.12, max.7, broadcast.11)
+  broadcast_in_dim.24 = f32[4096,1]{1,0} reshape(select_n.7)
+  sub.22 = f32[4096,1]{1,0} broadcast(broadcast_in_dim.24), dimensions={0,1}
+  sub.23 = f32[4096]{0} reshape(sub.22)
+  sub.24 = f32[4096,4096]{1,0} broadcast(sub.23), dimensions={0}
+  sub.25 = f32[4096,4096]{1,0} subtract(div.7, sub.24)
+  exp.3 = f32[4096,4096]{1,0} exponential(sub.25)
+  reduce_sum.47 = f32[4096]{0} reduce(exp.3, constant.29), dimensions={1}, to_apply=region_9.10
+  abs.3 = f32[4096]{0} abs(reduce_sum.47)
+  log.3 = f32[4096]{0} log(abs.3)
+  add.68 = f32[4096]{0} add(log.3, select_n.7)
+  mul.25 = f32[4096]{0} multiply(mul.24, add.68)
+  is_finite.13 = pred[4096]{0} is-finite(get-tuple-element.14)
+  jit__where_.9 = f32[4096]{0} call(is_finite.13, get-tuple-element.14, constant.25), to_apply=_where_0.6
+  sub.26 = f32[4096]{0} subtract(mul.25, jit__where_.9)
+  is_finite.14 = pred[4096]{0} is-finite(sub.26)
+  jit__where_.10 = f32[4096]{0} call(is_finite.14, sub.26, constant.25), to_apply=_where_0.6
+  sub.27 = f32[4096]{0} subtract(mul.27, jit__where_.10)
+  add.69 = f32[4096]{0} add(mul.28, sub.27)
+  ROOT tuple.1 = (s32[], s32[], f32[4096]{0}, f32[4096]{0}, f32[4096,3]{1,0}, /*index=5*/f32[4096,3]{1,0}) tuple(add.71, add.70, add.69, add.52, get-tuple-element.16, get-tuple-element.17)
+}
+
+region_10.12 {
+  arg_tuple.4 = (s32[], s32[], f32[4096]{0}, f32[4096]{0}, f32[4096,3]{1,0}, /*index=5*/f32[4096,3]{1,0}) parameter(0)
+  get-tuple-element.25 = s32[] get-tuple-element(arg_tuple.4), index=1
+  get-tuple-element.26 = f32[4096]{0} get-tuple-element(arg_tuple.4), index=2
+  get-tuple-element.27 = f32[4096]{0} get-tuple-element(arg_tuple.4), index=3
+  get-tuple-element.28 = f32[4096,3]{1,0} get-tuple-element(arg_tuple.4), index=4
+  get-tuple-element.29 = f32[4096,3]{1,0} get-tuple-element(arg_tuple.4), index=5
+  get-tuple-element.24 = s32[] get-tuple-element(arg_tuple.4), index=0
+  constant.34 = s32[] constant(10)
+  ROOT lt.1 = pred[] compare(get-tuple-element.24, constant.34), direction=LT
+}
+
+region_0.13 {
+  constant.36 = s32[] constant(0)
+  arg_tuple.5 = (s32[], s32[], f32[4096]{0}, f32[4096]{0}, f32[4096,3]{1,0}, /*index=5*/f32[4096,3]{1,0}) parameter(0)
+  get-tuple-element.31 = s32[] get-tuple-element(arg_tuple.5), index=1
+  get-tuple-element.32 = f32[4096]{0} get-tuple-element(arg_tuple.5), index=2
+  get-tuple-element.33 = f32[4096]{0} get-tuple-element(arg_tuple.5), index=3
+  get-tuple-element.34 = f32[4096,3]{1,0} get-tuple-element(arg_tuple.5), index=4
+  get-tuple-element.35 = f32[4096,3]{1,0} get-tuple-element(arg_tuple.5), index=5
+  while.6 = (s32[], s32[], f32[4096]{0}, f32[4096]{0}, f32[4096,3]{1,0}, /*index=5*/f32[4096,3]{1,0}) tuple(constant.36, get-tuple-element.31, get-tuple-element.32, get-tuple-element.33, get-tuple-element.34, get-tuple-element.35)
+  while.7 = (s32[], s32[], f32[4096]{0}, f32[4096]{0}, f32[4096,3]{1,0}, /*index=5*/f32[4096,3]{1,0}) while(while.6), condition=region_10.12, body=region_1.11
+  while.8 = s32[] get-tuple-element(while.7), index=0
+  get-tuple-element.30 = s32[] get-tuple-element(arg_tuple.5), index=0
+  constant.35 = s32[] constant(1)
+  add.73 = s32[] add(get-tuple-element.30, constant.35)
+  while.9 = s32[] get-tuple-element(while.7), index=1
+  while.10 = f32[4096]{0} get-tuple-element(while.7), index=2
+  while.11 = f32[4096]{0} get-tuple-element(while.7), index=3
+  ROOT tuple.3 = (s32[], s32[], f32[4096]{0}, f32[4096]{0}, f32[4096,3]{1,0}, /*index=5*/f32[4096,3]{1,0}) tuple(add.73, while.9, while.10, while.11, get-tuple-element.34, get-tuple-element.35)
+}
+
+region_11.14 {
+  arg_tuple.7 = (s32[], s32[], f32[4096]{0}, f32[4096]{0}, f32[4096,3]{1,0}, /*index=5*/f32[4096,3]{1,0}) parameter(0)
+  get-tuple-element.43 = s32[] get-tuple-element(arg_tuple.7), index=1
+  get-tuple-element.44 = f32[4096]{0} get-tuple-element(arg_tuple.7), index=2
+  get-tuple-element.45 = f32[4096]{0} get-tuple-element(arg_tuple.7), index=3
+  get-tuple-element.46 = f32[4096,3]{1,0} get-tuple-element(arg_tuple.7), index=4
+  get-tuple-element.47 = f32[4096,3]{1,0} get-tuple-element(arg_tuple.7), index=5
+  get-tuple-element.42 = s32[] get-tuple-element(arg_tuple.7), index=0
+  constant.38 = s32[] constant(5)
+  ROOT lt.3 = pred[] compare(get-tuple-element.42, constant.38), direction=LT
+}
+
+region_12.15 {
+  reduce_sum.51 = f32[] parameter(0)
+  reduce_sum.52 = f32[] parameter(1)
+  ROOT reduce_sum.53 = f32[] add(reduce_sum.51, reduce_sum.52)
+}
+
+region_13.16 {
+  reduce_sum.58 = f32[] parameter(0)
+  reduce_sum.59 = f32[] parameter(1)
+  ROOT reduce_sum.60 = f32[] add(reduce_sum.58, reduce_sum.59)
+}
+
+region_14.17 {
+  reduce_max.19 = f32[] parameter(0)
+  reduce_max.20 = f32[] parameter(1)
+  ROOT reduce_max.21 = f32[] maximum(reduce_max.19, reduce_max.20)
+}
+
+region_15.18 {
+  reduce_sum.65 = f32[] parameter(0)
+  reduce_sum.66 = f32[] parameter(1)
+  ROOT reduce_sum.67 = f32[] add(reduce_sum.65, reduce_sum.66)
+}
+
+_where_1.19 {
+  Arg_0.5 = pred[4096]{0} parameter(0)
+  Arg_1.5 = f32[4096]{0} parameter(1)
+  Arg_2.5 = f32[] parameter(2)
+  broadcast_in_dim.31 = f32[4096]{0} broadcast(Arg_2.5), dimensions={}
+  ROOT select_n.10 = f32[4096]{0} select(Arg_0.5, Arg_1.5, broadcast_in_dim.31)
+}
+
+region_16.20 {
+  reduce_sum.72 = f32[] parameter(0)
+  reduce_sum.73 = f32[] parameter(1)
+  ROOT reduce_sum.74 = f32[] add(reduce_sum.72, reduce_sum.73)
+}
+
+region_17.21 {
+  reduce_sum.79 = f32[] parameter(0)
+  reduce_sum.80 = f32[] parameter(1)
+  ROOT reduce_sum.81 = f32[] add(reduce_sum.79, reduce_sum.80)
+}
+
+ENTRY main.22 {
+  constant.45 = s32[] constant(0)
+  constant.49 = pred[] constant(true)
+  broadcast.19 = pred[4096]{0} broadcast(constant.49), dimensions={}
+  constant.48 = f32[] constant(0)
+  broadcast.18 = f32[4096]{0} broadcast(constant.48), dimensions={}
+  constant.46 = f32[] constant(-inf)
+  jvp_jit__where__.4 = f32[4096]{0} call(broadcast.19, broadcast.18, constant.46), to_apply=_where.1
+  jvp_jit__where__.5 = f32[4096]{0} call(broadcast.19, broadcast.18, constant.46), to_apply=_where.1
+  x.1 = f32[4096,3]{1,0} parameter(0)
+  y.1 = f32[4096,3]{1,0} parameter(1)
+  while.18 = (s32[], s32[], f32[4096]{0}, f32[4096]{0}, f32[4096,3]{1,0}, /*index=5*/f32[4096,3]{1,0}) tuple(constant.45, constant.45, jvp_jit__where__.4, jvp_jit__where__.5, x.1, y.1)
+  while.19 = (s32[], s32[], f32[4096]{0}, f32[4096]{0}, f32[4096,3]{1,0}, /*index=5*/f32[4096,3]{1,0}) while(while.18), condition=region_11.14, body=region_0.13
+  while.20 = s32[] get-tuple-element(while.19), index=0
+  while.21 = s32[] get-tuple-element(while.19), index=1
+  while.22 = f32[4096]{0} get-tuple-element(while.19), index=2
+  broadcast_in_dim.37 = f32[4096,1]{1,0} reshape(while.22)
+  add.91 = f32[4096,1]{1,0} broadcast(broadcast_in_dim.37), dimensions={0,1}
+  add.92 = f32[4096]{0} reshape(add.91)
+  add.93 = f32[4096,4096]{1,0} broadcast(add.92), dimensions={0}
+  while.23 = f32[4096]{0} get-tuple-element(while.19), index=3
+  broadcast_in_dim.38 = f32[1,4096]{1,0} reshape(while.23)
+  add.94 = f32[1,4096]{1,0} broadcast(broadcast_in_dim.38), dimensions={0,1}
+  add.95 = f32[4096]{0} reshape(add.94)
+  add.96 = f32[4096,4096]{1,0} broadcast(add.95), dimensions={1}
+  add.97 = f32[4096,4096]{1,0} add(add.93, add.96)
+  integer_pow.10 = f32[4096,3]{1,0} multiply(x.1, x.1)
+  constant.47 = f32[] constant(0)
+  reduce_sum.83 = f32[4096]{0} reduce(integer_pow.10, constant.47), dimensions={1}, to_apply=region_12.15
+  broadcast_in_dim.40 = f32[4096,1]{1,0} reshape(reduce_sum.83)
+  add.98 = f32[4096,1]{1,0} broadcast(broadcast_in_dim.40), dimensions={0,1}
+  add.99 = f32[4096]{0} reshape(add.98)
+  add.100 = f32[4096,4096]{1,0} broadcast(add.99), dimensions={0}
+  integer_pow.11 = f32[4096,3]{1,0} multiply(y.1, y.1)
+  reduce_sum.84 = f32[4096]{0} reduce(integer_pow.11, constant.47), dimensions={1}, to_apply=region_13.16
+  broadcast_in_dim.39 = f32[1,4096]{1,0} reshape(reduce_sum.84)
+  add.101 = f32[1,4096]{1,0} broadcast(broadcast_in_dim.39), dimensions={0,1}
+  add.102 = f32[4096]{0} reshape(add.101)
+  add.103 = f32[4096,4096]{1,0} broadcast(add.102), dimensions={1}
+  add.104 = f32[4096,4096]{1,0} add(add.100, add.103)
+  dot_general.6 = f32[4096,4096]{1,0} dot(x.1, y.1), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  constant.44 = f32[] constant(-2)
+  broadcast.17 = f32[4096,4096]{1,0} broadcast(constant.44), dimensions={}
+  mul.37 = f32[4096,4096]{1,0} multiply(dot_general.6, broadcast.17)
+  add.105 = f32[4096,4096]{1,0} add(add.104, mul.37)
+  sub.38 = f32[4096,4096]{1,0} subtract(add.97, add.105)
+  constant.41 = f32[] constant(0.05)
+  broadcast.15 = f32[4096,4096]{1,0} broadcast(constant.41), dimensions={}
+  div.12 = f32[4096,4096]{1,0} divide(sub.38, broadcast.15)
+  reduce_max.23 = f32[4096]{0} reduce(div.12, constant.46), dimensions={0}, to_apply=region_14.17
+  constant.43 = f32[] constant(-inf)
+  broadcast.16 = f32[4096]{0} broadcast(constant.43), dimensions={}
+  max.9 = f32[4096]{0} maximum(reduce_max.23, broadcast.16)
+  is_finite.19 = pred[4096]{0} is-finite(max.9)
+  select_n.11 = f32[4096]{0} select(is_finite.19, max.9, broadcast.18)
+  broadcast_in_dim.41 = f32[1,4096]{1,0} reshape(select_n.11)
+  sub.39 = f32[1,4096]{1,0} broadcast(broadcast_in_dim.41), dimensions={0,1}
+  sub.40 = f32[4096]{0} reshape(sub.39)
+  sub.41 = f32[4096,4096]{1,0} broadcast(sub.40), dimensions={1}
+  sub.42 = f32[4096,4096]{1,0} subtract(div.12, sub.41)
+  exp.7 = f32[4096,4096]{1,0} exponential(sub.42)
+  reduce_sum.85 = f32[4096]{0} reduce(exp.7, constant.47), dimensions={0}, to_apply=region_15.18
+  abs.5 = f32[4096]{0} abs(reduce_sum.85)
+  log.5 = f32[4096]{0} log(abs.5)
+  add.106 = f32[4096]{0} add(log.5, select_n.11)
+  is_finite.20 = pred[4096]{0} is-finite(add.106)
+  jvp_jit__where__.6 = f32[4096]{0} call(is_finite.20, add.106, constant.47), to_apply=_where_1.19
+  broadcast_in_dim.42 = f32[1,4096]{1,0} reshape(jvp_jit__where__.6)
+  sub.43 = f32[1,4096]{1,0} broadcast(broadcast_in_dim.42), dimensions={0,1}
+  sub.44 = f32[4096]{0} reshape(sub.43)
+  sub.45 = f32[4096,4096]{1,0} broadcast(sub.44), dimensions={1}
+  sub.46 = f32[4096,4096]{1,0} subtract(div.12, sub.45)
+  exp.8 = f32[4096,4096]{1,0} exponential(sub.46)
+  constant.40 = f32[] constant(0.05)
+  broadcast.14 = f32[4096]{0} broadcast(constant.40), dimensions={}
+  mul.39 = f32[4096]{0} multiply(jvp_jit__where__.6, broadcast.14)
+  is_finite.21 = pred[4096]{0} is-finite(while.23)
+  jvp_jit__where__.7 = f32[4096]{0} call(is_finite.21, while.23, constant.45), to_apply=_where_0.6
+  sub.47 = f32[4096]{0} subtract(mul.39, jvp_jit__where__.7)
+  add.107 = f32[4096]{0} add(sub.47, while.23)
+  div.13 = f32[4096]{0} divide(add.107, broadcast.14)
+  exp.9 = f32[4096]{0} exponential(div.13)
+  constant.39 = f32[] constant(-0.05)
+  broadcast_in_dim.36 = f32[4096]{0} broadcast(constant.39), dimensions={}
+  broadcast_in_dim.43 = f32[4096]{0} multiply(exp.9, broadcast_in_dim.36)
+  div.14 = f32[4096]{0} divide(broadcast_in_dim.43, broadcast.14)
+  mul.40 = f32[4096]{0} multiply(div.14, broadcast.14)
+  broadcast_in_dim.44 = f32[4096,4096]{1,0} broadcast(mul.40), dimensions={1}
+  mul.41 = f32[4096,4096]{1,0} multiply(exp.8, broadcast_in_dim.44)
+  div.15 = f32[4096,4096]{1,0} divide(mul.41, broadcast.15)
+  neg.1 = f32[4096,4096]{1,0} negate(div.15)
+  reduce_sum.86 = f32[4096]{0} reduce(neg.1, constant.47), dimensions={1}, to_apply=region_16.20
+  reshape.1 = f32[4096,1]{1,0} reshape(reduce_sum.86)
+  reduce_sum.87 = f32[4096]{0} reduce(reshape.1, constant.47), dimensions={1}, to_apply=region_17.21
+  broadcast_in_dim.45 = f32[4096,3]{1,0} broadcast(reduce_sum.87), dimensions={0}
+  constant.42 = f32[] constant(2)
+  mul.36 = f32[4096,3]{1,0} broadcast(constant.42), dimensions={}
+  mul.38 = f32[4096,3]{1,0} multiply(x.1, mul.36)
+  mul.42 = f32[4096,3]{1,0} multiply(broadcast_in_dim.45, mul.38)
+  mul.43 = f32[4096,4096]{1,0} multiply(neg.1, broadcast.17)
+  dot_general.7 = f32[4096,3]{1,0} dot(mul.43, y.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  ROOT add_any.1 = f32[4096,3]{1,0} add(mul.42, dot_general.7)
+}
+

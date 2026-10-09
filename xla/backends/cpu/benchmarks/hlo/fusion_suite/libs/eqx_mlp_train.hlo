@@ -1,0 +1,668 @@
+HloModule jit__lambda, entry_computation_layout={(f32[1024,256]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, /*index=5*/f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, f32[10,1024]{1,0}, f32[10]{0}, /*index=10*/s32[], f32[1024,256]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, /*index=15*/f32[1024,1024]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, f32[10,1024]{1,0}, /*index=20*/f32[10]{0}, f32[1024,256]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, /*index=25*/f32[1024,1024]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, f32[10,1024]{1,0}, /*index=30*/f32[10]{0}, f32[4096,256]{1,0}, s32[4096]{0})->(f32[1024,256]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, /*index=5*/f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, f32[10,1024]{1,0}, f32[10]{0}, /*index=10*/s32[], f32[1024,256]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, /*index=15*/f32[1024,1024]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, f32[10,1024]{1,0}, /*index=20*/f32[10]{0}, f32[1024,256]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, /*index=25*/f32[1024,1024]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, f32[10,1024]{1,0}, /*index=30*/f32[10]{0}, f32[])}
+
+region_0.1 {
+  reduce_and.3 = pred[] parameter(0)
+  reduce_and.4 = pred[] parameter(1)
+  ROOT reduce_and.5 = pred[] and(reduce_and.3, reduce_and.4)
+}
+
+take_along_axis.2 {
+  Arg_1.1 = s32[4096,1]{1,0} parameter(1)
+  constant.59 = s32[] constant(0)
+  lt.2 = s32[4096,1]{1,0} broadcast(constant.59), dimensions={}
+  lt.3 = pred[4096,1]{1,0} compare(Arg_1.1, lt.2), direction=LT
+  constant.57 = s32[] constant(10)
+  add.36 = s32[4096,1]{1,0} broadcast(constant.57), dimensions={}
+  add.37 = s32[4096,1]{1,0} add(Arg_1.1, add.36)
+  select_n.2 = s32[4096,1]{1,0} select(lt.3, add.37, Arg_1.1)
+  reshape.1 = s32[4096,1,1]{2,1,0} reshape(select_n.2)
+  constant.56 = s32[] constant(0)
+  ge.2 = s32[4096,1,1]{2,1,0} broadcast(constant.56), dimensions={}
+  ge.3 = pred[4096,1,1]{2,1,0} compare(reshape.1, ge.2), direction=GE
+  constant.55 = s32[] constant(9)
+  le.2 = s32[4096,1,1]{2,1,0} broadcast(constant.55), dimensions={}
+  le.3 = pred[4096,1,1]{2,1,0} compare(reshape.1, le.2), direction=LE
+  and.1 = pred[4096,1,1]{2,1,0} and(ge.3, le.3)
+  constant.58 = pred[] constant(true)
+  reduce_and.7 = pred[4096,1]{1,0} reduce(and.1, constant.58), dimensions={2}, to_apply=region_0.1
+  Arg_0.1 = f32[4096,10]{1,0} parameter(0)
+  gather.1 = f32[4096,1]{1,0} gather(Arg_0.1, reshape.1), offset_dims={}, collapsed_slice_dims={1}, start_index_map={1}, operand_batching_dims={0}, start_indices_batching_dims={0}, index_vector_dim=2, slice_sizes={1,1}
+  constant.54 = f32[] constant(nan)
+  broadcast_in_dim.8 = f32[4096,1]{1,0} broadcast(constant.54), dimensions={}
+  select_n.3 = f32[4096,1]{1,0} select(reduce_and.7, gather.1, broadcast_in_dim.8)
+  ROOT tuple.1 = (f32[4096,1]{1,0}, s32[4096,1,1]{2,1,0}) tuple(select_n.3, reshape.1)
+}
+
+_where.3 {
+  Arg_0.4 = pred[] parameter(0)
+  Arg_1.4 = s32[] parameter(1)
+  Arg_2.1 = s32[] parameter(2)
+  ROOT select_n.5 = s32[] select(Arg_0.4, Arg_1.4, Arg_2.1)
+}
+
+region_1.4 {
+  reduce_and.11 = pred[] parameter(0)
+  reduce_and.12 = pred[] parameter(1)
+  ROOT reduce_and.13 = pred[] and(reduce_and.11, reduce_and.12)
+}
+
+_take.5 {
+  Arg_1.5 = s32[] parameter(1)
+  constant.69 = s32[] constant(0)
+  lt.5 = pred[] compare(Arg_1.5, constant.69), direction=LT
+  constant.68 = s32[] constant(1)
+  add.39 = s32[] add(Arg_1.5, constant.68)
+  jit__where_.1 = s32[] call(lt.5, add.39, Arg_1.5), to_apply=_where.3
+  broadcast_in_dim.13 = s32[1]{0} reshape(jit__where_.1)
+  constant.67 = s32[1]{0} constant({0})
+  ge.5 = pred[1]{0} compare(broadcast_in_dim.13, constant.67), direction=GE
+  le.5 = pred[1]{0} compare(broadcast_in_dim.13, constant.67), direction=LE
+  and.3 = pred[1]{0} and(ge.5, le.5)
+  constant.66 = pred[] constant(true)
+  reduce_and.15 = pred[] reduce(and.3, constant.66), dimensions={0}, to_apply=region_1.4
+  broadcast_in_dim.14 = pred[4096]{0} broadcast(reduce_and.15), dimensions={}
+  Arg_0.5 = f32[4096,1]{1,0} parameter(0)
+  gather.3 = f32[4096]{0} gather(Arg_0.5, broadcast_in_dim.13), offset_dims={0}, collapsed_slice_dims={1}, start_index_map={1}, index_vector_dim=0, slice_sizes={4096,1}
+  constant.65 = f32[] constant(nan)
+  broadcast_in_dim.12 = f32[4096]{0} broadcast(constant.65), dimensions={}
+  select_n.7 = f32[4096]{0} select(broadcast_in_dim.14, gather.3, broadcast_in_dim.12)
+  ROOT tuple.3 = (f32[4096]{0}, s32[1]{0}) tuple(select_n.7, broadcast_in_dim.13)
+}
+
+region_2.6 {
+  reduce_max.3 = f32[] parameter(0)
+  reduce_max.4 = f32[] parameter(1)
+  ROOT reduce_max.5 = f32[] maximum(reduce_max.3, reduce_max.4)
+}
+
+region_3.7 {
+  reduce_sum.3 = f32[] parameter(0)
+  reduce_sum.4 = f32[] parameter(1)
+  ROOT reduce_sum.5 = f32[] add(reduce_sum.3, reduce_sum.4)
+}
+
+region_4.8 {
+  reduce_sum.10 = f32[] parameter(0)
+  reduce_sum.11 = f32[] parameter(1)
+  ROOT reduce_sum.12 = f32[] add(reduce_sum.10, reduce_sum.11)
+}
+
+region_5.9 {
+  scatter-add.2 = f32[] parameter(0)
+  scatter-add.3 = f32[] parameter(1)
+  ROOT add.42 = f32[] add(scatter-add.2, scatter-add.3)
+}
+
+_take_0.10 {
+  constant.71 = f32[] constant(0)
+  broadcast_in_dim.18 = f32[4096,1]{1,0} broadcast(constant.71), dimensions={}
+  Arg_0.7 = s32[1]{0} parameter(0)
+  Arg_1.7 = f32[4096]{0} parameter(1)
+  ROOT scatter-add.5 = f32[4096,1]{1,0} scatter(broadcast_in_dim.18, Arg_0.7, Arg_1.7), update_window_dims={0}, inserted_window_dims={1}, scatter_dims_to_operand_dims={1}, index_vector_dim=0, to_apply=region_5.9
+}
+
+region_6.11 {
+  scatter-add.8 = f32[] parameter(0)
+  scatter-add.9 = f32[] parameter(1)
+  ROOT add.44 = f32[] add(scatter-add.8, scatter-add.9)
+}
+
+take_along_axis_1.12 {
+  constant.73 = f32[] constant(0)
+  broadcast_in_dim.20 = f32[4096,10]{1,0} broadcast(constant.73), dimensions={}
+  Arg_0.9 = s32[4096,1,1]{2,1,0} parameter(0)
+  Arg_1.9 = f32[4096,1]{1,0} parameter(1)
+  ROOT scatter-add.11 = f32[4096,10]{1,0} scatter(broadcast_in_dim.20, Arg_0.9, Arg_1.9), update_window_dims={}, inserted_window_dims={1}, scatter_dims_to_operand_dims={1}, input_batching_dims={0}, scatter_indices_batching_dims={0}, index_vector_dim=2, to_apply=region_6.11
+}
+
+region_7.13 {
+  reduce_sum.17 = f32[] parameter(0)
+  reduce_sum.18 = f32[] parameter(1)
+  ROOT reduce_sum.19 = f32[] add(reduce_sum.17, reduce_sum.18)
+}
+
+region_8.14 {
+  reduce_sum.24 = f32[] parameter(0)
+  reduce_sum.25 = f32[] parameter(1)
+  ROOT reduce_sum.26 = f32[] add(reduce_sum.24, reduce_sum.25)
+}
+
+region_9.15 {
+  reduce_sum.31 = f32[] parameter(0)
+  reduce_sum.32 = f32[] parameter(1)
+  ROOT reduce_sum.33 = f32[] add(reduce_sum.31, reduce_sum.32)
+}
+
+region_10.16 {
+  reduce_sum.38 = f32[] parameter(0)
+  reduce_sum.39 = f32[] parameter(1)
+  ROOT reduce_sum.40 = f32[] add(reduce_sum.38, reduce_sum.39)
+}
+
+region_11.17 {
+  reduce_sum.45 = f32[] parameter(0)
+  reduce_sum.46 = f32[] parameter(1)
+  ROOT reduce_sum.47 = f32[] add(reduce_sum.45, reduce_sum.46)
+}
+
+region_12.18 {
+  reduce_sum.52 = f32[] parameter(0)
+  reduce_sum.53 = f32[] parameter(1)
+  ROOT reduce_sum.54 = f32[] add(reduce_sum.52, reduce_sum.53)
+}
+
+region_13.19 {
+  reduce_sum.59 = f32[] parameter(0)
+  reduce_sum.60 = f32[] parameter(1)
+  ROOT reduce_sum.61 = f32[] add(reduce_sum.59, reduce_sum.60)
+}
+
+region_14.20 {
+  reduce_sum.66 = f32[] parameter(0)
+  reduce_sum.67 = f32[] parameter(1)
+  ROOT reduce_sum.68 = f32[] add(reduce_sum.66, reduce_sum.67)
+}
+
+region_15.21 {
+  reduce_sum.73 = f32[] parameter(0)
+  reduce_sum.74 = f32[] parameter(1)
+  ROOT reduce_sum.75 = f32[] add(reduce_sum.73, reduce_sum.74)
+}
+
+region_16.22 {
+  reduce_sum.80 = f32[] parameter(0)
+  reduce_sum.81 = f32[] parameter(1)
+  ROOT reduce_sum.82 = f32[] add(reduce_sum.80, reduce_sum.81)
+}
+
+_where_2.23 {
+  Arg_0.11 = pred[] parameter(0)
+  Arg_1.11 = s32[] parameter(1)
+  Arg_2.3 = s32[] parameter(2)
+  ROOT select_n.12 = s32[] select(Arg_0.11, Arg_1.11, Arg_2.3)
+}
+
+ENTRY main.24 {
+  a_0__layers_0__weight.1 = f32[1024,256]{1,0} parameter(0)
+  a_0__layers_4__weight.1 = f32[10,1024]{1,0} parameter(8)
+  a_0__layers_3__weight.1 = f32[1024,1024]{1,0} parameter(6)
+  a_0__layers_2__weight.1 = f32[1024,1024]{1,0} parameter(4)
+  a_0__layers_1__weight.1 = f32[1024,1024]{1,0} parameter(2)
+  a_2_.1 = f32[4096,256]{1,0} parameter(31)
+  dot_general.14 = f32[1024,4096]{1,0} dot(a_0__layers_0__weight.1, a_2_.1), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  transpose.10 = f32[4096,1024]{0,1} transpose(dot_general.14), dimensions={1,0}
+  a_0__layers_0__bias.1 = f32[1024]{0} parameter(1)
+  broadcast_in_dim.22 = f32[1,1024]{1,0} reshape(a_0__layers_0__bias.1)
+  add.88 = f32[1,1024]{1,0} broadcast(broadcast_in_dim.22), dimensions={0,1}
+  add.89 = f32[1024]{0} reshape(add.88)
+  add.90 = f32[4096,1024]{1,0} broadcast(add.89), dimensions={1}
+  add.91 = f32[4096,1024]{0,1} add(transpose.10, add.90)
+  integer_pow.22 = f32[4096,1024]{0,1} multiply(add.91, add.91)
+  integer_pow.23 = f32[4096,1024]{0,1} multiply(integer_pow.22, add.91)
+  constant.111 = f32[] constant(0.044715)
+  broadcast.46 = f32[4096,1024]{1,0} broadcast(constant.111), dimensions={}
+  mul.124 = f32[4096,1024]{0,1} multiply(integer_pow.23, broadcast.46)
+  add.92 = f32[4096,1024]{0,1} add(add.91, mul.124)
+  constant.110 = f32[] constant(0.797884583)
+  broadcast.45 = f32[4096,1024]{1,0} broadcast(constant.110), dimensions={}
+  mul.125 = f32[4096,1024]{0,1} multiply(add.92, broadcast.45)
+  tanh.4 = f32[4096,1024]{0,1} tanh(mul.125)
+  constant.109 = f32[] constant(1)
+  broadcast.44 = f32[4096,1024]{1,0} broadcast(constant.109), dimensions={}
+  add.94 = f32[4096,1024]{0,1} add(tanh.4, broadcast.44)
+  constant.108 = f32[] constant(0.5)
+  broadcast.43 = f32[4096,1024]{1,0} broadcast(constant.108), dimensions={}
+  mul.127 = f32[4096,1024]{0,1} multiply(add.94, broadcast.43)
+  mul.128 = f32[4096,1024]{0,1} multiply(add.91, mul.127)
+  dot_general.15 = f32[1024,4096]{1,0} dot(a_0__layers_1__weight.1, mul.128), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  transpose.11 = f32[4096,1024]{0,1} transpose(dot_general.15), dimensions={1,0}
+  a_0__layers_1__bias.1 = f32[1024]{0} parameter(3)
+  broadcast_in_dim.23 = f32[1,1024]{1,0} reshape(a_0__layers_1__bias.1)
+  add.95 = f32[1,1024]{1,0} broadcast(broadcast_in_dim.23), dimensions={0,1}
+  add.96 = f32[1024]{0} reshape(add.95)
+  add.97 = f32[4096,1024]{1,0} broadcast(add.96), dimensions={1}
+  add.98 = f32[4096,1024]{0,1} add(transpose.11, add.97)
+  integer_pow.25 = f32[4096,1024]{0,1} multiply(add.98, add.98)
+  integer_pow.26 = f32[4096,1024]{0,1} multiply(integer_pow.25, add.98)
+  mul.130 = f32[4096,1024]{0,1} multiply(integer_pow.26, broadcast.46)
+  add.99 = f32[4096,1024]{0,1} add(add.98, mul.130)
+  mul.131 = f32[4096,1024]{0,1} multiply(add.99, broadcast.45)
+  tanh.5 = f32[4096,1024]{0,1} tanh(mul.131)
+  add.101 = f32[4096,1024]{0,1} add(tanh.5, broadcast.44)
+  mul.133 = f32[4096,1024]{0,1} multiply(add.101, broadcast.43)
+  mul.134 = f32[4096,1024]{0,1} multiply(add.98, mul.133)
+  dot_general.16 = f32[1024,4096]{1,0} dot(a_0__layers_2__weight.1, mul.134), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  transpose.12 = f32[4096,1024]{0,1} transpose(dot_general.16), dimensions={1,0}
+  a_0__layers_2__bias.1 = f32[1024]{0} parameter(5)
+  broadcast_in_dim.24 = f32[1,1024]{1,0} reshape(a_0__layers_2__bias.1)
+  add.102 = f32[1,1024]{1,0} broadcast(broadcast_in_dim.24), dimensions={0,1}
+  add.103 = f32[1024]{0} reshape(add.102)
+  add.104 = f32[4096,1024]{1,0} broadcast(add.103), dimensions={1}
+  add.105 = f32[4096,1024]{0,1} add(transpose.12, add.104)
+  integer_pow.28 = f32[4096,1024]{0,1} multiply(add.105, add.105)
+  integer_pow.29 = f32[4096,1024]{0,1} multiply(integer_pow.28, add.105)
+  mul.136 = f32[4096,1024]{0,1} multiply(integer_pow.29, broadcast.46)
+  add.106 = f32[4096,1024]{0,1} add(add.105, mul.136)
+  mul.137 = f32[4096,1024]{0,1} multiply(add.106, broadcast.45)
+  tanh.6 = f32[4096,1024]{0,1} tanh(mul.137)
+  add.108 = f32[4096,1024]{0,1} add(tanh.6, broadcast.44)
+  mul.139 = f32[4096,1024]{0,1} multiply(add.108, broadcast.43)
+  mul.140 = f32[4096,1024]{0,1} multiply(add.105, mul.139)
+  dot_general.17 = f32[1024,4096]{1,0} dot(a_0__layers_3__weight.1, mul.140), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  transpose.13 = f32[4096,1024]{0,1} transpose(dot_general.17), dimensions={1,0}
+  a_0__layers_3__bias.1 = f32[1024]{0} parameter(7)
+  broadcast_in_dim.25 = f32[1,1024]{1,0} reshape(a_0__layers_3__bias.1)
+  add.109 = f32[1,1024]{1,0} broadcast(broadcast_in_dim.25), dimensions={0,1}
+  add.110 = f32[1024]{0} reshape(add.109)
+  add.111 = f32[4096,1024]{1,0} broadcast(add.110), dimensions={1}
+  add.112 = f32[4096,1024]{0,1} add(transpose.13, add.111)
+  integer_pow.31 = f32[4096,1024]{0,1} multiply(add.112, add.112)
+  integer_pow.32 = f32[4096,1024]{0,1} multiply(integer_pow.31, add.112)
+  mul.142 = f32[4096,1024]{0,1} multiply(integer_pow.32, broadcast.46)
+  add.113 = f32[4096,1024]{0,1} add(add.112, mul.142)
+  mul.143 = f32[4096,1024]{0,1} multiply(add.113, broadcast.45)
+  tanh.7 = f32[4096,1024]{0,1} tanh(mul.143)
+  add.115 = f32[4096,1024]{0,1} add(tanh.7, broadcast.44)
+  mul.145 = f32[4096,1024]{0,1} multiply(add.115, broadcast.43)
+  mul.146 = f32[4096,1024]{0,1} multiply(add.112, mul.145)
+  dot_general.18 = f32[10,4096]{1,0} dot(a_0__layers_4__weight.1, mul.146), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  transpose.14 = f32[4096,10]{0,1} transpose(dot_general.18), dimensions={1,0}
+  a_0__layers_4__bias.1 = f32[10]{0} parameter(9)
+  broadcast_in_dim.26 = f32[1,10]{1,0} reshape(a_0__layers_4__bias.1)
+  add.116 = f32[1,10]{1,0} broadcast(broadcast_in_dim.26), dimensions={0,1}
+  add.117 = f32[10]{0} reshape(add.116)
+  add.118 = f32[4096,10]{1,0} broadcast(add.117), dimensions={1}
+  add.119 = f32[4096,10]{0,1} add(transpose.14, add.118)
+  constant.119 = f32[] constant(-inf)
+  reduce_max.7 = f32[4096]{0} reduce(add.119, constant.119), dimensions={1}, to_apply=region_2.6
+  constant.107 = f32[] constant(-inf)
+  max.2 = f32[4096]{0} broadcast(constant.107), dimensions={}
+  max.3 = f32[4096]{0} maximum(reduce_max.7, max.2)
+  is_finite.1 = pred[4096]{0} is-finite(max.3)
+  constant.106 = f32[] constant(0)
+  broadcast.42 = f32[4096]{0} broadcast(constant.106), dimensions={}
+  select_n.13 = f32[4096]{0} select(is_finite.1, max.3, broadcast.42)
+  broadcast_in_dim.28 = f32[4096,1]{1,0} reshape(select_n.13)
+  sub.15 = f32[4096,1]{1,0} broadcast(broadcast_in_dim.28), dimensions={0,1}
+  sub.16 = f32[4096]{0} reshape(sub.15)
+  sub.17 = f32[4096,10]{1,0} broadcast(sub.16), dimensions={0}
+  sub.18 = f32[4096,10]{0,1} subtract(add.119, sub.17)
+  exp.1 = f32[4096,10]{0,1} exponential(sub.18)
+  constant.118 = f32[] constant(0)
+  reduce_sum.84 = f32[4096]{0} reduce(exp.1, constant.118), dimensions={1}, to_apply=region_3.7
+  ge.7 = pred[4096]{0} compare(reduce_sum.84, broadcast.42), direction=GE
+  constant.105 = f32[] constant(0.000244140625)
+  broadcast_in_dim.21 = f32[4096]{0} broadcast(constant.105), dimensions={}
+  abs.1 = f32[4096]{0} abs(reduce_sum.84)
+  div.53 = f32[4096]{0} divide(broadcast_in_dim.21, abs.1)
+  select_n.15 = f32[4096]{0} select(ge.7, div.53, broadcast.42)
+  select_n.14 = f32[4096]{0} select(ge.7, broadcast.42, div.53)
+  neg.3 = f32[4096]{0} negate(select_n.14)
+  add_any.10 = f32[4096]{0} add(select_n.15, neg.3)
+  broadcast_in_dim.29 = f32[4096,10]{1,0} broadcast(add_any.10), dimensions={0}
+  mul.147 = f32[4096,10]{1,0} multiply(broadcast_in_dim.29, exp.1)
+  a_3_.1 = s32[4096]{0} parameter(32)
+  broadcast_in_dim.27 = s32[4096,1]{1,0} reshape(a_3_.1)
+  jvp_jit_take_along_axis__.3 = (f32[4096,1]{1,0}, s32[4096,1,1]{2,1,0}) call(add.119, broadcast_in_dim.27), to_apply=take_along_axis.2
+  jvp_jit_take_along_axis__.5 = s32[4096,1,1]{2,1,0} get-tuple-element(jvp_jit_take_along_axis__.3), index=1
+  jvp_jit_take_along_axis__.4 = f32[4096,1]{1,0} get-tuple-element(jvp_jit_take_along_axis__.3), index=0
+  constant.120 = s32[] constant(0)
+  jvp_jit__take__.3 = (f32[4096]{0}, s32[1]{0}) call(jvp_jit_take_along_axis__.4, constant.120), to_apply=_take.5
+  jvp_jit__take__.5 = s32[1]{0} get-tuple-element(jvp_jit__take__.3), index=1
+  constant.104 = f32[] constant(-0.000244140625)
+  neg.2 = f32[4096]{0} broadcast(constant.104), dimensions={}
+  transpose_jvp_jit__take___.1 = f32[4096,1]{1,0} call(jvp_jit__take__.5, neg.2), to_apply=_take_0.10
+  transpose_jvp_jit_take_along_axis___.1 = f32[4096,10]{1,0} call(jvp_jit_take_along_axis__.5, transpose_jvp_jit__take___.1), to_apply=take_along_axis_1.12
+  add_any.11 = f32[4096,10]{1,0} add(mul.147, transpose_jvp_jit_take_along_axis___.1)
+  transpose.15 = f32[10,4096]{0,1} transpose(add_any.11), dimensions={1,0}
+  dot_general.19 = f32[4096,1024]{1,0} dot(transpose.15, a_0__layers_4__weight.1), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  mul.149 = f32[4096,1024]{1,0} multiply(dot_general.19, mul.145)
+  mul.148 = f32[4096,1024]{0,1} multiply(add.112, dot_general.19)
+  mul.150 = f32[4096,1024]{0,1} multiply(mul.148, broadcast.43)
+  add.114 = f32[4096,1024]{0,1} add(tanh.7, broadcast.44)
+  sub.14 = f32[4096,1024]{1,0} subtract(broadcast.44, tanh.7)
+  mul.144 = f32[4096,1024]{0,1} multiply(add.114, sub.14)
+  mul.151 = f32[4096,1024]{0,1} multiply(mul.150, mul.144)
+  mul.152 = f32[4096,1024]{0,1} multiply(mul.151, broadcast.45)
+  add_any.12 = f32[4096,1024]{1,0} add(mul.149, mul.152)
+  mul.153 = f32[4096,1024]{0,1} multiply(mul.152, broadcast.46)
+  integer_pow.33 = f32[4096,1024]{0,1} multiply(add.112, add.112)
+  constant.112 = f32[] constant(3)
+  broadcast.47 = f32[4096,1024]{1,0} broadcast(constant.112), dimensions={}
+  mul.141 = f32[4096,1024]{0,1} multiply(integer_pow.33, broadcast.47)
+  mul.154 = f32[4096,1024]{0,1} multiply(mul.153, mul.141)
+  add_any.13 = f32[4096,1024]{1,0} add(add_any.12, mul.154)
+  transpose.16 = f32[1024,4096]{0,1} transpose(add_any.13), dimensions={1,0}
+  dot_general.21 = f32[4096,1024]{1,0} dot(transpose.16, a_0__layers_3__weight.1), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  mul.156 = f32[4096,1024]{1,0} multiply(dot_general.21, mul.139)
+  mul.155 = f32[4096,1024]{0,1} multiply(add.105, dot_general.21)
+  mul.157 = f32[4096,1024]{0,1} multiply(mul.155, broadcast.43)
+  add.107 = f32[4096,1024]{0,1} add(tanh.6, broadcast.44)
+  sub.13 = f32[4096,1024]{1,0} subtract(broadcast.44, tanh.6)
+  mul.138 = f32[4096,1024]{0,1} multiply(add.107, sub.13)
+  mul.158 = f32[4096,1024]{0,1} multiply(mul.157, mul.138)
+  mul.159 = f32[4096,1024]{0,1} multiply(mul.158, broadcast.45)
+  add_any.14 = f32[4096,1024]{1,0} add(mul.156, mul.159)
+  mul.160 = f32[4096,1024]{0,1} multiply(mul.159, broadcast.46)
+  integer_pow.30 = f32[4096,1024]{0,1} multiply(add.105, add.105)
+  mul.135 = f32[4096,1024]{0,1} multiply(integer_pow.30, broadcast.47)
+  mul.161 = f32[4096,1024]{0,1} multiply(mul.160, mul.135)
+  add_any.15 = f32[4096,1024]{1,0} add(add_any.14, mul.161)
+  transpose.17 = f32[1024,4096]{0,1} transpose(add_any.15), dimensions={1,0}
+  dot_general.23 = f32[4096,1024]{1,0} dot(transpose.17, a_0__layers_2__weight.1), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  mul.163 = f32[4096,1024]{1,0} multiply(dot_general.23, mul.133)
+  mul.162 = f32[4096,1024]{0,1} multiply(add.98, dot_general.23)
+  mul.164 = f32[4096,1024]{0,1} multiply(mul.162, broadcast.43)
+  add.100 = f32[4096,1024]{0,1} add(tanh.5, broadcast.44)
+  sub.12 = f32[4096,1024]{1,0} subtract(broadcast.44, tanh.5)
+  mul.132 = f32[4096,1024]{0,1} multiply(add.100, sub.12)
+  mul.165 = f32[4096,1024]{0,1} multiply(mul.164, mul.132)
+  mul.166 = f32[4096,1024]{0,1} multiply(mul.165, broadcast.45)
+  add_any.16 = f32[4096,1024]{1,0} add(mul.163, mul.166)
+  mul.167 = f32[4096,1024]{0,1} multiply(mul.166, broadcast.46)
+  integer_pow.27 = f32[4096,1024]{0,1} multiply(add.98, add.98)
+  mul.129 = f32[4096,1024]{0,1} multiply(integer_pow.27, broadcast.47)
+  mul.168 = f32[4096,1024]{0,1} multiply(mul.167, mul.129)
+  add_any.17 = f32[4096,1024]{1,0} add(add_any.16, mul.168)
+  transpose.18 = f32[1024,4096]{0,1} transpose(add_any.17), dimensions={1,0}
+  dot_general.25 = f32[4096,1024]{1,0} dot(transpose.18, a_0__layers_1__weight.1), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  mul.170 = f32[4096,1024]{1,0} multiply(dot_general.25, mul.127)
+  mul.169 = f32[4096,1024]{0,1} multiply(add.91, dot_general.25)
+  mul.171 = f32[4096,1024]{0,1} multiply(mul.169, broadcast.43)
+  add.93 = f32[4096,1024]{0,1} add(tanh.4, broadcast.44)
+  sub.11 = f32[4096,1024]{1,0} subtract(broadcast.44, tanh.4)
+  mul.126 = f32[4096,1024]{0,1} multiply(add.93, sub.11)
+  mul.172 = f32[4096,1024]{0,1} multiply(mul.171, mul.126)
+  mul.173 = f32[4096,1024]{0,1} multiply(mul.172, broadcast.45)
+  add_any.18 = f32[4096,1024]{1,0} add(mul.170, mul.173)
+  mul.174 = f32[4096,1024]{0,1} multiply(mul.173, broadcast.46)
+  integer_pow.24 = f32[4096,1024]{0,1} multiply(add.91, add.91)
+  mul.123 = f32[4096,1024]{0,1} multiply(integer_pow.24, broadcast.47)
+  mul.175 = f32[4096,1024]{0,1} multiply(mul.174, mul.123)
+  add_any.19 = f32[4096,1024]{1,0} add(add_any.18, mul.175)
+  transpose.19 = f32[1024,4096]{0,1} transpose(add_any.19), dimensions={1,0}
+  dot_general.27 = f32[1024,256]{1,0} dot(transpose.19, a_2_.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  constant.103 = f32[] constant(0.1)
+  mul.122 = f32[1024,256]{1,0} broadcast(constant.103), dimensions={}
+  mul.176 = f32[1024,256]{1,0} multiply(dot_general.27, mul.122)
+  a_1__0__mu_layers_0__weight.1 = f32[1024,256]{1,0} parameter(11)
+  constant.102 = f32[] constant(0.9)
+  mul.121 = f32[1024,256]{1,0} broadcast(constant.102), dimensions={}
+  mul.177 = f32[1024,256]{1,0} multiply(a_1__0__mu_layers_0__weight.1, mul.121)
+  add.121 = f32[1024,256]{1,0} add(mul.176, mul.177)
+  constant.121 = f32[] constant(1)
+  constant.116 = f32[] constant(0.9)
+  a_1__0__count.1 = s32[] parameter(10)
+  constant.114 = s32[] constant(2147483647)
+  lt.7 = pred[] compare(a_1__0__count.1, constant.114), direction=LT
+  constant.113 = s32[] constant(1)
+  add.141 = s32[] add(a_1__0__count.1, constant.113)
+  jit__where_.3 = s32[] call(lt.7, add.141, constant.114), to_apply=_where_2.23
+  pow.4 = f32[] convert(jit__where_.3)
+  pow.5 = f32[] power(constant.116, pow.4)
+  sub.20 = f32[] subtract(constant.121, pow.5)
+  div.54 = f32[1024,256]{1,0} broadcast(sub.20), dimensions={}
+  div.55 = f32[1024,256]{1,0} divide(add.121, div.54)
+  integer_pow.34 = f32[1024,256]{1,0} multiply(dot_general.27, dot_general.27)
+  constant.93 = f32[] constant(0.001)
+  mul.118 = f32[1024,256]{1,0} broadcast(constant.93), dimensions={}
+  mul.196 = f32[1024,256]{1,0} multiply(integer_pow.34, mul.118)
+  a_1__0__nu_layers_0__weight.1 = f32[1024,256]{1,0} parameter(21)
+  constant.92 = f32[] constant(0.999)
+  mul.117 = f32[1024,256]{1,0} broadcast(constant.92), dimensions={}
+  mul.197 = f32[1024,256]{1,0} multiply(a_1__0__nu_layers_0__weight.1, mul.117)
+  add.131 = f32[1024,256]{1,0} add(mul.196, mul.197)
+  constant.115 = f32[] constant(0.999)
+  pow.6 = f32[] convert(jit__where_.3)
+  pow.7 = f32[] power(constant.115, pow.6)
+  sub.21 = f32[] subtract(constant.121, pow.7)
+  div.74 = f32[1024,256]{1,0} broadcast(sub.21), dimensions={}
+  div.75 = f32[1024,256]{1,0} divide(add.131, div.74)
+  sqrt.10 = f32[1024,256]{1,0} sqrt(div.75)
+  constant.83 = f32[] constant(1e-08)
+  add.87 = f32[1024,256]{1,0} broadcast(constant.83), dimensions={}
+  add.142 = f32[1024,256]{1,0} add(sqrt.10, add.87)
+  div.94 = f32[1024,256]{1,0} divide(div.55, add.142)
+  constant.78 = f32[] constant(-0.001)
+  mul.114 = f32[1024,256]{1,0} broadcast(constant.78), dimensions={}
+  mul.216 = f32[1024,256]{1,0} multiply(div.94, mul.114)
+  add.152 = f32[1024,256]{1,0} add(a_0__layers_0__weight.1, mul.216)
+  reduce_sum.94 = f32[1024]{0} reduce(add_any.19, constant.118), dimensions={0}, to_apply=region_15.21
+  reshape.11 = f32[1,1024]{1,0} reshape(reduce_sum.94)
+  reduce_sum.95 = f32[1024]{0} reduce(reshape.11, constant.118), dimensions={0}, to_apply=region_16.22
+  constant.101 = f32[] constant(0.1)
+  broadcast.41 = f32[1024]{0} broadcast(constant.101), dimensions={}
+  mul.178 = f32[1024]{0} multiply(reduce_sum.95, broadcast.41)
+  a_1__0__mu_layers_0__bias.1 = f32[1024]{0} parameter(12)
+  constant.100 = f32[] constant(0.9)
+  broadcast.40 = f32[1024]{0} broadcast(constant.100), dimensions={}
+  mul.179 = f32[1024]{0} multiply(a_1__0__mu_layers_0__bias.1, broadcast.40)
+  add.122 = f32[1024]{0} add(mul.178, mul.179)
+  div.56 = f32[1024]{0} broadcast(sub.20), dimensions={}
+  div.57 = f32[1024]{0} divide(add.122, div.56)
+  integer_pow.35 = f32[1024]{0} multiply(reduce_sum.95, reduce_sum.95)
+  constant.91 = f32[] constant(0.001)
+  broadcast.35 = f32[1024]{0} broadcast(constant.91), dimensions={}
+  mul.198 = f32[1024]{0} multiply(integer_pow.35, broadcast.35)
+  a_1__0__nu_layers_0__bias.1 = f32[1024]{0} parameter(22)
+  constant.90 = f32[] constant(0.999)
+  broadcast.34 = f32[1024]{0} broadcast(constant.90), dimensions={}
+  mul.199 = f32[1024]{0} multiply(a_1__0__nu_layers_0__bias.1, broadcast.34)
+  add.132 = f32[1024]{0} add(mul.198, mul.199)
+  div.76 = f32[1024]{0} broadcast(sub.21), dimensions={}
+  div.77 = f32[1024]{0} divide(add.132, div.76)
+  sqrt.11 = f32[1024]{0} sqrt(div.77)
+  constant.82 = f32[] constant(1e-08)
+  broadcast.29 = f32[1024]{0} broadcast(constant.82), dimensions={}
+  add.143 = f32[1024]{0} add(sqrt.11, broadcast.29)
+  div.95 = f32[1024]{0} divide(div.57, add.143)
+  constant.77 = f32[] constant(-0.001)
+  broadcast.26 = f32[1024]{0} broadcast(constant.77), dimensions={}
+  mul.217 = f32[1024]{0} multiply(div.95, broadcast.26)
+  add.153 = f32[1024]{0} add(a_0__layers_0__bias.1, mul.217)
+  dot_general.26 = f32[1024,1024]{1,0} dot(transpose.18, mul.128), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  constant.99 = f32[] constant(0.1)
+  broadcast.39 = f32[1024,1024]{1,0} broadcast(constant.99), dimensions={}
+  mul.180 = f32[1024,1024]{1,0} multiply(dot_general.26, broadcast.39)
+  a_1__0__mu_layers_1__weight.1 = f32[1024,1024]{1,0} parameter(13)
+  constant.98 = f32[] constant(0.9)
+  broadcast.38 = f32[1024,1024]{1,0} broadcast(constant.98), dimensions={}
+  mul.181 = f32[1024,1024]{1,0} multiply(a_1__0__mu_layers_1__weight.1, broadcast.38)
+  add.123 = f32[1024,1024]{1,0} add(mul.180, mul.181)
+  div.58 = f32[1024,1024]{1,0} broadcast(sub.20), dimensions={}
+  div.59 = f32[1024,1024]{1,0} divide(add.123, div.58)
+  integer_pow.36 = f32[1024,1024]{1,0} multiply(dot_general.26, dot_general.26)
+  constant.89 = f32[] constant(0.001)
+  broadcast.33 = f32[1024,1024]{1,0} broadcast(constant.89), dimensions={}
+  mul.200 = f32[1024,1024]{1,0} multiply(integer_pow.36, broadcast.33)
+  a_1__0__nu_layers_1__weight.1 = f32[1024,1024]{1,0} parameter(23)
+  constant.88 = f32[] constant(0.999)
+  broadcast.32 = f32[1024,1024]{1,0} broadcast(constant.88), dimensions={}
+  mul.201 = f32[1024,1024]{1,0} multiply(a_1__0__nu_layers_1__weight.1, broadcast.32)
+  add.133 = f32[1024,1024]{1,0} add(mul.200, mul.201)
+  div.78 = f32[1024,1024]{1,0} broadcast(sub.21), dimensions={}
+  div.79 = f32[1024,1024]{1,0} divide(add.133, div.78)
+  sqrt.12 = f32[1024,1024]{1,0} sqrt(div.79)
+  constant.81 = f32[] constant(1e-08)
+  broadcast.28 = f32[1024,1024]{1,0} broadcast(constant.81), dimensions={}
+  add.144 = f32[1024,1024]{1,0} add(sqrt.12, broadcast.28)
+  div.96 = f32[1024,1024]{1,0} divide(div.59, add.144)
+  constant.76 = f32[] constant(-0.001)
+  broadcast.25 = f32[1024,1024]{1,0} broadcast(constant.76), dimensions={}
+  mul.218 = f32[1024,1024]{1,0} multiply(div.96, broadcast.25)
+  add.154 = f32[1024,1024]{1,0} add(a_0__layers_1__weight.1, mul.218)
+  reduce_sum.92 = f32[1024]{0} reduce(add_any.17, constant.118), dimensions={0}, to_apply=region_13.19
+  reshape.10 = f32[1,1024]{1,0} reshape(reduce_sum.92)
+  reduce_sum.93 = f32[1024]{0} reduce(reshape.10, constant.118), dimensions={0}, to_apply=region_14.20
+  mul.182 = f32[1024]{0} multiply(reduce_sum.93, broadcast.41)
+  a_1__0__mu_layers_1__bias.1 = f32[1024]{0} parameter(14)
+  mul.183 = f32[1024]{0} multiply(a_1__0__mu_layers_1__bias.1, broadcast.40)
+  add.124 = f32[1024]{0} add(mul.182, mul.183)
+  div.60 = f32[1024]{0} broadcast(sub.20), dimensions={}
+  div.61 = f32[1024]{0} divide(add.124, div.60)
+  integer_pow.37 = f32[1024]{0} multiply(reduce_sum.93, reduce_sum.93)
+  mul.202 = f32[1024]{0} multiply(integer_pow.37, broadcast.35)
+  a_1__0__nu_layers_1__bias.1 = f32[1024]{0} parameter(24)
+  mul.203 = f32[1024]{0} multiply(a_1__0__nu_layers_1__bias.1, broadcast.34)
+  add.134 = f32[1024]{0} add(mul.202, mul.203)
+  div.80 = f32[1024]{0} broadcast(sub.21), dimensions={}
+  div.81 = f32[1024]{0} divide(add.134, div.80)
+  sqrt.13 = f32[1024]{0} sqrt(div.81)
+  add.145 = f32[1024]{0} add(sqrt.13, broadcast.29)
+  div.97 = f32[1024]{0} divide(div.61, add.145)
+  mul.219 = f32[1024]{0} multiply(div.97, broadcast.26)
+  add.155 = f32[1024]{0} add(a_0__layers_1__bias.1, mul.219)
+  dot_general.24 = f32[1024,1024]{1,0} dot(transpose.17, mul.134), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  mul.184 = f32[1024,1024]{1,0} multiply(dot_general.24, broadcast.39)
+  a_1__0__mu_layers_2__weight.1 = f32[1024,1024]{1,0} parameter(15)
+  mul.185 = f32[1024,1024]{1,0} multiply(a_1__0__mu_layers_2__weight.1, broadcast.38)
+  add.125 = f32[1024,1024]{1,0} add(mul.184, mul.185)
+  div.62 = f32[1024,1024]{1,0} broadcast(sub.20), dimensions={}
+  div.63 = f32[1024,1024]{1,0} divide(add.125, div.62)
+  integer_pow.38 = f32[1024,1024]{1,0} multiply(dot_general.24, dot_general.24)
+  mul.204 = f32[1024,1024]{1,0} multiply(integer_pow.38, broadcast.33)
+  a_1__0__nu_layers_2__weight.1 = f32[1024,1024]{1,0} parameter(25)
+  mul.205 = f32[1024,1024]{1,0} multiply(a_1__0__nu_layers_2__weight.1, broadcast.32)
+  add.135 = f32[1024,1024]{1,0} add(mul.204, mul.205)
+  div.82 = f32[1024,1024]{1,0} broadcast(sub.21), dimensions={}
+  div.83 = f32[1024,1024]{1,0} divide(add.135, div.82)
+  sqrt.14 = f32[1024,1024]{1,0} sqrt(div.83)
+  add.146 = f32[1024,1024]{1,0} add(sqrt.14, broadcast.28)
+  div.98 = f32[1024,1024]{1,0} divide(div.63, add.146)
+  mul.220 = f32[1024,1024]{1,0} multiply(div.98, broadcast.25)
+  add.156 = f32[1024,1024]{1,0} add(a_0__layers_2__weight.1, mul.220)
+  reduce_sum.90 = f32[1024]{0} reduce(add_any.15, constant.118), dimensions={0}, to_apply=region_11.17
+  reshape.9 = f32[1,1024]{1,0} reshape(reduce_sum.90)
+  reduce_sum.91 = f32[1024]{0} reduce(reshape.9, constant.118), dimensions={0}, to_apply=region_12.18
+  mul.186 = f32[1024]{0} multiply(reduce_sum.91, broadcast.41)
+  a_1__0__mu_layers_2__bias.1 = f32[1024]{0} parameter(16)
+  mul.187 = f32[1024]{0} multiply(a_1__0__mu_layers_2__bias.1, broadcast.40)
+  add.126 = f32[1024]{0} add(mul.186, mul.187)
+  div.64 = f32[1024]{0} broadcast(sub.20), dimensions={}
+  div.65 = f32[1024]{0} divide(add.126, div.64)
+  integer_pow.39 = f32[1024]{0} multiply(reduce_sum.91, reduce_sum.91)
+  mul.206 = f32[1024]{0} multiply(integer_pow.39, broadcast.35)
+  a_1__0__nu_layers_2__bias.1 = f32[1024]{0} parameter(26)
+  mul.207 = f32[1024]{0} multiply(a_1__0__nu_layers_2__bias.1, broadcast.34)
+  add.136 = f32[1024]{0} add(mul.206, mul.207)
+  div.84 = f32[1024]{0} broadcast(sub.21), dimensions={}
+  div.85 = f32[1024]{0} divide(add.136, div.84)
+  sqrt.15 = f32[1024]{0} sqrt(div.85)
+  add.147 = f32[1024]{0} add(sqrt.15, broadcast.29)
+  div.99 = f32[1024]{0} divide(div.65, add.147)
+  mul.221 = f32[1024]{0} multiply(div.99, broadcast.26)
+  add.157 = f32[1024]{0} add(a_0__layers_2__bias.1, mul.221)
+  dot_general.22 = f32[1024,1024]{1,0} dot(transpose.16, mul.140), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  mul.188 = f32[1024,1024]{1,0} multiply(dot_general.22, broadcast.39)
+  a_1__0__mu_layers_3__weight.1 = f32[1024,1024]{1,0} parameter(17)
+  mul.189 = f32[1024,1024]{1,0} multiply(a_1__0__mu_layers_3__weight.1, broadcast.38)
+  add.127 = f32[1024,1024]{1,0} add(mul.188, mul.189)
+  div.66 = f32[1024,1024]{1,0} broadcast(sub.20), dimensions={}
+  div.67 = f32[1024,1024]{1,0} divide(add.127, div.66)
+  integer_pow.40 = f32[1024,1024]{1,0} multiply(dot_general.22, dot_general.22)
+  mul.208 = f32[1024,1024]{1,0} multiply(integer_pow.40, broadcast.33)
+  a_1__0__nu_layers_3__weight.1 = f32[1024,1024]{1,0} parameter(27)
+  mul.209 = f32[1024,1024]{1,0} multiply(a_1__0__nu_layers_3__weight.1, broadcast.32)
+  add.137 = f32[1024,1024]{1,0} add(mul.208, mul.209)
+  div.86 = f32[1024,1024]{1,0} broadcast(sub.21), dimensions={}
+  div.87 = f32[1024,1024]{1,0} divide(add.137, div.86)
+  sqrt.16 = f32[1024,1024]{1,0} sqrt(div.87)
+  add.148 = f32[1024,1024]{1,0} add(sqrt.16, broadcast.28)
+  div.100 = f32[1024,1024]{1,0} divide(div.67, add.148)
+  mul.222 = f32[1024,1024]{1,0} multiply(div.100, broadcast.25)
+  add.158 = f32[1024,1024]{1,0} add(a_0__layers_3__weight.1, mul.222)
+  reduce_sum.88 = f32[1024]{0} reduce(add_any.13, constant.118), dimensions={0}, to_apply=region_9.15
+  reshape.8 = f32[1,1024]{1,0} reshape(reduce_sum.88)
+  reduce_sum.89 = f32[1024]{0} reduce(reshape.8, constant.118), dimensions={0}, to_apply=region_10.16
+  mul.190 = f32[1024]{0} multiply(reduce_sum.89, broadcast.41)
+  a_1__0__mu_layers_3__bias.1 = f32[1024]{0} parameter(18)
+  mul.191 = f32[1024]{0} multiply(a_1__0__mu_layers_3__bias.1, broadcast.40)
+  add.128 = f32[1024]{0} add(mul.190, mul.191)
+  div.68 = f32[1024]{0} broadcast(sub.20), dimensions={}
+  div.69 = f32[1024]{0} divide(add.128, div.68)
+  integer_pow.41 = f32[1024]{0} multiply(reduce_sum.89, reduce_sum.89)
+  mul.210 = f32[1024]{0} multiply(integer_pow.41, broadcast.35)
+  a_1__0__nu_layers_3__bias.1 = f32[1024]{0} parameter(28)
+  mul.211 = f32[1024]{0} multiply(a_1__0__nu_layers_3__bias.1, broadcast.34)
+  add.138 = f32[1024]{0} add(mul.210, mul.211)
+  div.88 = f32[1024]{0} broadcast(sub.21), dimensions={}
+  div.89 = f32[1024]{0} divide(add.138, div.88)
+  sqrt.17 = f32[1024]{0} sqrt(div.89)
+  add.149 = f32[1024]{0} add(sqrt.17, broadcast.29)
+  div.101 = f32[1024]{0} divide(div.69, add.149)
+  mul.223 = f32[1024]{0} multiply(div.101, broadcast.26)
+  add.159 = f32[1024]{0} add(a_0__layers_3__bias.1, mul.223)
+  dot_general.20 = f32[10,1024]{1,0} dot(transpose.15, mul.146), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  constant.97 = f32[] constant(0.1)
+  mul.120 = f32[10,1024]{1,0} broadcast(constant.97), dimensions={}
+  mul.192 = f32[10,1024]{1,0} multiply(dot_general.20, mul.120)
+  a_1__0__mu_layers_4__weight.1 = f32[10,1024]{1,0} parameter(19)
+  constant.96 = f32[] constant(0.9)
+  mul.119 = f32[10,1024]{1,0} broadcast(constant.96), dimensions={}
+  mul.193 = f32[10,1024]{1,0} multiply(a_1__0__mu_layers_4__weight.1, mul.119)
+  add.129 = f32[10,1024]{1,0} add(mul.192, mul.193)
+  div.70 = f32[10,1024]{1,0} broadcast(sub.20), dimensions={}
+  div.71 = f32[10,1024]{1,0} divide(add.129, div.70)
+  integer_pow.42 = f32[10,1024]{1,0} multiply(dot_general.20, dot_general.20)
+  constant.87 = f32[] constant(0.001)
+  mul.116 = f32[10,1024]{1,0} broadcast(constant.87), dimensions={}
+  mul.212 = f32[10,1024]{1,0} multiply(integer_pow.42, mul.116)
+  a_1__0__nu_layers_4__weight.1 = f32[10,1024]{1,0} parameter(29)
+  constant.86 = f32[] constant(0.999)
+  mul.115 = f32[10,1024]{1,0} broadcast(constant.86), dimensions={}
+  mul.213 = f32[10,1024]{1,0} multiply(a_1__0__nu_layers_4__weight.1, mul.115)
+  add.139 = f32[10,1024]{1,0} add(mul.212, mul.213)
+  div.90 = f32[10,1024]{1,0} broadcast(sub.21), dimensions={}
+  div.91 = f32[10,1024]{1,0} divide(add.139, div.90)
+  sqrt.18 = f32[10,1024]{1,0} sqrt(div.91)
+  constant.80 = f32[] constant(1e-08)
+  add.86 = f32[10,1024]{1,0} broadcast(constant.80), dimensions={}
+  add.150 = f32[10,1024]{1,0} add(sqrt.18, add.86)
+  div.102 = f32[10,1024]{1,0} divide(div.71, add.150)
+  constant.75 = f32[] constant(-0.001)
+  mul.113 = f32[10,1024]{1,0} broadcast(constant.75), dimensions={}
+  mul.224 = f32[10,1024]{1,0} multiply(div.102, mul.113)
+  add.160 = f32[10,1024]{1,0} add(a_0__layers_4__weight.1, mul.224)
+  reduce_sum.86 = f32[10]{0} reduce(add_any.11, constant.118), dimensions={0}, to_apply=region_7.13
+  reshape.7 = f32[1,10]{1,0} reshape(reduce_sum.86)
+  reduce_sum.87 = f32[10]{0} reduce(reshape.7, constant.118), dimensions={0}, to_apply=region_8.14
+  constant.95 = f32[] constant(0.1)
+  broadcast.37 = f32[10]{0} broadcast(constant.95), dimensions={}
+  mul.194 = f32[10]{0} multiply(reduce_sum.87, broadcast.37)
+  a_1__0__mu_layers_4__bias.1 = f32[10]{0} parameter(20)
+  constant.94 = f32[] constant(0.9)
+  broadcast.36 = f32[10]{0} broadcast(constant.94), dimensions={}
+  mul.195 = f32[10]{0} multiply(a_1__0__mu_layers_4__bias.1, broadcast.36)
+  add.130 = f32[10]{0} add(mul.194, mul.195)
+  div.72 = f32[10]{0} broadcast(sub.20), dimensions={}
+  div.73 = f32[10]{0} divide(add.130, div.72)
+  integer_pow.43 = f32[10]{0} multiply(reduce_sum.87, reduce_sum.87)
+  constant.85 = f32[] constant(0.001)
+  broadcast.31 = f32[10]{0} broadcast(constant.85), dimensions={}
+  mul.214 = f32[10]{0} multiply(integer_pow.43, broadcast.31)
+  a_1__0__nu_layers_4__bias.1 = f32[10]{0} parameter(30)
+  constant.84 = f32[] constant(0.999)
+  broadcast.30 = f32[10]{0} broadcast(constant.84), dimensions={}
+  mul.215 = f32[10]{0} multiply(a_1__0__nu_layers_4__bias.1, broadcast.30)
+  add.140 = f32[10]{0} add(mul.214, mul.215)
+  div.92 = f32[10]{0} broadcast(sub.21), dimensions={}
+  div.93 = f32[10]{0} divide(add.140, div.92)
+  sqrt.19 = f32[10]{0} sqrt(div.93)
+  constant.79 = f32[] constant(1e-08)
+  broadcast.27 = f32[10]{0} broadcast(constant.79), dimensions={}
+  add.151 = f32[10]{0} add(sqrt.19, broadcast.27)
+  div.103 = f32[10]{0} divide(div.73, add.151)
+  constant.74 = f32[] constant(-0.001)
+  broadcast.24 = f32[10]{0} broadcast(constant.74), dimensions={}
+  mul.225 = f32[10]{0} multiply(div.103, broadcast.24)
+  add.161 = f32[10]{0} add(a_0__layers_4__bias.1, mul.225)
+  log.1 = f32[4096]{0} log(abs.1)
+  add.120 = f32[4096]{0} add(log.1, select_n.13)
+  jvp_jit__take__.4 = f32[4096]{0} get-tuple-element(jvp_jit__take__.3), index=0
+  sub.19 = f32[4096]{0} subtract(add.120, jvp_jit__take__.4)
+  reduce_sum.85 = f32[] reduce(sub.19, constant.118), dimensions={0}, to_apply=region_4.8
+  constant.117 = f32[] constant(4096)
+  div.52 = f32[] divide(reduce_sum.85, constant.117)
+  ROOT tuple.5 = (f32[1024,256]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, /*index=5*/f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, f32[10,1024]{1,0}, f32[10]{0}, /*index=10*/s32[], f32[1024,256]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, /*index=15*/f32[1024,1024]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, f32[10,1024]{1,0}, /*index=20*/f32[10]{0}, f32[1024,256]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, /*index=25*/f32[1024,1024]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, f32[10,1024]{1,0}, /*index=30*/f32[10]{0}, f32[]) tuple(add.152, add.153, add.154, add.155, add.156, add.157, add.158, add.159, add.160, add.161, jit__where_.3, add.121, add.122, add.123, add.124, add.125, add.126, add.127, add.128, add.129, add.130, add.131, add.132, add.133, add.134, add.135, add.136, add.137, add.138, add.139, add.140, div.52)
+}
+

@@ -1,0 +1,307 @@
+HloModule jit_f, entry_computation_layout={(f32[128,512]{1,0}, f32[512,128]{1,0}, f32[512,128]{1,0}, f32[512,128]{1,0})->(f32[128,512]{1,0}, f32[512,128]{1,0})}
+
+dynamic_update_index_in_dim.1 {
+  Arg_0.1 = f32[40,512,128]{2,1,0} parameter(0)
+  Arg_1.1 = f32[512,128]{1,0} parameter(1)
+  broadcast_in_dim.4 = f32[1,512,128]{2,1,0} reshape(Arg_1.1)
+  Arg_2.1 = s64[] parameter(2)
+  constant.14 = s64[] constant(0)
+  ROOT dynamic_update_slice.1 = f32[40,512,128]{2,1,0} dynamic-update-slice(Arg_0.1, broadcast_in_dim.4, Arg_2.1, constant.14, constant.14)
+}
+
+dynamic_update_index_in_dim_0.2 {
+  Arg_0.3 = f32[40,512,512]{2,1,0} parameter(0)
+  Arg_1.3 = f32[512,512]{1,0} parameter(1)
+  broadcast_in_dim.6 = f32[1,512,512]{2,1,0} reshape(Arg_1.3)
+  Arg_2.3 = s64[] parameter(2)
+  constant.16 = s64[] constant(0)
+  ROOT dynamic_update_slice.3 = f32[40,512,512]{2,1,0} dynamic-update-slice(Arg_0.3, broadcast_in_dim.6, Arg_2.3, constant.16, constant.16)
+}
+
+region_0.3 {
+  arg_tuple.1 = (s64[], f32[512,128]{1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=5*/f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=10*/f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[128,512]{1,0}, /*index=15*/f32[512,128]{1,0}) parameter(0)
+  get-tuple-element.16 = s64[] get-tuple-element(arg_tuple.1), index=0
+  constant.17 = s64[] constant(1)
+  add.23 = s64[] add(get-tuple-element.16, constant.17)
+  get-tuple-element.17 = f32[512,128]{1,0} get-tuple-element(arg_tuple.1), index=1
+  get-tuple-element.30 = f32[128,512]{1,0} get-tuple-element(arg_tuple.1), index=14
+  dot_general.8 = f32[512,512]{1,0} dot(get-tuple-element.17, get-tuple-element.30), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  tanh.4 = f32[512,512]{1,0} tanh(dot_general.8)
+  get-tuple-element.31 = f32[512,128]{1,0} get-tuple-element(arg_tuple.1), index=15
+  dot_general.9 = f32[512,128]{1,0} dot(tanh.4, get-tuple-element.31), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  constant.21 = f32[] constant(0.025)
+  broadcast.11 = f32[512,128]{1,0} broadcast(constant.21), dimensions={}
+  mul.11 = f32[512,128]{1,0} multiply(dot_general.9, broadcast.11)
+  add.13 = f32[512,128]{1,0} add(get-tuple-element.17, mul.11)
+  dot_general.10 = f32[512,512]{1,0} dot(add.13, get-tuple-element.30), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  tanh.5 = f32[512,512]{1,0} tanh(dot_general.10)
+  dot_general.11 = f32[512,128]{1,0} dot(tanh.5, get-tuple-element.31), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  constant.19 = f32[] constant(2)
+  broadcast.9 = f32[512,128]{1,0} broadcast(constant.19), dimensions={}
+  mul.17 = f32[512,128]{1,0} multiply(dot_general.11, broadcast.9)
+  add.19 = f32[512,128]{1,0} add(dot_general.9, mul.17)
+  mul.13 = f32[512,128]{1,0} multiply(dot_general.11, broadcast.11)
+  add.15 = f32[512,128]{1,0} add(get-tuple-element.17, mul.13)
+  dot_general.12 = f32[512,512]{1,0} dot(add.15, get-tuple-element.30), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  tanh.6 = f32[512,512]{1,0} tanh(dot_general.12)
+  dot_general.13 = f32[512,128]{1,0} dot(tanh.6, get-tuple-element.31), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  mul.18 = f32[512,128]{1,0} multiply(dot_general.13, broadcast.9)
+  add.20 = f32[512,128]{1,0} add(add.19, mul.18)
+  constant.20 = f32[] constant(0.05)
+  broadcast.10 = f32[512,128]{1,0} broadcast(constant.20), dimensions={}
+  mul.15 = f32[512,128]{1,0} multiply(dot_general.13, broadcast.10)
+  add.17 = f32[512,128]{1,0} add(get-tuple-element.17, mul.15)
+  dot_general.14 = f32[512,512]{1,0} dot(add.17, get-tuple-element.30), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  tanh.7 = f32[512,512]{1,0} tanh(dot_general.14)
+  dot_general.15 = f32[512,128]{1,0} dot(tanh.7, get-tuple-element.31), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  add.21 = f32[512,128]{1,0} add(add.20, dot_general.15)
+  constant.18 = f32[] constant(0.00833333377)
+  broadcast.8 = f32[512,128]{1,0} broadcast(constant.18), dimensions={}
+  mul.19 = f32[512,128]{1,0} multiply(add.21, broadcast.8)
+  add.22 = f32[512,128]{1,0} add(get-tuple-element.17, mul.19)
+  get-tuple-element.18 = f32[40,512,128]{2,1,0} get-tuple-element(arg_tuple.1), index=2
+  jit_dynamic_update_index_in_dim_.12 = f32[40,512,128]{2,1,0} call(get-tuple-element.18, get-tuple-element.17, get-tuple-element.16), to_apply=dynamic_update_index_in_dim.1
+  get-tuple-element.19 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.1), index=3
+  constant.22 = f32[] constant(1)
+  broadcast.12 = f32[512,512]{1,0} broadcast(constant.22), dimensions={}
+  add.12 = f32[512,512]{1,0} add(tanh.4, broadcast.12)
+  sub.4 = f32[512,512]{1,0} subtract(broadcast.12, tanh.4)
+  mul.10 = f32[512,512]{1,0} multiply(add.12, sub.4)
+  jit_dynamic_update_index_in_dim_.13 = f32[40,512,512]{2,1,0} call(get-tuple-element.19, mul.10, get-tuple-element.16), to_apply=dynamic_update_index_in_dim_0.2
+  get-tuple-element.20 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.1), index=4
+  jit_dynamic_update_index_in_dim_.14 = f32[40,512,512]{2,1,0} call(get-tuple-element.20, tanh.4, get-tuple-element.16), to_apply=dynamic_update_index_in_dim_0.2
+  get-tuple-element.21 = f32[40,512,128]{2,1,0} get-tuple-element(arg_tuple.1), index=5
+  jit_dynamic_update_index_in_dim_.15 = f32[40,512,128]{2,1,0} call(get-tuple-element.21, add.13, get-tuple-element.16), to_apply=dynamic_update_index_in_dim.1
+  get-tuple-element.22 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.1), index=6
+  add.14 = f32[512,512]{1,0} add(tanh.5, broadcast.12)
+  sub.5 = f32[512,512]{1,0} subtract(broadcast.12, tanh.5)
+  mul.12 = f32[512,512]{1,0} multiply(add.14, sub.5)
+  jit_dynamic_update_index_in_dim_.16 = f32[40,512,512]{2,1,0} call(get-tuple-element.22, mul.12, get-tuple-element.16), to_apply=dynamic_update_index_in_dim_0.2
+  get-tuple-element.23 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.1), index=7
+  jit_dynamic_update_index_in_dim_.17 = f32[40,512,512]{2,1,0} call(get-tuple-element.23, tanh.5, get-tuple-element.16), to_apply=dynamic_update_index_in_dim_0.2
+  get-tuple-element.24 = f32[40,512,128]{2,1,0} get-tuple-element(arg_tuple.1), index=8
+  jit_dynamic_update_index_in_dim_.18 = f32[40,512,128]{2,1,0} call(get-tuple-element.24, add.15, get-tuple-element.16), to_apply=dynamic_update_index_in_dim.1
+  get-tuple-element.25 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.1), index=9
+  add.16 = f32[512,512]{1,0} add(tanh.6, broadcast.12)
+  sub.6 = f32[512,512]{1,0} subtract(broadcast.12, tanh.6)
+  mul.14 = f32[512,512]{1,0} multiply(add.16, sub.6)
+  jit_dynamic_update_index_in_dim_.19 = f32[40,512,512]{2,1,0} call(get-tuple-element.25, mul.14, get-tuple-element.16), to_apply=dynamic_update_index_in_dim_0.2
+  get-tuple-element.26 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.1), index=10
+  jit_dynamic_update_index_in_dim_.20 = f32[40,512,512]{2,1,0} call(get-tuple-element.26, tanh.6, get-tuple-element.16), to_apply=dynamic_update_index_in_dim_0.2
+  get-tuple-element.27 = f32[40,512,128]{2,1,0} get-tuple-element(arg_tuple.1), index=11
+  jit_dynamic_update_index_in_dim_.21 = f32[40,512,128]{2,1,0} call(get-tuple-element.27, add.17, get-tuple-element.16), to_apply=dynamic_update_index_in_dim.1
+  get-tuple-element.28 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.1), index=12
+  add.18 = f32[512,512]{1,0} add(tanh.7, broadcast.12)
+  sub.7 = f32[512,512]{1,0} subtract(broadcast.12, tanh.7)
+  mul.16 = f32[512,512]{1,0} multiply(add.18, sub.7)
+  jit_dynamic_update_index_in_dim_.22 = f32[40,512,512]{2,1,0} call(get-tuple-element.28, mul.16, get-tuple-element.16), to_apply=dynamic_update_index_in_dim_0.2
+  get-tuple-element.29 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.1), index=13
+  jit_dynamic_update_index_in_dim_.23 = f32[40,512,512]{2,1,0} call(get-tuple-element.29, tanh.7, get-tuple-element.16), to_apply=dynamic_update_index_in_dim_0.2
+  ROOT tuple.1 = (s64[], f32[512,128]{1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=5*/f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=10*/f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[128,512]{1,0}, /*index=15*/f32[512,128]{1,0}) tuple(add.23, add.22, jit_dynamic_update_index_in_dim_.12, jit_dynamic_update_index_in_dim_.13, jit_dynamic_update_index_in_dim_.14, jit_dynamic_update_index_in_dim_.15, jit_dynamic_update_index_in_dim_.16, jit_dynamic_update_index_in_dim_.17, jit_dynamic_update_index_in_dim_.18, jit_dynamic_update_index_in_dim_.19, jit_dynamic_update_index_in_dim_.20, jit_dynamic_update_index_in_dim_.21, jit_dynamic_update_index_in_dim_.22, jit_dynamic_update_index_in_dim_.23, get-tuple-element.30, get-tuple-element.31)
+}
+
+region_1.4 {
+  arg_tuple.3 = (s64[], f32[512,128]{1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=5*/f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=10*/f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[128,512]{1,0}, /*index=15*/f32[512,128]{1,0}) parameter(0)
+  get-tuple-element.49 = f32[512,128]{1,0} get-tuple-element(arg_tuple.3), index=1
+  get-tuple-element.50 = f32[40,512,128]{2,1,0} get-tuple-element(arg_tuple.3), index=2
+  get-tuple-element.51 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.3), index=3
+  get-tuple-element.52 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.3), index=4
+  get-tuple-element.53 = f32[40,512,128]{2,1,0} get-tuple-element(arg_tuple.3), index=5
+  get-tuple-element.54 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.3), index=6
+  get-tuple-element.55 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.3), index=7
+  get-tuple-element.56 = f32[40,512,128]{2,1,0} get-tuple-element(arg_tuple.3), index=8
+  get-tuple-element.57 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.3), index=9
+  get-tuple-element.58 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.3), index=10
+  get-tuple-element.59 = f32[40,512,128]{2,1,0} get-tuple-element(arg_tuple.3), index=11
+  get-tuple-element.60 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.3), index=12
+  get-tuple-element.61 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.3), index=13
+  get-tuple-element.62 = f32[128,512]{1,0} get-tuple-element(arg_tuple.3), index=14
+  get-tuple-element.63 = f32[512,128]{1,0} get-tuple-element(arg_tuple.3), index=15
+  get-tuple-element.48 = s64[] get-tuple-element(arg_tuple.3), index=0
+  constant.24 = s64[] constant(40)
+  ROOT lt.1 = pred[] compare(get-tuple-element.48, constant.24), direction=LT
+}
+
+dynamic_index_in_dim.5 {
+  Arg_0.5 = f32[40,512,128]{2,1,0} parameter(0)
+  Arg_1.5 = s64[] parameter(1)
+  constant.32 = s64[] constant(0)
+  dynamic_slice.1 = f32[1,512,128]{2,1,0} dynamic-slice(Arg_0.5, Arg_1.5, constant.32, constant.32), dynamic_slice_sizes={1,512,128}
+  ROOT squeeze.1 = f32[512,128]{1,0} reshape(dynamic_slice.1)
+}
+
+dynamic_index_in_dim_1.6 {
+  Arg_0.7 = f32[40,512,512]{2,1,0} parameter(0)
+  Arg_1.7 = s64[] parameter(1)
+  constant.34 = s64[] constant(0)
+  dynamic_slice.3 = f32[1,512,512]{2,1,0} dynamic-slice(Arg_0.7, Arg_1.7, constant.34, constant.34), dynamic_slice_sizes={1,512,512}
+  ROOT squeeze.3 = f32[512,512]{1,0} reshape(dynamic_slice.3)
+}
+
+region_2.7 {
+  arg_tuple.5 = (s64[], f32[128,512]{1,0}, f32[512,128]{1,0}, f32[512,128]{1,0}, f32[40,512,128]{2,1,0}, /*index=5*/f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=10*/f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=15*/f32[40,512,512]{2,1,0}, f32[512,128]{1,0}, f32[128,512]{1,0}) parameter(0)
+  get-tuple-element.82 = s64[] get-tuple-element(arg_tuple.5), index=0
+  constant.39 = s64[] constant(1)
+  add.25 = s64[] add(get-tuple-element.82, constant.39)
+  get-tuple-element.83 = f32[128,512]{1,0} get-tuple-element(arg_tuple.5), index=1
+  get-tuple-element.85 = f32[512,128]{1,0} get-tuple-element(arg_tuple.5), index=3
+  constant.38 = f32[] constant(0.00833333377)
+  broadcast.20 = f32[512,128]{1,0} broadcast(constant.38), dimensions={}
+  mul.31 = f32[512,128]{1,0} multiply(get-tuple-element.85, broadcast.20)
+  get-tuple-element.98 = f32[512,128]{1,0} get-tuple-element(arg_tuple.5), index=16
+  dot_general.33 = f32[512,512]{1,0} dot(mul.31, get-tuple-element.98), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  get-tuple-element.96 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.5), index=14
+  constant.40 = s64[] constant(40)
+  sub.11 = s64[] subtract(constant.40, get-tuple-element.82)
+  sub.12 = s64[] subtract(sub.11, constant.39)
+  jit_dynamic_index_in_dim_.22 = f32[512,512]{1,0} call(get-tuple-element.96, sub.12), to_apply=dynamic_index_in_dim_1.6
+  mul.34 = f32[512,512]{1,0} multiply(dot_general.33, jit_dynamic_index_in_dim_.22)
+  get-tuple-element.95 = f32[40,512,128]{2,1,0} get-tuple-element(arg_tuple.5), index=13
+  jit_dynamic_index_in_dim_.21 = f32[512,128]{1,0} call(get-tuple-element.95, sub.12), to_apply=dynamic_index_in_dim.5
+  dot_general.34 = f32[512,128]{1,0} dot(mul.34, jit_dynamic_index_in_dim_.21), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  transpose.9 = f32[128,512]{0,1} transpose(dot_general.34), dimensions={1,0}
+  add_any.16 = f32[128,512]{1,0} add(get-tuple-element.83, transpose.9)
+  constant.37 = f32[] constant(2)
+  broadcast.19 = f32[512,128]{1,0} broadcast(constant.37), dimensions={}
+  mul.32 = f32[512,128]{1,0} multiply(mul.31, broadcast.19)
+  get-tuple-element.99 = f32[128,512]{1,0} get-tuple-element(arg_tuple.5), index=17
+  dot_general.35 = f32[512,128]{1,0} dot(mul.34, get-tuple-element.99), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  constant.36 = f32[] constant(0.05)
+  broadcast.18 = f32[512,128]{1,0} broadcast(constant.36), dimensions={}
+  mul.35 = f32[512,128]{1,0} multiply(dot_general.35, broadcast.18)
+  add_any.18 = f32[512,128]{1,0} add(mul.32, mul.35)
+  dot_general.37 = f32[512,512]{1,0} dot(add_any.18, get-tuple-element.98), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  get-tuple-element.93 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.5), index=11
+  jit_dynamic_index_in_dim_.19 = f32[512,512]{1,0} call(get-tuple-element.93, sub.12), to_apply=dynamic_index_in_dim_1.6
+  mul.36 = f32[512,512]{1,0} multiply(dot_general.37, jit_dynamic_index_in_dim_.19)
+  get-tuple-element.92 = f32[40,512,128]{2,1,0} get-tuple-element(arg_tuple.5), index=10
+  jit_dynamic_index_in_dim_.18 = f32[512,128]{1,0} call(get-tuple-element.92, sub.12), to_apply=dynamic_index_in_dim.5
+  dot_general.38 = f32[512,128]{1,0} dot(mul.36, jit_dynamic_index_in_dim_.18), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  transpose.11 = f32[128,512]{0,1} transpose(dot_general.38), dimensions={1,0}
+  add_any.20 = f32[128,512]{1,0} add(add_any.16, transpose.11)
+  mul.33 = f32[512,128]{1,0} multiply(mul.31, broadcast.19)
+  dot_general.39 = f32[512,128]{1,0} dot(mul.36, get-tuple-element.99), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  constant.35 = f32[] constant(0.025)
+  broadcast.17 = f32[512,128]{1,0} broadcast(constant.35), dimensions={}
+  mul.37 = f32[512,128]{1,0} multiply(dot_general.39, broadcast.17)
+  add_any.22 = f32[512,128]{1,0} add(mul.33, mul.37)
+  dot_general.41 = f32[512,512]{1,0} dot(add_any.22, get-tuple-element.98), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  get-tuple-element.90 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.5), index=8
+  jit_dynamic_index_in_dim_.16 = f32[512,512]{1,0} call(get-tuple-element.90, sub.12), to_apply=dynamic_index_in_dim_1.6
+  mul.38 = f32[512,512]{1,0} multiply(dot_general.41, jit_dynamic_index_in_dim_.16)
+  get-tuple-element.89 = f32[40,512,128]{2,1,0} get-tuple-element(arg_tuple.5), index=7
+  jit_dynamic_index_in_dim_.15 = f32[512,128]{1,0} call(get-tuple-element.89, sub.12), to_apply=dynamic_index_in_dim.5
+  dot_general.42 = f32[512,128]{1,0} dot(mul.38, jit_dynamic_index_in_dim_.15), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  transpose.13 = f32[128,512]{0,1} transpose(dot_general.42), dimensions={1,0}
+  add_any.24 = f32[128,512]{1,0} add(add_any.20, transpose.13)
+  dot_general.43 = f32[512,128]{1,0} dot(mul.38, get-tuple-element.99), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  mul.39 = f32[512,128]{1,0} multiply(dot_general.43, broadcast.17)
+  add_any.26 = f32[512,128]{1,0} add(mul.31, mul.39)
+  dot_general.45 = f32[512,512]{1,0} dot(add_any.26, get-tuple-element.98), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  get-tuple-element.87 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.5), index=5
+  jit_dynamic_index_in_dim_.13 = f32[512,512]{1,0} call(get-tuple-element.87, sub.12), to_apply=dynamic_index_in_dim_1.6
+  mul.40 = f32[512,512]{1,0} multiply(dot_general.45, jit_dynamic_index_in_dim_.13)
+  get-tuple-element.86 = f32[40,512,128]{2,1,0} get-tuple-element(arg_tuple.5), index=4
+  jit_dynamic_index_in_dim_.12 = f32[512,128]{1,0} call(get-tuple-element.86, sub.12), to_apply=dynamic_index_in_dim.5
+  dot_general.46 = f32[512,128]{1,0} dot(mul.40, jit_dynamic_index_in_dim_.12), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  transpose.15 = f32[128,512]{0,1} transpose(dot_general.46), dimensions={1,0}
+  add_any.28 = f32[128,512]{1,0} add(add_any.24, transpose.15)
+  get-tuple-element.84 = f32[512,128]{1,0} get-tuple-element(arg_tuple.5), index=2
+  get-tuple-element.97 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.5), index=15
+  jit_dynamic_index_in_dim_.23 = f32[512,512]{1,0} call(get-tuple-element.97, sub.12), to_apply=dynamic_index_in_dim_1.6
+  dot_general.32 = f32[128,512]{1,0} dot(mul.31, jit_dynamic_index_in_dim_.23), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  transpose.8 = f32[512,128]{0,1} transpose(dot_general.32), dimensions={1,0}
+  add_any.15 = f32[512,128]{1,0} add(get-tuple-element.84, transpose.8)
+  get-tuple-element.94 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.5), index=12
+  jit_dynamic_index_in_dim_.20 = f32[512,512]{1,0} call(get-tuple-element.94, sub.12), to_apply=dynamic_index_in_dim_1.6
+  dot_general.36 = f32[128,512]{1,0} dot(add_any.18, jit_dynamic_index_in_dim_.20), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  transpose.10 = f32[512,128]{0,1} transpose(dot_general.36), dimensions={1,0}
+  add_any.19 = f32[512,128]{1,0} add(add_any.15, transpose.10)
+  get-tuple-element.91 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.5), index=9
+  jit_dynamic_index_in_dim_.17 = f32[512,512]{1,0} call(get-tuple-element.91, sub.12), to_apply=dynamic_index_in_dim_1.6
+  dot_general.40 = f32[128,512]{1,0} dot(add_any.22, jit_dynamic_index_in_dim_.17), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  transpose.12 = f32[512,128]{0,1} transpose(dot_general.40), dimensions={1,0}
+  add_any.23 = f32[512,128]{1,0} add(add_any.19, transpose.12)
+  get-tuple-element.88 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.5), index=6
+  jit_dynamic_index_in_dim_.14 = f32[512,512]{1,0} call(get-tuple-element.88, sub.12), to_apply=dynamic_index_in_dim_1.6
+  dot_general.44 = f32[128,512]{1,0} dot(add_any.26, jit_dynamic_index_in_dim_.14), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  transpose.14 = f32[512,128]{0,1} transpose(dot_general.44), dimensions={1,0}
+  add_any.27 = f32[512,128]{1,0} add(add_any.23, transpose.14)
+  add_any.17 = f32[512,128]{1,0} add(get-tuple-element.85, dot_general.35)
+  add_any.21 = f32[512,128]{1,0} add(add_any.17, dot_general.39)
+  add_any.25 = f32[512,128]{1,0} add(add_any.21, dot_general.43)
+  dot_general.47 = f32[512,128]{1,0} dot(mul.40, get-tuple-element.99), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  add_any.29 = f32[512,128]{1,0} add(add_any.25, dot_general.47)
+  ROOT tuple.3 = (s64[], f32[128,512]{1,0}, f32[512,128]{1,0}, f32[512,128]{1,0}, f32[40,512,128]{2,1,0}, /*index=5*/f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=10*/f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=15*/f32[40,512,512]{2,1,0}, f32[512,128]{1,0}, f32[128,512]{1,0}) tuple(add.25, add_any.28, add_any.27, add_any.29, get-tuple-element.86, get-tuple-element.87, get-tuple-element.88, get-tuple-element.89, get-tuple-element.90, get-tuple-element.91, get-tuple-element.92, get-tuple-element.93, get-tuple-element.94, get-tuple-element.95, get-tuple-element.96, get-tuple-element.97, get-tuple-element.98, get-tuple-element.99)
+}
+
+region_3.8 {
+  arg_tuple.7 = (s64[], f32[128,512]{1,0}, f32[512,128]{1,0}, f32[512,128]{1,0}, f32[40,512,128]{2,1,0}, /*index=5*/f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=10*/f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=15*/f32[40,512,512]{2,1,0}, f32[512,128]{1,0}, f32[128,512]{1,0}) parameter(0)
+  get-tuple-element.119 = f32[128,512]{1,0} get-tuple-element(arg_tuple.7), index=1
+  get-tuple-element.120 = f32[512,128]{1,0} get-tuple-element(arg_tuple.7), index=2
+  get-tuple-element.121 = f32[512,128]{1,0} get-tuple-element(arg_tuple.7), index=3
+  get-tuple-element.122 = f32[40,512,128]{2,1,0} get-tuple-element(arg_tuple.7), index=4
+  get-tuple-element.123 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.7), index=5
+  get-tuple-element.124 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.7), index=6
+  get-tuple-element.125 = f32[40,512,128]{2,1,0} get-tuple-element(arg_tuple.7), index=7
+  get-tuple-element.126 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.7), index=8
+  get-tuple-element.127 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.7), index=9
+  get-tuple-element.128 = f32[40,512,128]{2,1,0} get-tuple-element(arg_tuple.7), index=10
+  get-tuple-element.129 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.7), index=11
+  get-tuple-element.130 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.7), index=12
+  get-tuple-element.131 = f32[40,512,128]{2,1,0} get-tuple-element(arg_tuple.7), index=13
+  get-tuple-element.132 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.7), index=14
+  get-tuple-element.133 = f32[40,512,512]{2,1,0} get-tuple-element(arg_tuple.7), index=15
+  get-tuple-element.134 = f32[512,128]{1,0} get-tuple-element(arg_tuple.7), index=16
+  get-tuple-element.135 = f32[128,512]{1,0} get-tuple-element(arg_tuple.7), index=17
+  get-tuple-element.118 = s64[] get-tuple-element(arg_tuple.7), index=0
+  constant.42 = s64[] constant(40)
+  ROOT lt.3 = pred[] compare(get-tuple-element.118, constant.42), direction=LT
+}
+
+ENTRY main.9 {
+  constant.47 = s64[] constant(0)
+  x0.1 = f32[512,128]{1,0} parameter(2)
+  constant.48 = f32[] constant(0)
+  broadcast.22 = f32[40,512,128]{2,1,0} broadcast(constant.48), dimensions={}
+  constant.49 = f32[] constant(0)
+  broadcast.23 = f32[40,512,512]{2,1,0} broadcast(constant.49), dimensions={}
+  W1.1 = f32[128,512]{1,0} parameter(0)
+  W2.1 = f32[512,128]{1,0} parameter(1)
+  while.22 = (s64[], f32[512,128]{1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=5*/f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=10*/f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[128,512]{1,0}, /*index=15*/f32[512,128]{1,0}) tuple(constant.47, x0.1, broadcast.22, broadcast.23, broadcast.23, broadcast.22, broadcast.23, broadcast.23, broadcast.22, broadcast.23, broadcast.23, broadcast.22, broadcast.23, broadcast.23, W1.1, W2.1)
+  while.23 = (s64[], f32[512,128]{1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=5*/f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=10*/f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[128,512]{1,0}, /*index=15*/f32[512,128]{1,0}) while(while.22), condition=region_1.4, body=region_0.3
+  while.24 = s64[] get-tuple-element(while.23), index=0
+  constant.44 = f32[] constant(0)
+  broadcast_in_dim.9 = f32[128,512]{1,0} broadcast(constant.44), dimensions={}
+  constant.43 = f32[] constant(0)
+  broadcast_in_dim.8 = f32[512,128]{1,0} broadcast(constant.43), dimensions={}
+  while.25 = f32[512,128]{1,0} get-tuple-element(while.23), index=1
+  target.1 = f32[512,128]{1,0} parameter(3)
+  sub.13 = f32[512,128]{1,0} subtract(while.25, target.1)
+  constant.46 = f32[] constant(2)
+  broadcast.21 = f32[512,128]{1,0} broadcast(constant.46), dimensions={}
+  mul.41 = f32[512,128]{1,0} multiply(sub.13, broadcast.21)
+  constant.45 = f32[] constant(1.52587891e-05)
+  broadcast_in_dim.10 = f32[512,128]{1,0} broadcast(constant.45), dimensions={}
+  broadcast_in_dim.11 = f32[512,128]{1,0} multiply(mul.41, broadcast_in_dim.10)
+  while.26 = f32[40,512,128]{2,1,0} get-tuple-element(while.23), index=2
+  while.27 = f32[40,512,512]{2,1,0} get-tuple-element(while.23), index=3
+  while.28 = f32[40,512,512]{2,1,0} get-tuple-element(while.23), index=4
+  while.29 = f32[40,512,128]{2,1,0} get-tuple-element(while.23), index=5
+  while.30 = f32[40,512,512]{2,1,0} get-tuple-element(while.23), index=6
+  while.31 = f32[40,512,512]{2,1,0} get-tuple-element(while.23), index=7
+  while.32 = f32[40,512,128]{2,1,0} get-tuple-element(while.23), index=8
+  while.33 = f32[40,512,512]{2,1,0} get-tuple-element(while.23), index=9
+  while.34 = f32[40,512,512]{2,1,0} get-tuple-element(while.23), index=10
+  while.35 = f32[40,512,128]{2,1,0} get-tuple-element(while.23), index=11
+  while.36 = f32[40,512,512]{2,1,0} get-tuple-element(while.23), index=12
+  while.37 = f32[40,512,512]{2,1,0} get-tuple-element(while.23), index=13
+  while.38 = (s64[], f32[128,512]{1,0}, f32[512,128]{1,0}, f32[512,128]{1,0}, f32[40,512,128]{2,1,0}, /*index=5*/f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=10*/f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=15*/f32[40,512,512]{2,1,0}, f32[512,128]{1,0}, f32[128,512]{1,0}) tuple(constant.47, broadcast_in_dim.9, broadcast_in_dim.8, broadcast_in_dim.11, while.26, while.27, while.28, while.29, while.30, while.31, while.32, while.33, while.34, while.35, while.36, while.37, W2.1, W1.1)
+  while.39 = (s64[], f32[128,512]{1,0}, f32[512,128]{1,0}, f32[512,128]{1,0}, f32[40,512,128]{2,1,0}, /*index=5*/f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=10*/f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,512]{2,1,0}, f32[40,512,128]{2,1,0}, f32[40,512,512]{2,1,0}, /*index=15*/f32[40,512,512]{2,1,0}, f32[512,128]{1,0}, f32[128,512]{1,0}) while(while.38), condition=region_3.8, body=region_2.7
+  while.40 = s64[] get-tuple-element(while.39), index=0
+  while.43 = f32[512,128]{1,0} get-tuple-element(while.39), index=3
+  while.41 = f32[128,512]{1,0} get-tuple-element(while.39), index=1
+  while.42 = f32[512,128]{1,0} get-tuple-element(while.39), index=2
+  ROOT tuple.5 = (f32[128,512]{1,0}, f32[512,128]{1,0}) tuple(while.41, while.42)
+}
+
