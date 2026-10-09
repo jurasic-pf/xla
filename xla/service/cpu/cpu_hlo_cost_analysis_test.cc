@@ -61,6 +61,24 @@ ENTRY e {
             0);
 }
 
+TEST_F(CpuHloCostAnalysisTest, MatrixVectorDotReusesTheVector) {
+  absl::string_view hlo_string = R"(
+HloModule m
+
+ENTRY e {
+  m = f32[4096,128] parameter(0)
+  v = f32[128] parameter(1)
+  ROOT d = f32[4096] dot(m, v), lhs_contracting_dims={1},
+      rhs_contracting_dims={0}
+})";
+  ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(hlo_string));
+  CpuHloCostAnalysis analysis(options_);
+  ASSERT_IS_OK(module->entry_computation()->Accept(&analysis));
+  const HloInstruction* dot = module->entry_computation()->root_instruction();
+  EXPECT_FLOAT_EQ(analysis.operand_utilization(*dot, 0), 1);
+  EXPECT_FLOAT_EQ(analysis.operand_utilization(*dot, 1), 4096);
+}
+
 TEST_F(CpuHloCostAnalysisTest, F64LibmCallsAreMoreExpensive) {
   EXPECT_GT(
       CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(F64, HloOpcode::kLog),

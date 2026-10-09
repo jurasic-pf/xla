@@ -45,6 +45,29 @@ absl::Status CpuHloCostAnalysis::HandleBroadcast(
   return absl::OkStatus();
 }
 
+absl::Status CpuHloCostAnalysis::HandleDot(const HloInstruction* dot) {
+  ABSL_RETURN_IF_ERROR(HloCostAnalysis::HandleDot(dot));
+  if (!options_.count_multiple_input_accesses) {
+    return absl::OkStatus();
+  }
+  // A dot emitted as a loop, e.g. a small matrix-vector product fused with
+  // its operands, reads each operand element once per output element that it
+  // contributes to.
+  int64_t contracted = 1;
+  for (int64_t dim : dot->dot_dimension_numbers().lhs_contracting_dimensions()) {
+    contracted *= dot->operand(0)->shape().dimensions(dim);
+  }
+  const int64_t reads = ShapeUtil::ElementsIn(dot->shape()) * contracted;
+  for (int64_t i = 0; i < dot->operand_count(); ++i) {
+    const int64_t elements = ShapeUtil::ElementsIn(dot->operand(i)->shape());
+    if (elements > 0) {
+      current_properties_.set_operand_utilization(
+          i, static_cast<float>(reads) / elements);
+    }
+  }
+  return absl::OkStatus();
+}
+
 /*static*/
 int64_t CpuHloCostAnalysis::UnrolledBroadcastElements(
     const HloInstruction& broadcast) {

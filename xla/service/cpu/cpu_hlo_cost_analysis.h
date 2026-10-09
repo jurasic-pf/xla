@@ -33,6 +33,7 @@ class CpuHloCostAnalysis : public HloCostAnalysis {
 
   absl::Status HandleElementwiseOp(const HloInstruction* hlo) override;
   absl::Status HandleBroadcast(const HloInstruction* broadcast) override;
+  absl::Status HandleDot(const HloInstruction* dot) override;
 
   // Time to compute one element of an elementwise op in a loop fusion, in
   // units of an add of the same type.
