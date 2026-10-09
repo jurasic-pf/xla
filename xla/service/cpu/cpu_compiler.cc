@@ -21,6 +21,7 @@ limitations under the License.
 #include <cstring>
 #include <functional>
 #include <limits>
+#include <cstdlib>
 #include <memory>
 #include <optional>
 #include <string>
@@ -103,6 +104,7 @@ limitations under the License.
 #include "xla/backends/cpu/target_machine_options.h"
 #include "xla/backends/cpu/transforms/collectives/all_reduce_combiner.h"
 #include "xla/backends/cpu/transforms/library_rewriter.h"
+#include "xla/backends/cpu/transforms/ynn_matcher.h"
 #include "xla/backends/cpu/ynn_support.h"
 #include "xla/comparison_util.h"
 #include "xla/hlo/analysis/alias_info.h"
@@ -162,6 +164,7 @@ limitations under the License.
 #include "xla/hlo/transforms/simplifiers/result_caster.h"
 #include "xla/hlo/transforms/simplifiers/sort_simplifier.h"
 #include "xla/hlo/transforms/simplifiers/sub_byte_normalization.h"
+#include "xla/hlo/transforms/simplifiers/reduction_kept_dim_splitter.h"
 #include "xla/hlo/transforms/simplifiers/tree_reduction_rewriter.h"
 #include "xla/hlo/transforms/simplifiers/tuple_simplifier.h"
 #include "xla/hlo/transforms/simplifiers/zero_sized_hlo_elimination.h"
@@ -518,6 +521,33 @@ std::unique_ptr<HloPassFix<HloPassPipeline>> CreateSimplificationPipeline(
   // Conversion to MLIR only works with simplified gathers.
   pipeline->AddPass<GatherSimplifier>();
 
+  // Experiment only: XLA_CPU_SPLIT_KEPT_DIM=1.
+  if (const char* env = std::getenv("XLA_CPU_SPLIT_KEPT_DIM");
+      env != nullptr && env[0] == '1') {
+    const char* unroll = std::getenv("XLA_CPU_UNROLL_TINY_REDUCE");
+    // YNN does not take variadic reductions. Make a reduction variadic only if
+    // the performance model prefers a loop fusion over the YNN fusion.
+    ReductionKeptDimSplitter::VariadicIsFaster variadic_is_faster;
+    const auto& ynn_types =
+        module->config().debug_options().xla_cpu_experimental_ynn_fusion_type();
+    if (absl::c_contains(ynn_types, DebugOptions::LIBRARY_FUSION_TYPE_REDUCE)) {
+      auto matcher = std::make_shared<YnnMatcher>(
+          /*target_machine_features=*/nullptr, &ynn_types);
+      variadic_is_faster = [matcher](const HloInstruction& reduce,
+                                     int64_t outputs) {
+        return matcher->LoopFusionIsFaster(&reduce, outputs);
+      };
+    }
+    pipeline->AddPass<ReductionKeptDimSplitter>(
+        /*max_kept_dim_size=*/8, /*min_reduced_elements=*/1024,
+        /*unroll_small_reductions=*/unroll != nullptr && unroll[0] == '1',
+        /*merge_sibling_reductions=*/
+        [] {
+          const char* env = std::getenv("XLA_CPU_MERGE_SIBLING_REDUCE");
+          return env != nullptr && env[0] == '1';
+        }(),
+        std::move(variadic_is_faster));
+  }
   if (!IsHostOffload(module) &&
       absl::c_contains(module->config()
                            .debug_options()
@@ -527,10 +557,18 @@ std::unique_ptr<HloPassFix<HloPassPipeline>> CreateSimplificationPipeline(
     // - Improving numerical properties by hierarchically performing reductions.
     // - Improving performance by allowing parallelism.
     // YNNPACK doesn't need TreeReductionRewriter to do either of these.
-    pipeline->AddPass<TreeReductionRewriter>([](const HloInstruction* hlo) {
-      return !(IsInstructionPreferredByYnn(hlo) &&
-               IsReduceLikeOpSupportedByYnn(hlo));
-    });
+    // Reductions that the performance model leaves to loop fusion are split
+    // if the loop fusion needs the split to use the thread pool.
+    auto matcher = std::make_shared<YnnMatcher>(
+        /*target_machine_features=*/nullptr,
+        &module->config().debug_options().xla_cpu_experimental_ynn_fusion_type());
+    pipeline->AddPass<TreeReductionRewriter>(
+        [matcher](const HloInstruction* hlo) {
+          return !(IsInstructionPreferredByYnn(hlo) &&
+                   IsReduceLikeOpSupportedByYnn(hlo)) ||
+                 (hlo->opcode() == HloOpcode::kReduce &&
+                  matcher->LoopFusionNeedsTreeReduction(hlo));
+        });
   } else {
     pipeline->AddPass<TreeReductionRewriter>();
   }

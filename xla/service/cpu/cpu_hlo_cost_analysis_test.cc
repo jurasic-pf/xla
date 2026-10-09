@@ -18,8 +18,10 @@ limitations under the License.
 #include <gtest/gtest.h>
 #include "absl/strings/string_view.h"
 #include "xla/hlo/ir/hlo_instruction.h"
+#include "xla/hlo/ir/hlo_opcode.h"
 #include "xla/hlo/testlib/hlo_hardware_independent_test_base.h"
 #include "xla/hlo/testlib/test_helpers.h"
+#include "xla/xla_data.pb.h"
 
 namespace xla::cpu {
 namespace {
@@ -49,8 +51,59 @@ ENTRY e {
 
   EXPECT_EQ(analysis.flop_count(*FindInstruction(module.get(), "add")), 100);
   EXPECT_EQ(analysis.flop_count(*FindInstruction(module.get(), "divide")),
-            800);
-  EXPECT_EQ(analysis.flop_count(*FindInstruction(module.get(), "exp")), 1500);
+            300);
+  EXPECT_EQ(analysis.flop_count(*FindInstruction(module.get(), "exp")), 1100);
+  EXPECT_EQ(analysis.transcendental_flop_count(
+                *FindInstruction(module.get(), "exp")),
+            1100);
+  EXPECT_EQ(analysis.transcendental_flop_count(
+                *FindInstruction(module.get(), "divide")),
+            0);
+}
+
+TEST_F(CpuHloCostAnalysisTest, MatrixVectorDotReusesTheVector) {
+  absl::string_view hlo_string = R"(
+HloModule m
+
+ENTRY e {
+  m = f32[4096,128] parameter(0)
+  v = f32[128] parameter(1)
+  ROOT d = f32[4096] dot(m, v), lhs_contracting_dims={1},
+      rhs_contracting_dims={0}
+})";
+  ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(hlo_string));
+  CpuHloCostAnalysis analysis(options_);
+  ASSERT_IS_OK(module->entry_computation()->Accept(&analysis));
+  const HloInstruction* dot = module->entry_computation()->root_instruction();
+  EXPECT_FLOAT_EQ(analysis.operand_utilization(*dot, 0), 1);
+  EXPECT_FLOAT_EQ(analysis.operand_utilization(*dot, 1), 4096);
+}
+
+TEST_F(CpuHloCostAnalysisTest, DeinterleavingSlicesCostTime) {
+  absl::string_view hlo_string = R"(
+HloModule m
+
+ENTRY e {
+  q = f32[1024,4] parameter(0)
+  c = f32[1024,1] slice(q), slice={[0:1024], [1:2]}
+  r = f32[512,4] slice(q), slice={[0:512], [0:4]}
+  d = f64[1024,4] parameter(1)
+  e = f64[1024,1] slice(d), slice={[0:1024], [1:2]}
+  ROOT t = (f32[1024,1], f32[512,4], f64[1024,1]) tuple(c, r, e)
+})";
+  ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(hlo_string));
+  CpuHloCostAnalysis analysis(options_);
+  ASSERT_IS_OK(module->entry_computation()->Accept(&analysis));
+  EXPECT_EQ(analysis.flop_count(*FindInstruction(module.get(), "c")), 2048);
+  EXPECT_EQ(analysis.flop_count(*FindInstruction(module.get(), "r")), 0);
+  EXPECT_EQ(analysis.flop_count(*FindInstruction(module.get(), "e")), 0);
+}
+
+TEST_F(CpuHloCostAnalysisTest, F64LibmCallsAreMoreExpensive) {
+  EXPECT_GT(
+      CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(F64, HloOpcode::kLog),
+      CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(F32,
+                                                          HloOpcode::kLog));
 }
 
 TEST_F(CpuHloCostAnalysisTest, FusionUtilizationThroughBroadcast) {
@@ -74,7 +127,7 @@ ENTRY e {
   const HloInstruction* fusion = module->entry_computation()->root_instruction();
   EXPECT_FLOAT_EQ(analysis.operand_utilization(*fusion, 0), 64);
   EXPECT_EQ(analysis.operand_bytes_accessed(*fusion, 0), 64 * 1000 * 4);
-  EXPECT_EQ(analysis.flop_count(*fusion), 15 * 64 * 1000);
+  EXPECT_EQ(analysis.flop_count(*fusion), 11 * 64 * 1000);
 }
 
 TEST_F(CpuHloCostAnalysisTest, FusionFlopsScaleWithUtilization) {
@@ -97,7 +150,7 @@ ENTRY e {
   ASSERT_IS_OK(module->entry_computation()->Accept(&analysis));
 
   const HloInstruction* fusion = module->entry_computation()->root_instruction();
-  EXPECT_EQ(analysis.flop_count(*fusion), 15 * 64 * 1000);
+  EXPECT_EQ(analysis.flop_count(*fusion), 11 * 64 * 1000);
 }
 
 TEST_F(CpuHloCostAnalysisTest, SmallMinorBroadcastDoesNotRecompute) {
@@ -122,7 +175,7 @@ ENTRY e {
 
   const HloInstruction* fusion = module->entry_computation()->root_instruction();
   EXPECT_FLOAT_EQ(analysis.operand_utilization(*fusion, 0), 1);
-  EXPECT_EQ(analysis.flop_count(*fusion), 15 * 1000);
+  EXPECT_EQ(analysis.flop_count(*fusion), 11 * 1000);
 }
 
 }  // namespace

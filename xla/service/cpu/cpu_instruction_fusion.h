@@ -72,11 +72,36 @@ class CpuInstructionFusion : public InstructionFusion {
   // into all of its users is at least as fast as materializing it.
   bool FusionIntoAllUsersIsFaster(const HloInstruction& producer);
   bool EstimateFusionIntoAllUsersIsFaster(const HloInstruction& producer);
+  // Returns true if recomputing `producer` and its recomputed operand chain
+  // involves arithmetic, not only data movement.
+  // Returns true if every kernel that recomputes `producer` computes
+  // `operand`, an operand of its recomputed `chain`, anyway.
+  bool ComputedByUsersAnyway(
+      const HloInstruction& operand, const HloInstruction& producer,
+      const absl::flat_hash_set<const HloInstruction*>& chain);
+
+  // Returns an upper bound of the temp bytes of the entry computation.
+  static int64_t EstimateEntryTempBytes(const HloModule& module);
+
+  // The kernels that `user` is fused into: how many bytes they load per byte
+  // of a materialized `producer`, and the fewest outputs among them, which
+  // bounds their parallelism.
+  struct Destinations {
+    int64_t read_factor;
+    int64_t outputs;
+    absl::flat_hash_set<const HloInstruction*> kernels;
+  };
+  Destinations FindDestinations(const HloInstruction& producer,
+                                const HloInstruction& user);
+  bool RecomputedChainHasCompute(const HloInstruction& producer);
+  bool RecomputeInEachUserIsFaster(const HloInstruction& producer,
+                                   const HloInstruction* consumer,
+                                   int64_t copies);
 
   // Returns `producer` and its operands, direct or indirect, that are
   // recomputed in each user if `producer` is fused into its users.
   absl::flat_hash_set<const HloInstruction*> RecomputedChain(
-      const HloInstruction& producer) const;
+      const HloInstruction& producer);
 
   HloInstruction* FuseInstruction(HloInstruction* fusion_instruction,
                                   HloInstruction* producer) override;

@@ -12,6 +12,7 @@
 #include "absl/status/status_macros.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_opcode.h"
+#include "xla/layout_util.h"
 #include "xla/primitive_util.h"
 #include "xla/service/hlo_cost_analysis.h"
 #include "xla/shape.h"
@@ -22,7 +23,11 @@ namespace xla::cpu {
 
 absl::Status CpuHloCostAnalysis::HandleElementwiseOp(
     const HloInstruction* hlo) {
-  current_properties_[kFlopsKey] = GetFlopsForElementwiseOp(hlo);
+  const int64_t flops = GetFlopsForElementwiseOp(hlo);
+  current_properties_[kFlopsKey] = flops;
+  if (IsTranscendental(hlo->opcode())) {
+    current_properties_[kTranscendentalFlopsKey] = flops;
+  }
   return absl::OkStatus();
 }
 
@@ -33,54 +38,123 @@ absl::Status CpuHloCostAnalysis::HandleBroadcast(
       !broadcast->shape().has_layout()) {
     return absl::OkStatus();
   }
-  // Loops over small dimensions that are minor to all operand dimensions are
-  // unrolled, and the operand is computed once for all of their iterations.
-  static constexpr int64_t kMaxUnrolledElements = 8;
-  const Shape& shape = broadcast->shape();
-  int64_t minor_elements = 1;
-  for (int64_t dim : shape.layout().minor_to_major()) {
-    if (absl::c_linear_search(broadcast->dimensions(), dim)) {
-      break;
-    }
-    minor_elements *= shape.dimensions(dim);
-  }
-  if (minor_elements > 1 && minor_elements <= kMaxUnrolledElements) {
+  const int64_t minor_elements = UnrolledBroadcastElements(*broadcast);
+  if (minor_elements > 1) {
     current_properties_.set_operand_utilization(
         0, current_properties_.operand_utilization(0) / minor_elements);
   }
   return absl::OkStatus();
 }
 
+absl::Status CpuHloCostAnalysis::HandleDot(const HloInstruction* dot) {
+  ABSL_RETURN_IF_ERROR(HloCostAnalysis::HandleDot(dot));
+  if (!options_.count_multiple_input_accesses) {
+    return absl::OkStatus();
+  }
+  // A dot emitted as a loop, e.g. a small matrix-vector product fused with
+  // its operands, reads each operand element once per output element that it
+  // contributes to.
+  int64_t contracted = 1;
+  for (int64_t dim : dot->dot_dimension_numbers().lhs_contracting_dimensions()) {
+    contracted *= dot->operand(0)->shape().dimensions(dim);
+  }
+  const int64_t reads = ShapeUtil::ElementsIn(dot->shape()) * contracted;
+  for (int64_t i = 0; i < dot->operand_count(); ++i) {
+    const int64_t elements = ShapeUtil::ElementsIn(dot->operand(i)->shape());
+    if (elements > 0) {
+      current_properties_.set_operand_utilization(
+          i, static_cast<float>(reads) / elements);
+    }
+  }
+  return absl::OkStatus();
+}
+
+/*static*/
+int64_t CpuHloCostAnalysis::SliceFlopsPerElement(const HloInstruction& slice) {
+  // Measured with an 8-op chain on 65536 elements, one core: reading the 4
+  // components as column slices of an [N,4] array costs 0.80 ns per element
+  // in f32, 0.41 ns from separate arrays; f64 costs the same either way.
+  const Shape& in = slice.operand(0)->shape();
+  const Shape& out = slice.shape();
+  if (!in.has_layout() || out.dimensions().empty() ||
+      primitive_util::BitWidth(out.element_type()) > 32) {
+    return 0;
+  }
+  const int64_t minor = LayoutUtil::Minor(in.layout(), 0);
+  return out.dimensions(minor) < in.dimensions(minor) ? 2 : 0;
+}
+
+absl::Status CpuHloCostAnalysis::HandleSlice(const HloInstruction* slice) {
+  ABSL_RETURN_IF_ERROR(HloCostAnalysis::HandleSlice(slice));
+  current_properties_[kFlopsKey] =
+      SliceFlopsPerElement(*slice) * ShapeUtil::ElementsIn(slice->shape());
+  return absl::OkStatus();
+}
+
+/*static*/
+int64_t CpuHloCostAnalysis::UnrolledBroadcastElements(
+    const HloInstruction& broadcast) {
+  // Loops over small dimensions that are minor to all operand dimensions are
+  // unrolled, and the operand is computed once for all of their iterations.
+  static constexpr int64_t kMaxUnrolledElements = 8;
+  const Shape& shape = broadcast.shape();
+  if (!shape.has_layout()) {
+    return 1;
+  }
+  int64_t minor_elements = 1;
+  for (int64_t dim : shape.layout().minor_to_major()) {
+    if (absl::c_linear_search(broadcast.dimensions(), dim)) {
+      break;
+    }
+    minor_elements *= shape.dimensions(dim);
+  }
+  return minor_elements <= kMaxUnrolledElements ? minor_elements : 1;
+}
+
+/*static*/
 int64_t CpuHloCostAnalysis::GetFlopsPerElementwiseOpElement(
-    PrimitiveType type, HloOpcode opcode) const {
-  // Approximate cost relative to an add, for vectorized code on x86 and
-  // AArch64. Transcendentals are expanded to polynomial approximations.
+    PrimitiveType type, HloOpcode opcode) {
+  // Time of one element in a loop fusion, relative to an add of the same
+  // type. Measured with single-op loop fusions (x <- op(x), in cache, one
+  // thread) on an AVX2 x86 core: sine, cosine and power, and f64 log, are
+  // scalar libm calls, and f64 rsqrt is scalar code. Ops that were not
+  // measured are grouped with a measured op of the same implementation.
+  // Types narrower than f32 are computed in f32.
+  const bool f64 = type == F64 || type == C128;
   int64_t flops;
   switch (opcode) {
     case HloOpcode::kDivide:
-    case HloOpcode::kRemainder:
-      flops = 8;
+      flops = f64 ? 4 : 3;
       break;
-    case HloOpcode::kCbrt:
-    case HloOpcode::kRsqrt:
     case HloOpcode::kSqrt:
-      flops = 10;
+      flops = f64 ? 7 : 4;
       break;
-    case HloOpcode::kCos:
+    case HloOpcode::kRsqrt:
+      flops = f64 ? 41 : 4;
+      break;
+    case HloOpcode::kTanh:
     case HloOpcode::kErf:
+      flops = f64 ? 14 : 9;
+      break;
     case HloOpcode::kExp:
     case HloOpcode::kExpm1:
+    case HloOpcode::kLogistic:
+      flops = f64 ? 17 : 11;
+      break;
     case HloOpcode::kLog:
     case HloOpcode::kLog1p:
-    case HloOpcode::kLogistic:
+      flops = f64 ? 45 : 15;
+      break;
+    case HloOpcode::kCos:
     case HloOpcode::kSin:
     case HloOpcode::kTan:
-    case HloOpcode::kTanh:
-      flops = 15;
-      break;
+    case HloOpcode::kCbrt:
     case HloOpcode::kAtan2:
+    case HloOpcode::kRemainder:
+      flops = f64 ? 90 : 48;
+      break;
     case HloOpcode::kPower:
-      flops = 20;
+      flops = f64 ? 139 : 113;
       break;
     default:
       flops = 1;
@@ -102,6 +176,11 @@ int64_t CpuHloCostAnalysis::GetFlopsForElementwiseOp(HloOpcode op_code,
 int64_t CpuHloCostAnalysis::GetFlopsForElementwiseOp(
     const HloInstruction* instr) const {
   return GetFlopsForElementwiseOp(instr->opcode(), instr->shape());
+}
+
+int64_t CpuHloCostAnalysis::transcendental_flop_count(
+    const HloInstruction& hlo) const {
+  return GetPropertyForHlo(hlo, kTranscendentalFlopsKey, hlo_properties_);
 }
 
 float CpuHloCostAnalysis::CommonElementwiseUtilization(
