@@ -1,0 +1,332 @@
+HloModule jit__lambda, entry_computation_layout={(f64[4096,3]{1,0})->f64[4096,3]{1,0}}
+
+remainder.1 {
+  Arg_0.1 = f64[4096,4096,3]{2,1,0} parameter(0)
+  Arg_1.1 = f64[] parameter(1)
+  rem.2 = f64[4096,4096,3]{2,1,0} broadcast(Arg_1.1), dimensions={}
+  rem.3 = f64[4096,4096,3]{2,1,0} remainder(Arg_0.1, rem.2)
+  constant.17 = f64[] constant(0)
+  broadcast.7 = f64[4096,4096,3]{2,1,0} broadcast(constant.17), dimensions={}
+  lt.3 = pred[4096,4096,3]{2,1,0} compare(rem.3, broadcast.7), direction=LT
+  constant.18 = f64[] constant(0)
+  lt.4 = pred[] compare(Arg_1.1, constant.18), direction=LT
+  ne.4 = pred[4096,4096,3]{2,1,0} broadcast(lt.4), dimensions={}
+  ne.5 = pred[4096,4096,3]{2,1,0} compare(lt.3, ne.4), direction=NE
+  ne.3 = pred[4096,4096,3]{2,1,0} compare(rem.3, broadcast.7), direction=NE
+  and.1 = pred[4096,4096,3]{2,1,0} and(ne.5, ne.3)
+  add.3 = f64[4096,4096,3]{2,1,0} broadcast(Arg_1.1), dimensions={}
+  add.4 = f64[4096,4096,3]{2,1,0} add(rem.3, add.3)
+  select_n.1 = f64[4096,4096,3]{2,1,0} select(and.1, add.4, rem.3)
+  ROOT tuple.1 = (f64[4096,4096,3]{2,1,0}, pred[4096,4096,3]{2,1,0}) tuple(select_n.1, and.1)
+}
+
+region_0.2 {
+  reduce_sum.3 = f64[] parameter(0)
+  reduce_sum.4 = f64[] parameter(1)
+  ROOT reduce_sum.5 = f64[] add(reduce_sum.3, reduce_sum.4)
+}
+
+_where.3 {
+  Arg_0.4 = pred[4096,4096]{1,0} parameter(0)
+  Arg_1.4 = f64[4096,4096]{1,0} parameter(1)
+  Arg_2.1 = s64[] parameter(2)
+  convert_element_type.1 = f64[] convert(Arg_2.1)
+  broadcast_in_dim.4 = f64[4096,4096]{1,0} broadcast(convert_element_type.1), dimensions={}
+  ROOT select_n.3 = f64[4096,4096]{1,0} select(Arg_0.4, Arg_1.4, broadcast_in_dim.4)
+}
+
+safe_mask.4 {
+  Arg_0.5 = pred[4096,4096]{1,0} parameter(0)
+  Arg_1.5 = f64[4096,4096]{1,0} parameter(1)
+  constant.22 = s64[] constant(0)
+  jit__where_.2 = f64[4096,4096]{1,0} call(Arg_0.5, Arg_1.5, constant.22), to_apply=_where.3
+  sqrt.1 = f64[4096,4096]{1,0} sqrt(jit__where_.2)
+  jit__where_.3 = f64[4096,4096]{1,0} call(Arg_0.5, sqrt.1, constant.22), to_apply=_where.3
+  constant.21 = f64[] constant(0.5)
+  div.2 = f64[4096,4096]{1,0} broadcast(constant.21), dimensions={}
+  div.3 = f64[4096,4096]{1,0} divide(div.2, sqrt.1)
+  ROOT tuple.3 = (f64[4096,4096]{1,0}, f64[4096,4096]{1,0}) tuple(jit__where_.3, div.3)
+}
+
+_where_0.5 {
+  Arg_0.7 = pred[4096,4096]{1,0} parameter(0)
+  Arg_1.7 = f64[4096,4096]{1,0} parameter(1)
+  Arg_2.3 = s64[] parameter(2)
+  convert_element_type.3 = f64[] convert(Arg_2.3)
+  broadcast_in_dim.6 = f64[4096,4096]{1,0} broadcast(convert_element_type.3), dimensions={}
+  ROOT select_n.5 = f64[4096,4096]{1,0} select(Arg_0.7, Arg_1.7, broadcast_in_dim.6)
+}
+
+_where_1.6 {
+  Arg_0.9 = pred[4096,4096]{1,0} parameter(0)
+  Arg_1.9 = s64[] parameter(1)
+  convert_element_type.5 = f64[] convert(Arg_1.9)
+  broadcast_in_dim.8 = f64[4096,4096]{1,0} broadcast(convert_element_type.5), dimensions={}
+  Arg_2.5 = f64[4096,4096]{1,0} parameter(2)
+  ROOT select_n.7 = f64[4096,4096]{1,0} select(Arg_0.9, broadcast_in_dim.8, Arg_2.5)
+}
+
+_where_2.7 {
+  Arg_0.12 = pred[4096,4096]{1,0} parameter(0)
+  Arg_1.11 = f64[] parameter(1)
+  broadcast_in_dim.10 = f64[4096,4096]{1,0} broadcast(Arg_1.11), dimensions={}
+  Arg_2.7 = f64[4096,4096]{1,0} parameter(2)
+  ROOT select_n.9 = f64[4096,4096]{1,0} select(Arg_0.12, broadcast_in_dim.10, Arg_2.7)
+}
+
+nan_to_num.8 {
+  Arg_0.13 = f64[4096,4096]{1,0} parameter(0)
+  ne.7 = pred[4096,4096]{1,0} compare(Arg_0.13, Arg_0.13), direction=NE
+  constant.32 = f64[] constant(0)
+  jit__where_.7 = f64[4096,4096]{1,0} call(ne.7, constant.32, Arg_0.13), to_apply=_where_2.7
+  constant.29 = f64[] constant(inf)
+  eq.5 = f64[4096,4096]{1,0} broadcast(constant.29), dimensions={}
+  eq.6 = pred[4096,4096]{1,0} compare(jit__where_.7, eq.5), direction=EQ
+  constant.31 = f64[] constant(1.7976931348623157e+308)
+  jit__where_.8 = f64[4096,4096]{1,0} call(eq.6, constant.31, jit__where_.7), to_apply=_where_2.7
+  constant.28 = f64[] constant(-inf)
+  eq.4 = f64[4096,4096]{1,0} broadcast(constant.28), dimensions={}
+  eq.7 = pred[4096,4096]{1,0} compare(jit__where_.8, eq.4), direction=EQ
+  constant.30 = f64[] constant(-1.7976931348623157e+308)
+  jit__where_.9 = f64[4096,4096]{1,0} call(eq.7, constant.30, jit__where_.8), to_apply=_where_2.7
+  ROOT tuple.5 = (f64[4096,4096]{1,0}, pred[4096,4096]{1,0}, pred[4096,4096]{1,0}, pred[4096,4096]{1,0}) tuple(jit__where_.9, ne.7, eq.6, eq.7)
+}
+
+nan_to_num_3.9 {
+  Arg_0.15 = f64[4096,4096]{1,0} parameter(0)
+  ne.9 = pred[4096,4096]{1,0} compare(Arg_0.15, Arg_0.15), direction=NE
+  constant.40 = f64[] constant(0)
+  jit__where_.12 = f64[4096,4096]{1,0} call(ne.9, constant.40, Arg_0.15), to_apply=_where_2.7
+  constant.38 = f64[] constant(inf)
+  eq.13 = f64[4096,4096]{1,0} broadcast(constant.38), dimensions={}
+  eq.14 = pred[4096,4096]{1,0} compare(jit__where_.12, eq.13), direction=EQ
+  constant.39 = f64[] constant(1.7976931348623157e+308)
+  jit__where_.13 = f64[4096,4096]{1,0} call(eq.14, constant.39, jit__where_.12), to_apply=_where_2.7
+  constant.37 = f64[] constant(-inf)
+  eq.12 = f64[4096,4096]{1,0} broadcast(constant.37), dimensions={}
+  eq.15 = pred[4096,4096]{1,0} compare(jit__where_.13, eq.12), direction=EQ
+  ROOT tuple.7 = (pred[4096,4096]{1,0}, pred[4096,4096]{1,0}, pred[4096,4096]{1,0}) tuple(ne.9, eq.14, eq.15)
+}
+
+_where_5.10 {
+  Arg_0.18 = pred[4096,4096]{1,0} parameter(0)
+  constant.42 = f64[] constant(0)
+  broadcast_in_dim.12 = f64[4096,4096]{1,0} broadcast(constant.42), dimensions={}
+  Arg_1.14 = f64[4096,4096]{1,0} parameter(1)
+  ROOT select_n.11 = f64[4096,4096]{1,0} select(Arg_0.18, broadcast_in_dim.12, Arg_1.14)
+}
+
+nan_to_num_4.11 {
+  Arg_0.19 = pred[4096,4096]{1,0} parameter(0)
+  Arg_1.15 = pred[4096,4096]{1,0} parameter(1)
+  Arg_2.9 = pred[4096,4096]{1,0} parameter(2)
+  Arg_3.1 = f64[4096,4096]{1,0} parameter(3)
+  jit__where_.17 = f64[4096,4096]{1,0} call(Arg_2.9, Arg_3.1), to_apply=_where_5.10
+  jit__where_.18 = f64[4096,4096]{1,0} call(Arg_1.15, jit__where_.17), to_apply=_where_5.10
+  ROOT jit__where_.19 = f64[4096,4096]{1,0} call(Arg_0.19, jit__where_.18), to_apply=_where_5.10
+}
+
+_where_6.12 {
+  Arg_0.21 = pred[4096,4096]{1,0} parameter(0)
+  constant.44 = f64[] constant(0)
+  broadcast_in_dim.14 = f64[4096,4096]{1,0} broadcast(constant.44), dimensions={}
+  Arg_1.17 = f64[4096,4096]{1,0} parameter(1)
+  ROOT select_n.13 = f64[4096,4096]{1,0} select(Arg_0.21, broadcast_in_dim.14, Arg_1.17)
+}
+
+_where_7.13 {
+  Arg_0.23 = pred[4096,4096]{1,0} parameter(0)
+  Arg_1.19 = f64[4096,4096]{1,0} parameter(1)
+  constant.46 = f64[] constant(0)
+  broadcast_in_dim.16 = f64[4096,4096]{1,0} broadcast(constant.46), dimensions={}
+  ROOT select_n.15 = f64[4096,4096]{1,0} select(Arg_0.23, Arg_1.19, broadcast_in_dim.16)
+}
+
+_where_9.14 {
+  Arg_0.26 = pred[4096,4096]{1,0} parameter(0)
+  Arg_1.22 = f64[4096,4096]{1,0} parameter(1)
+  constant.48 = f64[] constant(0)
+  broadcast_in_dim.18 = f64[4096,4096]{1,0} broadcast(constant.48), dimensions={}
+  ROOT select_n.17 = f64[4096,4096]{1,0} select(Arg_0.26, Arg_1.22, broadcast_in_dim.18)
+}
+
+safe_mask_8.15 {
+  Arg_0.27 = pred[4096,4096]{1,0} parameter(0)
+  Arg_2.11 = f64[4096,4096]{1,0} parameter(2)
+  jit__where_.22 = f64[4096,4096]{1,0} call(Arg_0.27, Arg_2.11), to_apply=_where_9.14
+  Arg_1.23 = f64[4096,4096]{1,0} parameter(1)
+  mul.32 = f64[4096,4096]{1,0} multiply(jit__where_.22, Arg_1.23)
+  ROOT jit__where_.23 = f64[4096,4096]{1,0} call(Arg_0.27, mul.32), to_apply=_where_9.14
+}
+
+remainder_10.16 {
+  Arg_0.29 = pred[4096,4096,3]{2,1,0} parameter(0)
+  constant.50 = f64[] constant(0)
+  broadcast_in_dim.21 = f64[4096,4096,3]{2,1,0} broadcast(constant.50), dimensions={}
+  Arg_1.25 = f64[4096,4096,3]{2,1,0} parameter(1)
+  select_n.20 = f64[4096,4096,3]{2,1,0} select(Arg_0.29, broadcast_in_dim.21, Arg_1.25)
+  select_n.21 = f64[4096,4096,3]{2,1,0} select(Arg_0.29, Arg_1.25, broadcast_in_dim.21)
+  ROOT add_any.8 = f64[4096,4096,3]{2,1,0} add(select_n.20, select_n.21)
+}
+
+region_1.17 {
+  reduce_sum.10 = f64[] parameter(0)
+  reduce_sum.11 = f64[] parameter(1)
+  ROOT reduce_sum.12 = f64[] add(reduce_sum.10, reduce_sum.11)
+}
+
+region_2.18 {
+  reduce_sum.17 = f64[] parameter(0)
+  reduce_sum.18 = f64[] parameter(1)
+  ROOT reduce_sum.19 = f64[] add(reduce_sum.17, reduce_sum.18)
+}
+
+region_3.19 {
+  reduce_sum.24 = f64[] parameter(0)
+  reduce_sum.25 = f64[] parameter(1)
+  ROOT reduce_sum.26 = f64[] add(reduce_sum.24, reduce_sum.25)
+}
+
+region_4.20 {
+  reduce_sum.31 = f64[] parameter(0)
+  reduce_sum.32 = f64[] parameter(1)
+  ROOT reduce_sum.33 = f64[] add(reduce_sum.31, reduce_sum.32)
+}
+
+ENTRY main.21 {
+  R.1 = f64[4096,3]{1,0} parameter(0)
+  broadcast_in_dim.24 = f64[1,4096,3]{2,1,0} reshape(R.1)
+  sub.14 = f64[1,4096,3]{2,1,0} broadcast(broadcast_in_dim.24), dimensions={0,1,2}
+  sub.15 = f64[4096,3]{1,0} reshape(sub.14)
+  sub.16 = f64[4096,4096,3]{2,1,0} broadcast(sub.15), dimensions={1,2}
+  broadcast_in_dim.23 = f64[4096,1,3]{2,1,0} reshape(R.1)
+  sub.17 = f64[4096,1,3]{2,1,0} broadcast(broadcast_in_dim.23), dimensions={0,1,2}
+  sub.18 = f64[4096,3]{1,0} reshape(sub.17)
+  sub.19 = f64[4096,4096,3]{2,1,0} broadcast(sub.18), dimensions={0,2}
+  sub.20 = f64[4096,4096,3]{2,1,0} subtract(sub.16, sub.19)
+  constant.61 = f64[] constant(9)
+  broadcast.13 = f64[4096,4096,3]{2,1,0} broadcast(constant.61), dimensions={}
+  add.6 = f64[4096,4096,3]{2,1,0} add(sub.20, broadcast.13)
+  constant.65 = f64[] constant(18)
+  jvp_vmap_vmap_jit_remainder____.3 = (f64[4096,4096,3]{2,1,0}, pred[4096,4096,3]{2,1,0}) call(add.6, constant.65), to_apply=remainder.1
+  jvp_vmap_vmap_jit_remainder____.5 = pred[4096,4096,3]{2,1,0} get-tuple-element(jvp_vmap_vmap_jit_remainder____.3), index=1
+  jvp_vmap_vmap_jit_remainder____.4 = f64[4096,4096,3]{2,1,0} get-tuple-element(jvp_vmap_vmap_jit_remainder____.3), index=0
+  sub.21 = f64[4096,4096,3]{2,1,0} subtract(jvp_vmap_vmap_jit_remainder____.4, broadcast.13)
+  integer_pow.2 = f64[4096,4096,3]{2,1,0} multiply(sub.21, sub.21)
+  constant.64 = f64[] constant(0)
+  reduce_sum.35 = f64[4096,4096]{1,0} reduce(integer_pow.2, constant.64), dimensions={2}, to_apply=region_0.2
+  constant.59 = f64[] constant(0)
+  gt.2 = f64[4096,4096]{1,0} broadcast(constant.59), dimensions={}
+  gt.3 = pred[4096,4096]{1,0} compare(reduce_sum.35, gt.2), direction=GT
+  jvp_vmap_vmap_jit_safe_mask____.3 = (f64[4096,4096]{1,0}, f64[4096,4096]{1,0}) call(gt.3, reduce_sum.35), to_apply=safe_mask.4
+  jvp_vmap_vmap_jit_safe_mask____.5 = f64[4096,4096]{1,0} get-tuple-element(jvp_vmap_vmap_jit_safe_mask____.3), index=1
+  constant.57 = f64[] constant(1)
+  broadcast.11 = f64[4096,4096]{1,0} broadcast(constant.57), dimensions={}
+  jvp_vmap_vmap_jit_safe_mask____.4 = f64[4096,4096]{1,0} get-tuple-element(jvp_vmap_vmap_jit_safe_mask____.3), index=0
+  div.9 = f64[4096,4096]{1,0} divide(broadcast.11, jvp_vmap_vmap_jit_safe_mask____.4)
+  mul.41 = f64[4096,4096]{1,0} multiply(div.9, div.9)
+  mul.42 = f64[4096,4096]{1,0} multiply(mul.41, mul.41)
+  mul.43 = f64[4096,4096]{1,0} multiply(mul.42, mul.41)
+  mul.44 = f64[4096,4096]{1,0} multiply(mul.43, mul.43)
+  sub.24 = f64[4096,4096]{1,0} subtract(mul.44, mul.43)
+  constant.52 = f64[] constant(4)
+  broadcast.8 = f64[4096,4096]{1,0} broadcast(constant.52), dimensions={}
+  mul.45 = f64[4096,4096]{1,0} multiply(sub.24, broadcast.8)
+  jvp_jit_nan_to_num__.9 = (f64[4096,4096]{1,0}, pred[4096,4096]{1,0}, pred[4096,4096]{1,0}, pred[4096,4096]{1,0}) call(mul.45), to_apply=nan_to_num.8
+  jvp_jit_nan_to_num__.11 = pred[4096,4096]{1,0} get-tuple-element(jvp_jit_nan_to_num__.9), index=1
+  jvp_jit_nan_to_num__.12 = pred[4096,4096]{1,0} get-tuple-element(jvp_jit_nan_to_num__.9), index=2
+  jvp_jit_nan_to_num__.13 = pred[4096,4096]{1,0} get-tuple-element(jvp_jit_nan_to_num__.9), index=3
+  constant.58 = f64[] constant(2)
+  broadcast.12 = f64[4096,4096]{1,0} broadcast(constant.58), dimensions={}
+  lt.9 = pred[4096,4096]{1,0} compare(jvp_vmap_vmap_jit_safe_mask____.4, broadcast.12), direction=LT
+  constant.62 = s64[] constant(1)
+  constant.56 = f64[] constant(2.5)
+  lt.7 = f64[4096,4096]{1,0} broadcast(constant.56), dimensions={}
+  lt.8 = pred[4096,4096]{1,0} compare(jvp_vmap_vmap_jit_safe_mask____.4, lt.7), direction=LT
+  constant.55 = f64[] constant(6.25)
+  broadcast.10 = f64[4096,4096]{1,0} broadcast(constant.55), dimensions={}
+  pow.2 = f64[4096,4096]{1,0} power(jvp_vmap_vmap_jit_safe_mask____.4, broadcast.12)
+  sub.22 = f64[4096,4096]{1,0} subtract(broadcast.10, pow.2)
+  integer_pow.3 = f64[4096,4096]{1,0} multiply(sub.22, sub.22)
+  mul.38 = f64[4096,4096]{1,0} multiply(pow.2, broadcast.12)
+  add.7 = f64[4096,4096]{1,0} add(mul.38, broadcast.10)
+  constant.54 = f64[] constant(12)
+  sub.13 = f64[4096,4096]{1,0} broadcast(constant.54), dimensions={}
+  sub.23 = f64[4096,4096]{1,0} subtract(add.7, sub.13)
+  mul.39 = f64[4096,4096]{1,0} multiply(integer_pow.3, sub.23)
+  constant.53 = f64[] constant(11.390625)
+  broadcast.9 = f64[4096,4096]{1,0} broadcast(constant.53), dimensions={}
+  div.8 = f64[4096,4096]{1,0} divide(mul.39, broadcast.9)
+  constant.63 = s64[] constant(0)
+  jvp_jit__where__.2 = f64[4096,4096]{1,0} call(lt.8, div.8, constant.63), to_apply=_where_0.5
+  jvp_jit__where__.3 = f64[4096,4096]{1,0} call(lt.9, constant.62, jvp_jit__where__.2), to_apply=_where_1.6
+  jvp_jit_nan_to_num__.10 = f64[4096,4096]{1,0} get-tuple-element(jvp_jit_nan_to_num__.9), index=0
+  mul.46 = f64[4096,4096]{1,0} multiply(jvp_jit__where__.3, jvp_jit_nan_to_num__.10)
+  jvp_jit_nan_to_num__.14 = (pred[4096,4096]{1,0}, pred[4096,4096]{1,0}, pred[4096,4096]{1,0}) call(mul.46), to_apply=nan_to_num_3.9
+  jvp_jit_nan_to_num__.15 = pred[4096,4096]{1,0} get-tuple-element(jvp_jit_nan_to_num__.14), index=0
+  jvp_jit_nan_to_num__.16 = pred[4096,4096]{1,0} get-tuple-element(jvp_jit_nan_to_num__.14), index=1
+  jvp_jit_nan_to_num__.17 = pred[4096,4096]{1,0} get-tuple-element(jvp_jit_nan_to_num__.14), index=2
+  iota.4 = s64[4096]{0} iota(), iota_dimension=0
+  iota.5 = s64[4096,4096]{1,0} broadcast(iota.4), dimensions={0}
+  iota.6 = s64[4096]{0} iota(), iota_dimension=0
+  iota.7 = s64[4096,4096]{1,0} broadcast(iota.6), dimensions={1}
+  eq.17 = pred[4096,4096]{1,0} compare(iota.5, iota.7), direction=EQ
+  convert_element_type.7 = f64[4096,4096]{1,0} convert(eq.17)
+  sub.25 = f64[4096,4096]{1,0} subtract(broadcast.11, convert_element_type.7)
+  constant.51 = f64[] constant(-0.5)
+  broadcast_in_dim.22 = f64[4096,4096]{1,0} broadcast(constant.51), dimensions={}
+  mul.47 = f64[4096,4096]{1,0} multiply(sub.25, broadcast_in_dim.22)
+  transpose_jvp_jit_nan_to_num___.2 = f64[4096,4096]{1,0} call(jvp_jit_nan_to_num__.15, jvp_jit_nan_to_num__.16, jvp_jit_nan_to_num__.17, mul.47), to_apply=nan_to_num_4.11
+  mul.48 = f64[4096,4096]{1,0} multiply(jvp_jit__where__.3, transpose_jvp_jit_nan_to_num___.2)
+  transpose_jvp_jit_nan_to_num___.3 = f64[4096,4096]{1,0} call(jvp_jit_nan_to_num__.11, jvp_jit_nan_to_num__.12, jvp_jit_nan_to_num__.13, mul.48), to_apply=nan_to_num_4.11
+  mul.50 = f64[4096,4096]{1,0} multiply(transpose_jvp_jit_nan_to_num___.3, broadcast.8)
+  neg.4 = f64[4096,4096]{1,0} negate(mul.50)
+  mul.51 = f64[4096,4096]{1,0} multiply(mul.43, mul.50)
+  add_any.10 = f64[4096,4096]{1,0} add(neg.4, mul.51)
+  mul.52 = f64[4096,4096]{1,0} multiply(mul.50, mul.43)
+  add_any.11 = f64[4096,4096]{1,0} add(add_any.10, mul.52)
+  mul.53 = f64[4096,4096]{1,0} multiply(mul.42, add_any.11)
+  mul.54 = f64[4096,4096]{1,0} multiply(add_any.11, mul.41)
+  mul.55 = f64[4096,4096]{1,0} multiply(mul.41, mul.54)
+  add_any.12 = f64[4096,4096]{1,0} add(mul.53, mul.55)
+  mul.56 = f64[4096,4096]{1,0} multiply(mul.54, mul.41)
+  add_any.13 = f64[4096,4096]{1,0} add(add_any.12, mul.56)
+  mul.57 = f64[4096,4096]{1,0} multiply(div.9, add_any.13)
+  mul.58 = f64[4096,4096]{1,0} multiply(add_any.13, div.9)
+  add_any.14 = f64[4096,4096]{1,0} add(mul.57, mul.58)
+  mul.40 = f64[4096,4096]{1,0} multiply(jvp_vmap_vmap_jit_safe_mask____.4, jvp_vmap_vmap_jit_safe_mask____.4)
+  div.10 = f64[4096,4096]{1,0} divide(broadcast.11, mul.40)
+  mul.59 = f64[4096,4096]{1,0} multiply(add_any.14, div.10)
+  neg.5 = f64[4096,4096]{1,0} negate(mul.59)
+  mul.49 = f64[4096,4096]{1,0} multiply(transpose_jvp_jit_nan_to_num___.2, jvp_jit_nan_to_num__.10)
+  transpose_jvp_jit__where___.2 = f64[4096,4096]{1,0} call(lt.9, mul.49), to_apply=_where_6.12
+  transpose_jvp_jit__where___.3 = f64[4096,4096]{1,0} call(lt.8, transpose_jvp_jit__where___.2), to_apply=_where_7.13
+  div.11 = f64[4096,4096]{1,0} divide(transpose_jvp_jit__where___.3, broadcast.9)
+  mul.60 = f64[4096,4096]{1,0} multiply(integer_pow.3, div.11)
+  mul.62 = f64[4096,4096]{1,0} multiply(mul.60, broadcast.12)
+  mul.61 = f64[4096,4096]{1,0} multiply(div.11, sub.23)
+  mul.37 = f64[4096,4096]{1,0} multiply(sub.22, broadcast.12)
+  mul.63 = f64[4096,4096]{1,0} multiply(mul.61, mul.37)
+  neg.6 = f64[4096,4096]{1,0} negate(mul.63)
+  add_any.15 = f64[4096,4096]{1,0} add(mul.62, neg.6)
+  pow.3 = f64[4096,4096]{1,0} power(jvp_vmap_vmap_jit_safe_mask____.4, broadcast.11)
+  mul.36 = f64[4096,4096]{1,0} multiply(pow.3, broadcast.12)
+  mul.64 = f64[4096,4096]{1,0} multiply(add_any.15, mul.36)
+  add_any.16 = f64[4096,4096]{1,0} add(neg.5, mul.64)
+  transpose_jvp_vmap_vmap_jit_safe_mask_____.1 = f64[4096,4096]{1,0} call(gt.3, jvp_vmap_vmap_jit_safe_mask____.5, add_any.16), to_apply=safe_mask_8.15
+  broadcast_in_dim.25 = f64[4096,4096,3]{2,1,0} broadcast(transpose_jvp_vmap_vmap_jit_safe_mask_____.1), dimensions={0,1}
+  constant.60 = f64[] constant(2)
+  mul.34 = f64[4096,4096,3]{2,1,0} broadcast(constant.60), dimensions={}
+  mul.35 = f64[4096,4096,3]{2,1,0} multiply(sub.21, mul.34)
+  mul.65 = f64[4096,4096,3]{2,1,0} multiply(broadcast_in_dim.25, mul.35)
+  transpose_jvp_vmap_vmap_jit_remainder_____.1 = f64[4096,4096,3]{2,1,0} call(jvp_vmap_vmap_jit_remainder____.5, mul.65), to_apply=remainder_10.16
+  reduce_sum.36 = f64[4096,3]{1,0} reduce(transpose_jvp_vmap_vmap_jit_remainder_____.1, constant.64), dimensions={0}, to_apply=region_1.17
+  reshape.2 = f64[1,4096,3]{2,1,0} reshape(reduce_sum.36)
+  reduce_sum.38 = f64[4096,3]{1,0} reduce(reshape.2, constant.64), dimensions={0}, to_apply=region_3.19
+  neg.7 = f64[4096,4096,3]{2,1,0} negate(transpose_jvp_vmap_vmap_jit_remainder_____.1)
+  reduce_sum.37 = f64[4096,3]{1,0} reduce(neg.7, constant.64), dimensions={1}, to_apply=region_2.18
+  reshape.3 = f64[4096,1,3]{2,1,0} reshape(reduce_sum.37)
+  reduce_sum.39 = f64[4096,3]{1,0} reduce(reshape.3, constant.64), dimensions={1}, to_apply=region_4.20
+  ROOT add_any.17 = f64[4096,3]{1,0} add(reduce_sum.38, reduce_sum.39)
+}
+

@@ -1,0 +1,18 @@
+HloModule reduce_two_rows
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  x = f32[64,1048576] parameter(0)
+  y = f32[64,1048576] parameter(1)
+  m = f32[64,1048576] multiply(x, y)
+  e = f32[64,1048576] multiply(m, m)
+  c = f32[] constant(0)
+  r0 = f32[64] reduce(m, c), dimensions={1}, to_apply=add
+  r1 = f32[64] reduce(e, c), dimensions={1}, to_apply=add
+  ROOT t = (f32[64], f32[64]) tuple(r0, r1)
+}

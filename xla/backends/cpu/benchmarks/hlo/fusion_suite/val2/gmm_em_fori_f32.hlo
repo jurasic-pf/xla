@@ -1,0 +1,150 @@
+HloModule jit_gmm, entry_computation_layout={(f32[8192,16]{1,0}, f32[16,16]{1,0})->(f32[16,16]{1,0}, f32[16,16]{1,0}, f32[16]{0})}
+
+region_1.1 {
+  reduce_sum.3 = f32[] parameter(0)
+  reduce_sum.4 = f32[] parameter(1)
+  ROOT reduce_sum.5 = f32[] add(reduce_sum.3, reduce_sum.4)
+}
+
+region_2.2 {
+  reduce_max.3 = f32[] parameter(0)
+  reduce_max.4 = f32[] parameter(1)
+  ROOT reduce_max.5 = f32[] maximum(reduce_max.3, reduce_max.4)
+}
+
+region_3.3 {
+  reduce_sum.10 = f32[] parameter(0)
+  reduce_sum.11 = f32[] parameter(1)
+  ROOT reduce_sum.12 = f32[] add(reduce_sum.10, reduce_sum.11)
+}
+
+region_4.4 {
+  reduce_sum.17 = f32[] parameter(0)
+  reduce_sum.18 = f32[] parameter(1)
+  ROOT reduce_sum.19 = f32[] add(reduce_sum.17, reduce_sum.18)
+}
+
+region_0.5 {
+  arg_tuple.1 = (s32[], f32[16,16]{1,0}, f32[16,16]{1,0}, f32[16]{0}, f32[8192,16]{1,0}) parameter(0)
+  get-tuple-element.5 = s32[] get-tuple-element(arg_tuple.1), index=0
+  constant.13 = s32[] constant(1)
+  add.22 = s32[] add(get-tuple-element.5, constant.13)
+  get-tuple-element.9 = f32[8192,16]{1,0} get-tuple-element(arg_tuple.1), index=4
+  broadcast_in_dim.10 = f32[8192,1,16]{2,1,0} reshape(get-tuple-element.9)
+  sub.12 = f32[8192,1,16]{2,1,0} broadcast(broadcast_in_dim.10), dimensions={0,1,2}
+  sub.13 = f32[8192,16]{1,0} reshape(sub.12)
+  sub.14 = f32[8192,16,16]{2,1,0} broadcast(sub.13), dimensions={0,2}
+  get-tuple-element.6 = f32[16,16]{1,0} get-tuple-element(arg_tuple.1), index=1
+  broadcast_in_dim.11 = f32[1,16,16]{2,1,0} reshape(get-tuple-element.6)
+  sub.15 = f32[1,16,16]{2,1,0} broadcast(broadcast_in_dim.11), dimensions={0,1,2}
+  sub.16 = f32[16,16]{1,0} reshape(sub.15)
+  sub.17 = f32[8192,16,16]{2,1,0} broadcast(sub.16), dimensions={1,2}
+  sub.18 = f32[8192,16,16]{2,1,0} subtract(sub.14, sub.17)
+  integer_pow.2 = f32[8192,16,16]{2,1,0} multiply(sub.18, sub.18)
+  get-tuple-element.7 = f32[16,16]{1,0} get-tuple-element(arg_tuple.1), index=2
+  broadcast_in_dim.12 = f32[1,16,16]{2,1,0} reshape(get-tuple-element.7)
+  div.17 = f32[1,16,16]{2,1,0} broadcast(broadcast_in_dim.12), dimensions={0,1,2}
+  div.18 = f32[16,16]{1,0} reshape(div.17)
+  div.19 = f32[8192,16,16]{2,1,0} broadcast(div.18), dimensions={1,2}
+  div.20 = f32[8192,16,16]{2,1,0} divide(integer_pow.2, div.19)
+  broadcast_in_dim.13 = f32[1,16,16]{2,1,0} reshape(get-tuple-element.7)
+  constant.21 = f32[] constant(6.28318548)
+  broadcast.12 = f32[1,16,16]{2,1,0} broadcast(constant.21), dimensions={}
+  mul.5 = f32[1,16,16]{2,1,0} multiply(broadcast_in_dim.13, broadcast.12)
+  log.2 = f32[1,16,16]{2,1,0} log(mul.5)
+  add.12 = f32[1,16,16]{2,1,0} broadcast(log.2), dimensions={0,1,2}
+  add.13 = f32[16,16]{1,0} reshape(add.12)
+  add.14 = f32[8192,16,16]{2,1,0} broadcast(add.13), dimensions={1,2}
+  add.15 = f32[8192,16,16]{2,1,0} add(div.20, add.14)
+  constant.20 = f32[] constant(0)
+  reduce_sum.21 = f32[8192,16]{1,0} reduce(add.15, constant.20), dimensions={2}, to_apply=region_1.1
+  constant.19 = f32[] constant(-0.5)
+  broadcast.11 = f32[8192,16]{1,0} broadcast(constant.19), dimensions={}
+  mul.6 = f32[8192,16]{1,0} multiply(reduce_sum.21, broadcast.11)
+  get-tuple-element.8 = f32[16]{0} get-tuple-element(arg_tuple.1), index=3
+  log.3 = f32[16]{0} log(get-tuple-element.8)
+  broadcast_in_dim.14 = f32[1,16]{1,0} reshape(log.3)
+  add.16 = f32[1,16]{1,0} broadcast(broadcast_in_dim.14), dimensions={0,1}
+  add.17 = f32[16]{0} reshape(add.16)
+  add.18 = f32[8192,16]{1,0} broadcast(add.17), dimensions={1}
+  add.19 = f32[8192,16]{1,0} add(mul.6, add.18)
+  constant.18 = f32[] constant(-inf)
+  reduce_max.7 = f32[8192]{0} reduce(add.19, constant.18), dimensions={1}, to_apply=region_2.2
+  constant.17 = f32[] constant(-inf)
+  broadcast.10 = f32[8192]{0} broadcast(constant.17), dimensions={}
+  max.2 = f32[8192]{0} maximum(reduce_max.7, broadcast.10)
+  broadcast_in_dim.15 = f32[8192,1]{1,0} reshape(max.2)
+  sub.19 = f32[8192,1]{1,0} broadcast(broadcast_in_dim.15), dimensions={0,1}
+  sub.20 = f32[8192]{0} reshape(sub.19)
+  sub.21 = f32[8192,16]{1,0} broadcast(sub.20), dimensions={0}
+  sub.22 = f32[8192,16]{1,0} subtract(add.19, sub.21)
+  exp.1 = f32[8192,16]{1,0} exponential(sub.22)
+  reduce_sum.22 = f32[8192]{0} reduce(exp.1, constant.20), dimensions={1}, to_apply=region_3.3
+  broadcast_in_dim.16 = f32[8192,1]{1,0} reshape(reduce_sum.22)
+  div.21 = f32[8192,1]{1,0} broadcast(broadcast_in_dim.16), dimensions={0,1}
+  div.22 = f32[8192]{0} reshape(div.21)
+  div.23 = f32[8192,16]{1,0} broadcast(div.22), dimensions={0}
+  div.24 = f32[8192,16]{1,0} divide(exp.1, div.23)
+  transpose.2 = f32[16,8192]{0,1} transpose(div.24), dimensions={1,0}
+  dot_general.2 = f32[16,16]{1,0} dot(transpose.2, get-tuple-element.9), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  reduce_sum.23 = f32[16]{0} reduce(div.24, constant.20), dimensions={0}, to_apply=region_4.4
+  constant.16 = f32[] constant(1e-06)
+  broadcast.9 = f32[16]{0} broadcast(constant.16), dimensions={}
+  add.20 = f32[16]{0} add(reduce_sum.23, broadcast.9)
+  broadcast_in_dim.17 = f32[16,1]{1,0} reshape(add.20)
+  div.25 = f32[16,1]{1,0} broadcast(broadcast_in_dim.17), dimensions={0,1}
+  div.26 = f32[16]{0} reshape(div.25)
+  div.27 = f32[16,16]{1,0} broadcast(div.26), dimensions={0}
+  div.28 = f32[16,16]{1,0} divide(dot_general.2, div.27)
+  transpose.3 = f32[16,8192]{0,1} transpose(div.24), dimensions={1,0}
+  mul.7 = f32[8192,16]{1,0} multiply(get-tuple-element.9, get-tuple-element.9)
+  dot_general.3 = f32[16,16]{1,0} dot(transpose.3, mul.7), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  broadcast_in_dim.18 = f32[16,1]{1,0} reshape(add.20)
+  div.29 = f32[16,1]{1,0} broadcast(broadcast_in_dim.18), dimensions={0,1}
+  div.30 = f32[16]{0} reshape(div.29)
+  div.31 = f32[16,16]{1,0} broadcast(div.30), dimensions={0}
+  div.32 = f32[16,16]{1,0} divide(dot_general.3, div.31)
+  integer_pow.3 = f32[16,16]{1,0} multiply(div.28, div.28)
+  sub.23 = f32[16,16]{1,0} subtract(div.32, integer_pow.3)
+  constant.15 = f32[] constant(0.001)
+  broadcast.8 = f32[16,16]{1,0} broadcast(constant.15), dimensions={}
+  add.21 = f32[16,16]{1,0} add(sub.23, broadcast.8)
+  max.3 = f32[16,16]{1,0} maximum(add.21, broadcast.8)
+  constant.14 = f32[] constant(8192)
+  broadcast.7 = f32[16]{0} broadcast(constant.14), dimensions={}
+  div.33 = f32[16]{0} divide(add.20, broadcast.7)
+  ROOT tuple.1 = (s32[], f32[16,16]{1,0}, f32[16,16]{1,0}, f32[16]{0}, f32[8192,16]{1,0}) tuple(add.22, div.28, max.3, div.33, get-tuple-element.9)
+}
+
+region_5.6 {
+  arg_tuple.3 = (s32[], f32[16,16]{1,0}, f32[16,16]{1,0}, f32[16]{0}, f32[8192,16]{1,0}) parameter(0)
+  get-tuple-element.16 = f32[16,16]{1,0} get-tuple-element(arg_tuple.3), index=1
+  get-tuple-element.17 = f32[16,16]{1,0} get-tuple-element(arg_tuple.3), index=2
+  get-tuple-element.18 = f32[16]{0} get-tuple-element(arg_tuple.3), index=3
+  get-tuple-element.19 = f32[8192,16]{1,0} get-tuple-element(arg_tuple.3), index=4
+  get-tuple-element.15 = s32[] get-tuple-element(arg_tuple.3), index=0
+  constant.23 = s32[] constant(20)
+  ROOT lt.1 = pred[] compare(get-tuple-element.15, constant.23), direction=LT
+}
+
+ENTRY main.7 {
+  constant.26 = s32[] constant(0)
+  mu0.1 = f32[16,16]{1,0} parameter(1)
+  constant.27 = f32[] constant(0)
+  mul.8 = f32[16,16]{1,0} broadcast(constant.27), dimensions={}
+  mul.9 = f32[16,16]{1,0} multiply(mu0.1, mul.8)
+  add.23 = f32[16,16]{1,0} add(mu0.1, mul.9)
+  constant.25 = f32[] constant(1)
+  broadcast_in_dim.19 = f32[16,16]{1,0} broadcast(constant.25), dimensions={}
+  constant.24 = f32[] constant(0.0625)
+  broadcast.13 = f32[16]{0} broadcast(constant.24), dimensions={}
+  x.1 = f32[8192,16]{1,0} parameter(0)
+  while.6 = (s32[], f32[16,16]{1,0}, f32[16,16]{1,0}, f32[16]{0}, f32[8192,16]{1,0}) tuple(constant.26, add.23, broadcast_in_dim.19, broadcast.13, x.1)
+  while.7 = (s32[], f32[16,16]{1,0}, f32[16,16]{1,0}, f32[16]{0}, f32[8192,16]{1,0}) while(while.6), condition=region_5.6, body=region_0.5
+  while.8 = s32[] get-tuple-element(while.7), index=0
+  while.9 = f32[16,16]{1,0} get-tuple-element(while.7), index=1
+  while.10 = f32[16,16]{1,0} get-tuple-element(while.7), index=2
+  while.11 = f32[16]{0} get-tuple-element(while.7), index=3
+  ROOT tuple.3 = (f32[16,16]{1,0}, f32[16,16]{1,0}, f32[16]{0}) tuple(while.9, while.10, while.11)
+}
+

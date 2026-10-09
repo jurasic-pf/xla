@@ -1,0 +1,228 @@
+HloModule jit_kuramoto, entry_computation_layout={(f64[262144]{0}, f64[262144]{0})->f64[262144]{0}}
+
+region_1.1 {
+  reduce_sum.3 = f64[] parameter(0)
+  reduce_sum.4 = f64[] parameter(1)
+  ROOT reduce_sum.5 = f64[] add(reduce_sum.3, reduce_sum.4)
+}
+
+region_2.2 {
+  reduce_sum.10 = f64[] parameter(0)
+  reduce_sum.11 = f64[] parameter(1)
+  ROOT reduce_sum.12 = f64[] add(reduce_sum.10, reduce_sum.11)
+}
+
+_where.3 {
+  Arg_0.2 = pred[1]{0} parameter(0)
+  Arg_1.2 = f64[1]{0} parameter(1)
+  Arg_2.1 = f64[1]{0} parameter(2)
+  ROOT select_n.1 = f64[1]{0} select(Arg_0.2, Arg_1.2, Arg_2.1)
+}
+
+_where_0.4 {
+  Arg_0.4 = pred[1]{0} parameter(0)
+  Arg_1.4 = f64[] parameter(1)
+  broadcast_in_dim.3 = f64[1]{0} reshape(Arg_1.4)
+  Arg_2.3 = f64[1]{0} parameter(2)
+  ROOT select_n.3 = f64[1]{0} select(Arg_0.4, broadcast_in_dim.3, Arg_2.3)
+}
+
+hypot.5 {
+  Arg_0.5 = f64[1]{0} parameter(0)
+  abs.2 = f64[1]{0} abs(Arg_0.5)
+  constant.15 = f64[1]{0} constant({inf})
+  eq.4 = pred[1]{0} compare(abs.2, constant.15), direction=EQ
+  Arg_1.5 = f64[1]{0} parameter(1)
+  abs.3 = f64[1]{0} abs(Arg_1.5)
+  eq.5 = pred[1]{0} compare(abs.3, constant.15), direction=EQ
+  or.1 = pred[1]{0} or(eq.4, eq.5)
+  constant.16 = f64[] constant(inf)
+  max.1 = f64[1]{0} maximum(abs.2, abs.3)
+  constant.14 = f64[1]{0} constant({0})
+  eq.6 = pred[1]{0} compare(max.1, constant.14), direction=EQ
+  min.1 = f64[1]{0} minimum(abs.2, abs.3)
+  eq.7 = pred[1]{0} compare(max.1, constant.14), direction=EQ
+  constant.13 = f64[1]{0} constant({1})
+  jit__where_.3 = f64[1]{0} call(eq.7, constant.13, max.1), to_apply=_where.3
+  div.3 = f64[1]{0} divide(min.1, jit__where_.3)
+  square.1 = f64[1]{0} multiply(div.3, div.3)
+  add.1 = f64[1]{0} add(square.1, constant.13)
+  sqrt.1 = f64[1]{0} sqrt(add.1)
+  mul.1 = f64[1]{0} multiply(max.1, sqrt.1)
+  jit__where_.4 = f64[1]{0} call(eq.6, max.1, mul.1), to_apply=_where.3
+  ROOT jit__where_.5 = f64[1]{0} call(or.1, constant.16, jit__where_.4), to_apply=_where_0.4
+}
+
+region_3.6 {
+  reduce_sum.17 = f64[] parameter(0)
+  reduce_sum.18 = f64[] parameter(1)
+  ROOT reduce_sum.19 = f64[] add(reduce_sum.17, reduce_sum.18)
+}
+
+region_4.7 {
+  reduce_sum.24 = f64[] parameter(0)
+  reduce_sum.25 = f64[] parameter(1)
+  ROOT reduce_sum.26 = f64[] add(reduce_sum.24, reduce_sum.25)
+}
+
+region_5.8 {
+  reduce_sum.31 = f64[] parameter(0)
+  reduce_sum.32 = f64[] parameter(1)
+  ROOT reduce_sum.33 = f64[] add(reduce_sum.31, reduce_sum.32)
+}
+
+region_6.9 {
+  reduce_sum.38 = f64[] parameter(0)
+  reduce_sum.39 = f64[] parameter(1)
+  ROOT reduce_sum.40 = f64[] add(reduce_sum.38, reduce_sum.39)
+}
+
+region_7.10 {
+  reduce_sum.45 = f64[] parameter(0)
+  reduce_sum.46 = f64[] parameter(1)
+  ROOT reduce_sum.47 = f64[] add(reduce_sum.45, reduce_sum.46)
+}
+
+region_8.11 {
+  reduce_sum.52 = f64[] parameter(0)
+  reduce_sum.53 = f64[] parameter(1)
+  ROOT reduce_sum.54 = f64[] add(reduce_sum.52, reduce_sum.53)
+}
+
+region_0.12 {
+  arg_tuple.1 = (s64[], f64[262144]{0}, f64[262144]{0}) parameter(0)
+  get-tuple-element.3 = s64[] get-tuple-element(arg_tuple.1), index=0
+  constant.17 = s64[] constant(1)
+  add.25 = s64[] add(get-tuple-element.3, constant.17)
+  get-tuple-element.4 = f64[262144]{0} get-tuple-element(arg_tuple.1), index=1
+  get-tuple-element.5 = f64[262144]{0} get-tuple-element(arg_tuple.1), index=2
+  sin.8 = f64[262144]{0} sine(get-tuple-element.4)
+  constant.24 = f64[] constant(0)
+  reduce_sum.56 = f64[] reduce(sin.8, constant.24), dimensions={0}, to_apply=region_1.1
+  broadcast_in_dim.10 = f64[1]{0} reshape(reduce_sum.56)
+  constant.23 = f64[1]{0} constant({262144})
+  div.10 = f64[1]{0} divide(broadcast_in_dim.10, constant.23)
+  cos.4 = f64[262144]{0} cosine(get-tuple-element.4)
+  reduce_sum.57 = f64[] reduce(cos.4, constant.24), dimensions={0}, to_apply=region_2.2
+  broadcast_in_dim.11 = f64[1]{0} reshape(reduce_sum.57)
+  div.11 = f64[1]{0} divide(broadcast_in_dim.11, constant.23)
+  jit_hypot_.4 = f64[1]{0} call(div.10, div.11), to_apply=hypot.5
+  constant.22 = f64[1]{0} constant({1.5})
+  mul.28 = f64[1]{0} multiply(jit_hypot_.4, constant.22)
+  mul.29 = f64[1]{0} broadcast(mul.28), dimensions={0}
+  mul.30 = f64[] reshape(mul.29)
+  mul.31 = f64[262144]{0} broadcast(mul.30), dimensions={}
+  atan2.4 = f64[1]{0} atan2(div.10, div.11)
+  sub.16 = f64[1]{0} broadcast(atan2.4), dimensions={0}
+  sub.17 = f64[] reshape(sub.16)
+  sub.18 = f64[262144]{0} broadcast(sub.17), dimensions={}
+  sub.19 = f64[262144]{0} subtract(sub.18, get-tuple-element.4)
+  sin.9 = f64[262144]{0} sine(sub.19)
+  mul.32 = f64[262144]{0} multiply(mul.31, sin.9)
+  add.14 = f64[262144]{0} add(get-tuple-element.5, mul.32)
+  constant.21 = f64[] constant(0.005)
+  broadcast.7 = f64[262144]{0} broadcast(constant.21), dimensions={}
+  mul.33 = f64[262144]{0} multiply(add.14, broadcast.7)
+  add.15 = f64[262144]{0} add(get-tuple-element.4, mul.33)
+  sin.10 = f64[262144]{0} sine(add.15)
+  reduce_sum.58 = f64[] reduce(sin.10, constant.24), dimensions={0}, to_apply=region_3.6
+  broadcast_in_dim.12 = f64[1]{0} reshape(reduce_sum.58)
+  div.12 = f64[1]{0} divide(broadcast_in_dim.12, constant.23)
+  cos.5 = f64[262144]{0} cosine(add.15)
+  reduce_sum.59 = f64[] reduce(cos.5, constant.24), dimensions={0}, to_apply=region_4.7
+  broadcast_in_dim.13 = f64[1]{0} reshape(reduce_sum.59)
+  div.13 = f64[1]{0} divide(broadcast_in_dim.13, constant.23)
+  jit_hypot_.5 = f64[1]{0} call(div.12, div.13), to_apply=hypot.5
+  mul.34 = f64[1]{0} multiply(jit_hypot_.5, constant.22)
+  mul.35 = f64[1]{0} broadcast(mul.34), dimensions={0}
+  mul.36 = f64[] reshape(mul.35)
+  mul.37 = f64[262144]{0} broadcast(mul.36), dimensions={}
+  atan2.5 = f64[1]{0} atan2(div.12, div.13)
+  sub.20 = f64[1]{0} broadcast(atan2.5), dimensions={0}
+  sub.21 = f64[] reshape(sub.20)
+  sub.22 = f64[262144]{0} broadcast(sub.21), dimensions={}
+  sub.23 = f64[262144]{0} subtract(sub.22, add.15)
+  sin.11 = f64[262144]{0} sine(sub.23)
+  mul.38 = f64[262144]{0} multiply(mul.37, sin.11)
+  add.16 = f64[262144]{0} add(get-tuple-element.5, mul.38)
+  constant.19 = f64[] constant(2)
+  broadcast.5 = f64[262144]{0} broadcast(constant.19), dimensions={}
+  mul.51 = f64[262144]{0} multiply(add.16, broadcast.5)
+  add.21 = f64[262144]{0} add(add.14, mul.51)
+  mul.39 = f64[262144]{0} multiply(add.16, broadcast.7)
+  add.17 = f64[262144]{0} add(get-tuple-element.4, mul.39)
+  sin.12 = f64[262144]{0} sine(add.17)
+  reduce_sum.60 = f64[] reduce(sin.12, constant.24), dimensions={0}, to_apply=region_5.8
+  broadcast_in_dim.14 = f64[1]{0} reshape(reduce_sum.60)
+  div.14 = f64[1]{0} divide(broadcast_in_dim.14, constant.23)
+  cos.6 = f64[262144]{0} cosine(add.17)
+  reduce_sum.61 = f64[] reduce(cos.6, constant.24), dimensions={0}, to_apply=region_6.9
+  broadcast_in_dim.15 = f64[1]{0} reshape(reduce_sum.61)
+  div.15 = f64[1]{0} divide(broadcast_in_dim.15, constant.23)
+  jit_hypot_.6 = f64[1]{0} call(div.14, div.15), to_apply=hypot.5
+  mul.40 = f64[1]{0} multiply(jit_hypot_.6, constant.22)
+  mul.41 = f64[1]{0} broadcast(mul.40), dimensions={0}
+  mul.42 = f64[] reshape(mul.41)
+  mul.43 = f64[262144]{0} broadcast(mul.42), dimensions={}
+  atan2.6 = f64[1]{0} atan2(div.14, div.15)
+  sub.24 = f64[1]{0} broadcast(atan2.6), dimensions={0}
+  sub.25 = f64[] reshape(sub.24)
+  sub.26 = f64[262144]{0} broadcast(sub.25), dimensions={}
+  sub.27 = f64[262144]{0} subtract(sub.26, add.17)
+  sin.13 = f64[262144]{0} sine(sub.27)
+  mul.44 = f64[262144]{0} multiply(mul.43, sin.13)
+  add.18 = f64[262144]{0} add(get-tuple-element.5, mul.44)
+  mul.52 = f64[262144]{0} multiply(add.18, broadcast.5)
+  add.22 = f64[262144]{0} add(add.21, mul.52)
+  constant.20 = f64[] constant(0.01)
+  broadcast.6 = f64[262144]{0} broadcast(constant.20), dimensions={}
+  mul.45 = f64[262144]{0} multiply(add.18, broadcast.6)
+  add.19 = f64[262144]{0} add(get-tuple-element.4, mul.45)
+  sin.14 = f64[262144]{0} sine(add.19)
+  reduce_sum.62 = f64[] reduce(sin.14, constant.24), dimensions={0}, to_apply=region_7.10
+  broadcast_in_dim.16 = f64[1]{0} reshape(reduce_sum.62)
+  div.16 = f64[1]{0} divide(broadcast_in_dim.16, constant.23)
+  cos.7 = f64[262144]{0} cosine(add.19)
+  reduce_sum.63 = f64[] reduce(cos.7, constant.24), dimensions={0}, to_apply=region_8.11
+  broadcast_in_dim.17 = f64[1]{0} reshape(reduce_sum.63)
+  div.17 = f64[1]{0} divide(broadcast_in_dim.17, constant.23)
+  jit_hypot_.7 = f64[1]{0} call(div.16, div.17), to_apply=hypot.5
+  mul.46 = f64[1]{0} multiply(jit_hypot_.7, constant.22)
+  mul.47 = f64[1]{0} broadcast(mul.46), dimensions={0}
+  mul.48 = f64[] reshape(mul.47)
+  mul.49 = f64[262144]{0} broadcast(mul.48), dimensions={}
+  atan2.7 = f64[1]{0} atan2(div.16, div.17)
+  sub.28 = f64[1]{0} broadcast(atan2.7), dimensions={0}
+  sub.29 = f64[] reshape(sub.28)
+  sub.30 = f64[262144]{0} broadcast(sub.29), dimensions={}
+  sub.31 = f64[262144]{0} subtract(sub.30, add.19)
+  sin.15 = f64[262144]{0} sine(sub.31)
+  mul.50 = f64[262144]{0} multiply(mul.49, sin.15)
+  add.20 = f64[262144]{0} add(get-tuple-element.5, mul.50)
+  add.23 = f64[262144]{0} add(add.22, add.20)
+  constant.18 = f64[] constant(0.0016666666666666668)
+  broadcast.4 = f64[262144]{0} broadcast(constant.18), dimensions={}
+  mul.53 = f64[262144]{0} multiply(add.23, broadcast.4)
+  add.24 = f64[262144]{0} add(get-tuple-element.4, mul.53)
+  ROOT tuple.1 = (s64[], f64[262144]{0}, f64[262144]{0}) tuple(add.25, add.24, get-tuple-element.5)
+}
+
+region_9.13 {
+  arg_tuple.3 = (s64[], f64[262144]{0}, f64[262144]{0}) parameter(0)
+  get-tuple-element.10 = f64[262144]{0} get-tuple-element(arg_tuple.3), index=1
+  get-tuple-element.11 = f64[262144]{0} get-tuple-element(arg_tuple.3), index=2
+  get-tuple-element.9 = s64[] get-tuple-element(arg_tuple.3), index=0
+  constant.26 = s64[] constant(200)
+  ROOT lt.1 = pred[] compare(get-tuple-element.9, constant.26), direction=LT
+}
+
+ENTRY main.14 {
+  constant.27 = s64[] constant(0)
+  theta.1 = f64[262144]{0} parameter(0)
+  omega.1 = f64[262144]{0} parameter(1)
+  while.4 = (s64[], f64[262144]{0}, f64[262144]{0}) tuple(constant.27, theta.1, omega.1)
+  while.5 = (s64[], f64[262144]{0}, f64[262144]{0}) while(while.4), condition=region_9.13, body=region_0.12
+  while.6 = s64[] get-tuple-element(while.5), index=0
+  ROOT while.7 = f64[262144]{0} get-tuple-element(while.5), index=1
+}
+

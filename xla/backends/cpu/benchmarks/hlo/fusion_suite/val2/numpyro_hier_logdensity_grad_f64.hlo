@@ -1,0 +1,447 @@
+HloModule jit_np_lp, entry_computation_layout={(f64[64]{0}, f64[64]{0}, f64[], f64[], f64[], /*index=5*/f64[2048]{0}, f64[2048]{0})->(f64[], f64[64]{0}, f64[64]{0}, f64[], f64[], /*index=5*/f64[])}
+
+_where.1 {
+  Arg_0.2 = pred[] parameter(0)
+  Arg_1.2 = s64[] parameter(1)
+  Arg_2.1 = s64[] parameter(2)
+  ROOT select_n.1 = s64[] select(Arg_0.2, Arg_1.2, Arg_2.1)
+}
+
+remainder.2 {
+  Arg_0.3 = s64[2048]{0} parameter(0)
+  Arg_1.3 = s64[] parameter(1)
+  constant.46 = s64[] constant(0)
+  eq.1 = pred[] compare(Arg_1.3, constant.46), direction=EQ
+  constant.45 = s64[] constant(1)
+  jit__where_.1 = s64[] call(eq.1, constant.45, Arg_1.3), to_apply=_where.1
+  rem.2 = s64[2048]{0} broadcast(jit__where_.1), dimensions={}
+  rem.3 = s64[2048]{0} remainder(Arg_0.3, rem.2)
+  constant.44 = s64[] constant(0)
+  broadcast.13 = s64[2048]{0} broadcast(constant.44), dimensions={}
+  lt.2 = pred[2048]{0} compare(rem.3, broadcast.13), direction=LT
+  lt.3 = pred[] compare(jit__where_.1, constant.46), direction=LT
+  ne.6 = pred[2048]{0} broadcast(lt.3), dimensions={}
+  ne.7 = pred[2048]{0} compare(lt.2, ne.6), direction=NE
+  ne.5 = pred[2048]{0} compare(rem.3, broadcast.13), direction=NE
+  and.1 = pred[2048]{0} and(ne.7, ne.5)
+  add.2 = s64[2048]{0} broadcast(jit__where_.1), dimensions={}
+  add.3 = s64[2048]{0} add(rem.3, add.2)
+  ROOT select_n.3 = s64[2048]{0} select(and.1, add.3, rem.3)
+}
+
+_where_0.3 {
+  Arg_0.5 = pred[] parameter(0)
+  Arg_1.5 = f64[] parameter(1)
+  Arg_2.3 = f64[] parameter(2)
+  ROOT select_n.7 = f64[] select(Arg_0.5, Arg_1.5, Arg_2.3)
+}
+
+_where_1.4 {
+  Arg_0.7 = pred[64]{0} parameter(0)
+  Arg_1.7 = f64[64]{0} parameter(1)
+  Arg_2.5 = f64[] parameter(2)
+  broadcast_in_dim.3 = f64[64]{0} broadcast(Arg_2.5), dimensions={}
+  ROOT select_n.9 = f64[64]{0} select(Arg_0.7, Arg_1.7, broadcast_in_dim.3)
+}
+
+region_0.5 {
+  reduce_sum.3 = f64[] parameter(0)
+  reduce_sum.4 = f64[] parameter(1)
+  ROOT reduce_sum.5 = f64[] add(reduce_sum.3, reduce_sum.4)
+}
+
+region_1.6 {
+  reduce_sum.10 = f64[] parameter(0)
+  reduce_sum.11 = f64[] parameter(1)
+  ROOT reduce_sum.12 = f64[] add(reduce_sum.10, reduce_sum.11)
+}
+
+region_2.7 {
+  reduce_sum.17 = f64[] parameter(0)
+  reduce_sum.18 = f64[] parameter(1)
+  ROOT reduce_sum.19 = f64[] add(reduce_sum.17, reduce_sum.18)
+}
+
+region_3.8 {
+  reduce_sum.24 = f64[] parameter(0)
+  reduce_sum.25 = f64[] parameter(1)
+  ROOT reduce_sum.26 = f64[] add(reduce_sum.24, reduce_sum.25)
+}
+
+_where_2.9 {
+  Arg_0.9 = pred[2048]{0} parameter(0)
+  Arg_1.9 = f64[2048]{0} parameter(1)
+  Arg_2.7 = f64[] parameter(2)
+  broadcast_in_dim.7 = f64[2048]{0} broadcast(Arg_2.7), dimensions={}
+  ROOT select_n.11 = f64[2048]{0} select(Arg_0.9, Arg_1.9, broadcast_in_dim.7)
+}
+
+region_4.10 {
+  reduce_sum.31 = f64[] parameter(0)
+  reduce_sum.32 = f64[] parameter(1)
+  ROOT reduce_sum.33 = f64[] add(reduce_sum.31, reduce_sum.32)
+}
+
+_where_3.11 {
+  Arg_0.11 = pred[2048]{0} parameter(0)
+  Arg_1.11 = f64[2048]{0} parameter(1)
+  constant.48 = f64[] constant(0)
+  broadcast_in_dim.9 = f64[2048]{0} broadcast(constant.48), dimensions={}
+  ROOT select_n.13 = f64[2048]{0} select(Arg_0.11, Arg_1.11, broadcast_in_dim.9)
+}
+
+region_5.12 {
+  reduce_sum.38 = f64[] parameter(0)
+  reduce_sum.39 = f64[] parameter(1)
+  ROOT reduce_sum.40 = f64[] add(reduce_sum.38, reduce_sum.39)
+}
+
+region_6.13 {
+  reduce_sum.45 = f64[] parameter(0)
+  reduce_sum.46 = f64[] parameter(1)
+  ROOT reduce_sum.47 = f64[] add(reduce_sum.45, reduce_sum.46)
+}
+
+_where_4.14 {
+  Arg_0.13 = pred[] parameter(0)
+  Arg_1.13 = f64[] parameter(1)
+  constant.50 = f64[] constant(0)
+  ROOT select_n.15 = f64[] select(Arg_0.13, Arg_1.13, constant.50)
+}
+
+region_7.15 {
+  reduce_sum.52 = f64[] parameter(0)
+  reduce_sum.53 = f64[] parameter(1)
+  ROOT reduce_sum.54 = f64[] add(reduce_sum.52, reduce_sum.53)
+}
+
+region_8.16 {
+  reduce_sum.59 = f64[] parameter(0)
+  reduce_sum.60 = f64[] parameter(1)
+  ROOT reduce_sum.61 = f64[] add(reduce_sum.59, reduce_sum.60)
+}
+
+_where_5.17 {
+  Arg_0.15 = pred[64]{0} parameter(0)
+  Arg_1.15 = f64[64]{0} parameter(1)
+  constant.52 = f64[] constant(0)
+  broadcast_in_dim.13 = f64[64]{0} broadcast(constant.52), dimensions={}
+  ROOT select_n.17 = f64[64]{0} select(Arg_0.15, Arg_1.15, broadcast_in_dim.13)
+}
+
+region_9.18 {
+  reduce_sum.66 = f64[] parameter(0)
+  reduce_sum.67 = f64[] parameter(1)
+  ROOT reduce_sum.68 = f64[] add(reduce_sum.66, reduce_sum.67)
+}
+
+region_10.19 {
+  reduce_sum.73 = f64[] parameter(0)
+  reduce_sum.74 = f64[] parameter(1)
+  ROOT reduce_sum.75 = f64[] add(reduce_sum.73, reduce_sum.74)
+}
+
+region_11.20 {
+  reduce_sum.80 = f64[] parameter(0)
+  reduce_sum.81 = f64[] parameter(1)
+  ROOT reduce_sum.82 = f64[] add(reduce_sum.80, reduce_sum.81)
+}
+
+region_12.21 {
+  scatter-add.2 = f64[] parameter(0)
+  scatter-add.3 = f64[] parameter(1)
+  ROOT add.20 = f64[] add(scatter-add.2, scatter-add.3)
+}
+
+region_13.22 {
+  scatter-add.7 = f64[] parameter(0)
+  scatter-add.8 = f64[] parameter(1)
+  ROOT add.22 = f64[] add(scatter-add.7, scatter-add.8)
+}
+
+ENTRY main.23 {
+  params__mu__.1 = f64[] parameter(2)
+  eq.8 = pred[] compare(params__mu__.1, params__mu__.1), direction=EQ
+  constant.88 = f64[] constant(inf)
+  ne.22 = pred[] compare(params__mu__.1, constant.88), direction=NE
+  and.14 = pred[] and(eq.8, ne.22)
+  constant.87 = f64[] constant(-inf)
+  ne.23 = pred[] compare(params__mu__.1, constant.87), direction=NE
+  and.15 = pred[] and(and.14, ne.23)
+  constant.92 = f64[] constant(5)
+  div.29 = f64[] divide(params__mu__.1, constant.92)
+  integer_pow.5 = f64[] multiply(div.29, div.29)
+  constant.89 = f64[] constant(-0.5)
+  mul.36 = f64[] multiply(integer_pow.5, constant.89)
+  constant.81 = f64[] constant(2.5283764456387732)
+  sub.17 = f64[] subtract(mul.36, constant.81)
+  jvp_jit__where__.8 = f64[] call(and.15, sub.17, constant.87), to_apply=_where_0.3
+  params__tau__.1 = f64[] parameter(4)
+  constant.91 = f64[] constant(0)
+  gt.2 = pred[] compare(params__tau__.1, constant.91), direction=GT
+  eq.9 = pred[] compare(params__tau__.1, params__tau__.1), direction=EQ
+  ne.24 = pred[] compare(params__tau__.1, constant.88), direction=NE
+  and.16 = pred[] and(eq.9, ne.24)
+  ne.25 = pred[] compare(params__tau__.1, constant.87), direction=NE
+  and.17 = pred[] and(and.16, ne.25)
+  constant.80 = f64[] constant(-2.7541677982835004)
+  div.30 = f64[] divide(params__tau__.1, constant.92)
+  integer_pow.6 = f64[] multiply(div.30, div.30)
+  log1p.2 = f64[] log-plus-one(integer_pow.6)
+  sub.18 = f64[] subtract(constant.80, log1p.2)
+  jvp_jit__where__.9 = f64[] call(and.17, sub.18, constant.87), to_apply=_where_0.3
+  constant.79 = f64[] constant(0.69314718055994529)
+  add.27 = f64[] add(jvp_jit__where__.9, constant.79)
+  jvp_jit__where__.10 = f64[] call(gt.2, add.27, constant.87), to_apply=_where_0.3
+  add.33 = f64[] add(jvp_jit__where__.8, jvp_jit__where__.10)
+  params__a__.1 = f64[64]{0} parameter(0)
+  eq.10 = pred[64]{0} compare(params__a__.1, params__a__.1), direction=EQ
+  constant.75 = f64[] constant(inf)
+  broadcast.21 = f64[64]{0} broadcast(constant.75), dimensions={}
+  ne.26 = pred[64]{0} compare(params__a__.1, broadcast.21), direction=NE
+  and.18 = pred[64]{0} and(eq.10, ne.26)
+  constant.74 = f64[] constant(-inf)
+  broadcast.20 = f64[64]{0} broadcast(constant.74), dimensions={}
+  ne.27 = pred[64]{0} compare(params__a__.1, broadcast.20), direction=NE
+  and.19 = pred[64]{0} and(and.18, ne.27)
+  sub.19 = f64[64]{0} broadcast(params__mu__.1), dimensions={}
+  sub.20 = f64[64]{0} subtract(params__a__.1, sub.19)
+  div.31 = f64[64]{0} broadcast(params__tau__.1), dimensions={}
+  div.32 = f64[64]{0} divide(sub.20, div.31)
+  integer_pow.7 = f64[64]{0} multiply(div.32, div.32)
+  constant.76 = f64[] constant(-0.5)
+  broadcast.22 = f64[64]{0} broadcast(constant.76), dimensions={}
+  mul.40 = f64[64]{0} multiply(integer_pow.7, broadcast.22)
+  constant.78 = f64[] constant(2.5066282746310002)
+  sqrt.2 = f64[] multiply(params__tau__.1, constant.78)
+  log.3 = f64[] log(sqrt.2)
+  sub.21 = f64[64]{0} broadcast(log.3), dimensions={}
+  sub.22 = f64[64]{0} subtract(mul.40, sub.21)
+  jvp_jit__where__.11 = f64[64]{0} call(and.19, sub.22, constant.87), to_apply=_where_1.4
+  reduce_sum.84 = f64[] reduce(jvp_jit__where__.11, constant.91), dimensions={0}, to_apply=region_0.5
+  add.34 = f64[] add(add.33, reduce_sum.84)
+  params__b__.1 = f64[64]{0} parameter(1)
+  eq.11 = pred[64]{0} compare(params__b__.1, params__b__.1), direction=EQ
+  ne.28 = pred[64]{0} compare(params__b__.1, broadcast.21), direction=NE
+  and.20 = pred[64]{0} and(eq.11, ne.28)
+  ne.29 = pred[64]{0} compare(params__b__.1, broadcast.20), direction=NE
+  and.21 = pred[64]{0} and(and.20, ne.29)
+  constant.77 = f64[] constant(2)
+  broadcast.23 = f64[64]{0} broadcast(constant.77), dimensions={}
+  div.34 = f64[64]{0} divide(params__b__.1, broadcast.23)
+  integer_pow.8 = f64[64]{0} multiply(div.34, div.34)
+  mul.42 = f64[64]{0} multiply(integer_pow.8, broadcast.22)
+  constant.73 = f64[] constant(1.6120857137646178)
+  sub.16 = f64[64]{0} broadcast(constant.73), dimensions={}
+  sub.23 = f64[64]{0} subtract(mul.42, sub.16)
+  jvp_jit__where__.12 = f64[64]{0} call(and.21, sub.23, constant.87), to_apply=_where_1.4
+  reduce_sum.85 = f64[] reduce(jvp_jit__where__.12, constant.91), dimensions={0}, to_apply=region_1.6
+  add.35 = f64[] add(add.34, reduce_sum.85)
+  params__sig__.1 = f64[] parameter(3)
+  gt.3 = pred[] compare(params__sig__.1, constant.91), direction=GT
+  log.4 = f64[] log(params__sig__.1)
+  broadcast_in_dim.16 = f64[1]{0} reshape(log.4)
+  reduce_sum.86 = f64[] reduce(broadcast_in_dim.16, constant.91), dimensions={0}, to_apply=region_2.7
+  sub.24 = f64[] subtract(constant.91, reduce_sum.86)
+  eq.12 = pred[] compare(log.4, log.4), direction=EQ
+  ne.30 = pred[] compare(log.4, constant.88), direction=NE
+  and.22 = pred[] and(eq.12, ne.30)
+  ne.31 = pred[] compare(log.4, constant.87), direction=NE
+  and.23 = pred[] and(and.22, ne.31)
+  constant.86 = f64[] constant(1)
+  div.35 = f64[] divide(log.4, constant.86)
+  integer_pow.9 = f64[] multiply(div.35, div.35)
+  mul.44 = f64[] multiply(integer_pow.9, constant.89)
+  constant.72 = f64[] constant(0.91893853320467267)
+  sub.25 = f64[] subtract(mul.44, constant.72)
+  jvp_jit__where__.13 = f64[] call(and.23, sub.25, constant.87), to_apply=_where_0.3
+  broadcast_in_dim.17 = f64[1]{0} reshape(jvp_jit__where__.13)
+  reduce_sum.87 = f64[] reduce(broadcast_in_dim.17, constant.91), dimensions={0}, to_apply=region_3.8
+  add.28 = f64[] add(sub.24, reduce_sum.87)
+  jvp_jit__where__.14 = f64[] call(gt.3, add.28, constant.87), to_apply=_where_0.3
+  add.36 = f64[] add(add.35, jvp_jit__where__.14)
+  y.1 = f64[2048]{0} parameter(6)
+  eq.13 = pred[2048]{0} compare(y.1, y.1), direction=EQ
+  constant.56 = f64[] constant(inf)
+  ne.21 = f64[2048]{0} broadcast(constant.56), dimensions={}
+  ne.32 = pred[2048]{0} compare(y.1, ne.21), direction=NE
+  and.24 = pred[2048]{0} and(eq.13, ne.32)
+  constant.55 = f64[] constant(-inf)
+  ne.20 = f64[2048]{0} broadcast(constant.55), dimensions={}
+  ne.33 = pred[2048]{0} compare(y.1, ne.20), direction=NE
+  and.25 = pred[2048]{0} and(and.24, ne.33)
+  iota.1 = s64[2048]{0} iota(), iota_dimension=0
+  constant.93 = s64[] constant(64)
+  jvp_jit_remainder__.1 = s64[2048]{0} call(iota.1, constant.93), to_apply=remainder.2
+  constant.83 = s64[] constant(0)
+  broadcast.25 = s64[2048]{0} broadcast(constant.83), dimensions={}
+  lt.6 = pred[2048]{0} compare(jvp_jit_remainder__.1, broadcast.25), direction=LT
+  constant.82 = s64[] constant(64)
+  broadcast.24 = s64[2048]{0} broadcast(constant.82), dimensions={}
+  add.23 = s64[2048]{0} add(jvp_jit_remainder__.1, broadcast.24)
+  select_n.18 = s64[2048]{0} select(lt.6, add.23, jvp_jit_remainder__.1)
+  convert_element_type.2 = s32[2048]{0} convert(select_n.18)
+  broadcast_in_dim.14 = s32[2048,1]{1,0} reshape(convert_element_type.2)
+  gather.2 = f64[2048]{0} gather(params__a__.1, broadcast_in_dim.14), offset_dims={}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1}
+  lt.7 = pred[2048]{0} compare(jvp_jit_remainder__.1, broadcast.25), direction=LT
+  add.24 = s64[2048]{0} add(jvp_jit_remainder__.1, broadcast.24)
+  select_n.19 = s64[2048]{0} select(lt.7, add.24, jvp_jit_remainder__.1)
+  convert_element_type.3 = s32[2048]{0} convert(select_n.19)
+  broadcast_in_dim.15 = s32[2048,1]{1,0} reshape(convert_element_type.3)
+  gather.3 = f64[2048]{0} gather(params__b__.1, broadcast_in_dim.15), offset_dims={}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1}
+  x.1 = f64[2048]{0} parameter(5)
+  mul.34 = f64[2048]{0} multiply(gather.3, x.1)
+  add.25 = f64[2048]{0} add(gather.2, mul.34)
+  sub.26 = f64[2048]{0} subtract(y.1, add.25)
+  reshape.4 = f64[1]{0} reshape(params__sig__.1)
+  div.36 = f64[1]{0} broadcast(reshape.4), dimensions={0}
+  div.37 = f64[] reshape(div.36)
+  div.38 = f64[2048]{0} broadcast(div.37), dimensions={}
+  div.39 = f64[2048]{0} divide(sub.26, div.38)
+  constant.60 = f64[] constant(2)
+  broadcast.19 = f64[2048]{0} broadcast(constant.60), dimensions={}
+  pow.2 = f64[2048]{0} power(div.39, broadcast.19)
+  constant.58 = f64[] constant(4)
+  broadcast.17 = f64[2048]{0} broadcast(constant.58), dimensions={}
+  div.41 = f64[2048]{0} divide(pow.2, broadcast.17)
+  log1p.3 = f64[2048]{0} log-plus-one(div.41)
+  constant.57 = f64[] constant(-2.5)
+  broadcast.16 = f64[2048]{0} broadcast(constant.57), dimensions={}
+  mul.47 = f64[2048]{0} multiply(log1p.3, broadcast.16)
+  log.5 = f64[1]{0} log(reshape.4)
+  constant.70 = f64[1]{0} constant({0.69314718055994529})
+  add.29 = f64[1]{0} add(log.5, constant.70)
+  constant.69 = f64[1]{0} constant({0.57236494292470008})
+  add.30 = f64[1]{0} add(add.29, constant.69)
+  constant.66 = f64[1]{0} constant({1.5})
+  constant.68 = f64[1]{0} constant({8.5})
+  constant.67 = f64[1]{0} constant({0.13333333333333333})
+  lgamma.14 = f64[1]{0} log-plus-one(constant.67)
+  constant.85 = f64[1]{0} constant({2.0149030205422647})
+  lgamma.15 = f64[1]{0} add(lgamma.14, constant.85)
+  lgamma.16 = f64[1]{0} divide(constant.68, lgamma.15)
+  lgamma.17 = f64[1]{0} subtract(constant.66, lgamma.16)
+  lgamma.18 = f64[1]{0} multiply(lgamma.17, lgamma.15)
+  constant.84 = f64[1]{0} constant({0.91893853320467267})
+  lgamma.19 = f64[1]{0} add(lgamma.18, constant.84)
+  constant.65 = f64[1]{0} constant({4.3709622215509212})
+  lgamma.20 = f64[1]{0} add(lgamma.19, constant.65)
+  add.31 = f64[1]{0} add(add.30, lgamma.20)
+  constant.62 = f64[1]{0} constant({2})
+  constant.64 = f64[1]{0} constant({9})
+  constant.63 = f64[1]{0} constant({0.2})
+  lgamma.21 = f64[1]{0} log-plus-one(constant.63)
+  lgamma.22 = f64[1]{0} add(lgamma.21, constant.85)
+  lgamma.23 = f64[1]{0} divide(constant.64, lgamma.22)
+  lgamma.24 = f64[1]{0} subtract(constant.62, lgamma.23)
+  lgamma.25 = f64[1]{0} multiply(lgamma.24, lgamma.22)
+  lgamma.26 = f64[1]{0} add(lgamma.25, constant.84)
+  constant.61 = f64[1]{0} constant({3.9712951825958087})
+  lgamma.27 = f64[1]{0} add(lgamma.26, constant.61)
+  sub.27 = f64[1]{0} subtract(add.31, lgamma.27)
+  sub.28 = f64[1]{0} broadcast(sub.27), dimensions={0}
+  sub.29 = f64[] reshape(sub.28)
+  sub.30 = f64[2048]{0} broadcast(sub.29), dimensions={}
+  sub.31 = f64[2048]{0} subtract(mul.47, sub.30)
+  jvp_jit__where__.15 = f64[2048]{0} call(and.25, sub.31, constant.87), to_apply=_where_2.9
+  reduce_sum.88 = f64[] reduce(jvp_jit__where__.15, constant.91), dimensions={0}, to_apply=region_4.10
+  add.37 = f64[] add(add.36, reduce_sum.88)
+  constant.54 = f64[] constant(1)
+  broadcast.15 = f64[64]{0} broadcast(constant.54), dimensions={}
+  transpose_jvp_jit__where___.12 = f64[64]{0} call(and.19, broadcast.15), to_apply=_where_5.17
+  mul.59 = f64[64]{0} multiply(transpose_jvp_jit__where___.12, broadcast.22)
+  mul.39 = f64[64]{0} multiply(div.32, broadcast.23)
+  mul.60 = f64[64]{0} multiply(mul.59, mul.39)
+  div.52 = f64[64]{0} broadcast(params__tau__.1), dimensions={}
+  div.53 = f64[64]{0} divide(mul.60, div.52)
+  constant.53 = f64[] constant(0)
+  broadcast.14 = f64[64]{0} broadcast(constant.53), dimensions={}
+  constant.59 = f64[] constant(1)
+  broadcast.18 = f64[2048]{0} broadcast(constant.59), dimensions={}
+  transpose_jvp_jit__where___.8 = f64[2048]{0} call(and.25, broadcast.18), to_apply=_where_3.11
+  mul.48 = f64[2048]{0} multiply(transpose_jvp_jit__where___.8, broadcast.16)
+  add.32 = f64[2048]{0} add(div.41, broadcast.18)
+  div.42 = f64[2048]{0} divide(mul.48, add.32)
+  div.43 = f64[2048]{0} divide(div.42, broadcast.17)
+  pow.3 = f64[2048]{0} power(div.39, broadcast.18)
+  mul.46 = f64[2048]{0} multiply(pow.3, broadcast.19)
+  mul.49 = f64[2048]{0} multiply(div.43, mul.46)
+  div.45 = f64[1]{0} broadcast(reshape.4), dimensions={0}
+  div.46 = f64[] reshape(div.45)
+  div.47 = f64[2048]{0} broadcast(div.46), dimensions={}
+  div.48 = f64[2048]{0} divide(mul.49, div.47)
+  neg.10 = f64[2048]{0} negate(div.48)
+  scatter-add.11 = f64[64]{0} scatter(broadcast.14, broadcast_in_dim.14, neg.10), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=region_13.22
+  add_any.15 = f64[64]{0} add(div.53, scatter-add.11)
+  transpose_jvp_jit__where___.11 = f64[64]{0} call(and.21, broadcast.15), to_apply=_where_5.17
+  mul.57 = f64[64]{0} multiply(transpose_jvp_jit__where___.11, broadcast.22)
+  mul.41 = f64[64]{0} multiply(div.34, broadcast.23)
+  mul.58 = f64[64]{0} multiply(mul.57, mul.41)
+  div.51 = f64[64]{0} divide(mul.58, broadcast.23)
+  mul.67 = f64[2048]{0} multiply(neg.10, x.1)
+  scatter-add.10 = f64[64]{0} scatter(broadcast.14, broadcast_in_dim.15, mul.67), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=region_12.21
+  add_any.14 = f64[64]{0} add(div.51, scatter-add.10)
+  neg.14 = f64[64]{0} negate(div.53)
+  reduce_sum.95 = f64[] reduce(neg.14, constant.91), dimensions={0}, to_apply=region_11.20
+  transpose_jvp_jit__where___.15 = f64[] call(and.15, constant.86), to_apply=_where_4.14
+  mul.65 = f64[] multiply(transpose_jvp_jit__where___.15, constant.89)
+  constant.90 = f64[] constant(2)
+  mul.35 = f64[] multiply(div.29, constant.90)
+  mul.66 = f64[] multiply(mul.65, mul.35)
+  div.57 = f64[] divide(mul.66, constant.92)
+  add_any.12 = f64[] add(reduce_sum.95, div.57)
+  transpose_jvp_jit__where___.9 = f64[] call(gt.3, constant.86), to_apply=_where_4.14
+  broadcast_in_dim.18 = f64[1]{0} reshape(transpose_jvp_jit__where___.9)
+  reduce_sum.91 = f64[] reduce(broadcast_in_dim.18, constant.91), dimensions={0}, to_apply=region_7.15
+  transpose_jvp_jit__where___.10 = f64[] call(and.23, reduce_sum.91), to_apply=_where_4.14
+  mul.55 = f64[] multiply(transpose_jvp_jit__where___.10, constant.89)
+  mul.43 = f64[] multiply(div.35, constant.90)
+  mul.56 = f64[] multiply(mul.55, mul.43)
+  div.49 = f64[] divide(mul.56, constant.86)
+  neg.11 = f64[] negate(transpose_jvp_jit__where___.9)
+  broadcast_in_dim.19 = f64[1]{0} reshape(neg.11)
+  reduce_sum.92 = f64[] reduce(broadcast_in_dim.19, constant.91), dimensions={0}, to_apply=region_8.16
+  add_any.9 = f64[] add(div.49, reduce_sum.92)
+  div.50 = f64[] divide(add_any.9, params__sig__.1)
+  neg.8 = f64[2048]{0} negate(transpose_jvp_jit__where___.8)
+  reduce_sum.89 = f64[] reduce(neg.8, constant.91), dimensions={0}, to_apply=region_5.12
+  reshape.5 = f64[1]{0} reshape(reduce_sum.89)
+  div.44 = f64[1]{0} divide(reshape.5, reshape.4)
+  constant.71 = f64[1]{0} constant({1})
+  mul.45 = f64[1]{0} multiply(reshape.4, reshape.4)
+  div.40 = f64[1]{0} divide(constant.71, mul.45)
+  mul.50 = f64[1]{0} broadcast(div.40), dimensions={0}
+  mul.51 = f64[] reshape(mul.50)
+  mul.52 = f64[2048]{0} broadcast(mul.51), dimensions={}
+  mul.53 = f64[2048]{0} multiply(mul.49, mul.52)
+  mul.54 = f64[2048]{0} multiply(mul.53, sub.26)
+  reduce_sum.90 = f64[] reduce(mul.54, constant.91), dimensions={0}, to_apply=region_6.13
+  reshape.6 = f64[1]{0} reshape(reduce_sum.90)
+  neg.9 = f64[1]{0} negate(reshape.6)
+  add_any.8 = f64[1]{0} add(div.44, neg.9)
+  reshape.7 = f64[] reshape(add_any.8)
+  add_any.13 = f64[] add(div.50, reshape.7)
+  mul.38 = f64[] multiply(params__tau__.1, params__tau__.1)
+  div.33 = f64[] divide(constant.86, mul.38)
+  mul.61 = f64[64]{0} broadcast(div.33), dimensions={}
+  mul.62 = f64[64]{0} multiply(mul.60, mul.61)
+  mul.63 = f64[64]{0} multiply(mul.62, sub.20)
+  reduce_sum.94 = f64[] reduce(mul.63, constant.91), dimensions={0}, to_apply=region_10.19
+  neg.13 = f64[] negate(reduce_sum.94)
+  neg.12 = f64[64]{0} negate(transpose_jvp_jit__where___.12)
+  reduce_sum.93 = f64[] reduce(neg.12, constant.91), dimensions={0}, to_apply=region_9.18
+  div.54 = f64[] divide(reduce_sum.93, sqrt.2)
+  sqrt.3 = f64[] multiply(div.54, constant.78)
+  add_any.10 = f64[] add(neg.13, sqrt.3)
+  transpose_jvp_jit__where___.13 = f64[] call(gt.2, constant.86), to_apply=_where_4.14
+  transpose_jvp_jit__where___.14 = f64[] call(and.17, transpose_jvp_jit__where___.13), to_apply=_where_4.14
+  neg.15 = f64[] negate(transpose_jvp_jit__where___.14)
+  add.26 = f64[] add(integer_pow.6, constant.86)
+  div.55 = f64[] divide(neg.15, add.26)
+  mul.37 = f64[] multiply(div.30, constant.90)
+  mul.64 = f64[] multiply(div.55, mul.37)
+  div.56 = f64[] divide(mul.64, constant.92)
+  add_any.11 = f64[] add(add_any.10, div.56)
+  ROOT tuple.1 = (f64[], f64[64]{0}, f64[64]{0}, f64[], f64[], /*index=5*/f64[]) tuple(add.37, add_any.15, add_any.14, add_any.12, add_any.13, add_any.11)
+}
+

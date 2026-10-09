@@ -1,0 +1,224 @@
+HloModule jit__lambda, entry_computation_layout={(f32[32]{0}, f32[32]{0}, f32[64]{0}, f32[64]{0}, f32[128]{0}, /*index=5*/f32[128]{0}, f32[32]{0}, f32[32]{0}, f32[64]{0}, f32[64]{0}, /*index=10*/f32[128]{0}, f32[128]{0}, f32[32]{0}, f32[3,3,3,32]{3,2,1,0}, f32[32]{0}, /*index=15*/f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[1,1,3,32]{3,2,1,0}, f32[64]{0}, f32[3,3,32,64]{3,2,1,0}, /*index=20*/f32[64]{0}, f32[3,3,64,64]{3,2,1,0}, f32[64]{0}, f32[1,1,32,64]{3,2,1,0}, f32[128]{0}, /*index=25*/f32[3,3,64,128]{3,2,1,0}, f32[128]{0}, f32[3,3,128,128]{3,2,1,0}, f32[128]{0}, f32[1,1,64,128]{3,2,1,0}, /*index=30*/f32[10]{0}, f32[128,10]{1,0}, f32[32,64,64,3]{3,2,1,0})->f32[32,10]{1,0}}
+
+relu.1 {
+  Arg_0.1 = f32[32,64,64,32]{3,2,1,0} parameter(0)
+  constant.7 = f32[] constant(0)
+  max.2 = f32[32,64,64,32]{3,2,1,0} broadcast(constant.7), dimensions={}
+  ROOT max.3 = f32[32,64,64,32]{3,2,1,0} maximum(Arg_0.1, max.2)
+}
+
+region_0.2 {
+  reduce_window_max.3 = f32[] parameter(0)
+  reduce_window_max.4 = f32[] parameter(1)
+  ROOT reduce_window_max.5 = f32[] maximum(reduce_window_max.3, reduce_window_max.4)
+}
+
+relu_0.3 {
+  Arg_0.3 = f32[32,32,32,64]{3,2,1,0} parameter(0)
+  constant.9 = f32[] constant(0)
+  max.6 = f32[32,32,32,64]{3,2,1,0} broadcast(constant.9), dimensions={}
+  ROOT max.7 = f32[32,32,32,64]{3,2,1,0} maximum(Arg_0.3, max.6)
+}
+
+region_1.4 {
+  reduce_window_max.10 = f32[] parameter(0)
+  reduce_window_max.11 = f32[] parameter(1)
+  ROOT reduce_window_max.12 = f32[] maximum(reduce_window_max.10, reduce_window_max.11)
+}
+
+relu_1.5 {
+  Arg_0.5 = f32[32,16,16,128]{3,2,1,0} parameter(0)
+  constant.11 = f32[] constant(0)
+  max.10 = f32[32,16,16,128]{3,2,1,0} broadcast(constant.11), dimensions={}
+  ROOT max.11 = f32[32,16,16,128]{3,2,1,0} maximum(Arg_0.5, max.10)
+}
+
+region_2.6 {
+  reduce_window_max.17 = f32[] parameter(0)
+  reduce_window_max.18 = f32[] parameter(1)
+  ROOT reduce_window_max.19 = f32[] maximum(reduce_window_max.17, reduce_window_max.18)
+}
+
+region_3.7 {
+  reduce_sum.3 = f32[] parameter(0)
+  reduce_sum.4 = f32[] parameter(1)
+  ROOT reduce_sum.5 = f32[] add(reduce_sum.3, reduce_sum.4)
+}
+
+ENTRY main.8 {
+  x.1 = f32[32,64,64,3]{3,2,1,0} parameter(32)
+  v__params____Conv_0____kernel__.1 = f32[3,3,3,32]{3,2,1,0} parameter(13)
+  conv_general_dilated.9 = f32[32,64,64,32]{3,2,1,0} convolution(x.1, v__params____Conv_0____kernel__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  v__params____Conv_0____bias__.1 = f32[32]{0} parameter(12)
+  reshape.16 = f32[1,1,1,32]{3,2,1,0} reshape(v__params____Conv_0____bias__.1)
+  add.64 = f32[1,1,1,32]{3,2,1,0} broadcast(reshape.16), dimensions={0,1,2,3}
+  add.65 = f32[32]{0} reshape(add.64)
+  add.66 = f32[32,64,64,32]{3,2,1,0} broadcast(add.65), dimensions={3}
+  add.67 = f32[32,64,64,32]{3,2,1,0} add(conv_general_dilated.9, add.66)
+  v__batch_stats____BatchNorm_0____mean__.1 = f32[32]{0} parameter(0)
+  broadcast_in_dim.6 = f32[1,1,1,32]{3,2,1,0} reshape(v__batch_stats____BatchNorm_0____mean__.1)
+  sub.12 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.6), dimensions={0,1,2,3}
+  sub.13 = f32[32]{0} reshape(sub.12)
+  sub.14 = f32[32,64,64,32]{3,2,1,0} broadcast(sub.13), dimensions={3}
+  sub.15 = f32[32,64,64,32]{3,2,1,0} subtract(add.67, sub.14)
+  v__batch_stats____BatchNorm_0____var__.1 = f32[32]{0} parameter(1)
+  broadcast_in_dim.7 = f32[1,1,1,32]{3,2,1,0} reshape(v__batch_stats____BatchNorm_0____var__.1)
+  constant.16 = f32[] constant(1e-05)
+  add.63 = f32[1,1,1,32]{3,2,1,0} broadcast(constant.16), dimensions={}
+  add.68 = f32[1,1,1,32]{3,2,1,0} add(broadcast_in_dim.7, add.63)
+  rsqrt.3 = f32[1,1,1,32]{3,2,1,0} rsqrt(add.68)
+  v__params____BatchNorm_0____scale__.1 = f32[32]{0} parameter(7)
+  reshape.17 = f32[1,1,1,32]{3,2,1,0} reshape(v__params____BatchNorm_0____scale__.1)
+  mul.15 = f32[1,1,1,32]{3,2,1,0} multiply(rsqrt.3, reshape.17)
+  mul.16 = f32[1,1,1,32]{3,2,1,0} broadcast(mul.15), dimensions={0,1,2,3}
+  mul.17 = f32[32]{0} reshape(mul.16)
+  mul.18 = f32[32,64,64,32]{3,2,1,0} broadcast(mul.17), dimensions={3}
+  mul.19 = f32[32,64,64,32]{3,2,1,0} multiply(sub.15, mul.18)
+  v__params____BatchNorm_0____bias__.1 = f32[32]{0} parameter(6)
+  reshape.18 = f32[1,1,1,32]{3,2,1,0} reshape(v__params____BatchNorm_0____bias__.1)
+  add.69 = f32[1,1,1,32]{3,2,1,0} broadcast(reshape.18), dimensions={0,1,2,3}
+  add.70 = f32[32]{0} reshape(add.69)
+  add.71 = f32[32,64,64,32]{3,2,1,0} broadcast(add.70), dimensions={3}
+  add.72 = f32[32,64,64,32]{3,2,1,0} add(mul.19, add.71)
+  jit_relu_.6 = f32[32,64,64,32]{3,2,1,0} call(add.72), to_apply=relu.1
+  v__params____Conv_1____kernel__.1 = f32[3,3,32,32]{3,2,1,0} parameter(15)
+  conv_general_dilated.10 = f32[32,64,64,32]{3,2,1,0} convolution(jit_relu_.6, v__params____Conv_1____kernel__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  v__params____Conv_1____bias__.1 = f32[32]{0} parameter(14)
+  reshape.19 = f32[1,1,1,32]{3,2,1,0} reshape(v__params____Conv_1____bias__.1)
+  add.73 = f32[1,1,1,32]{3,2,1,0} broadcast(reshape.19), dimensions={0,1,2,3}
+  add.74 = f32[32]{0} reshape(add.73)
+  add.75 = f32[32,64,64,32]{3,2,1,0} broadcast(add.74), dimensions={3}
+  add.76 = f32[32,64,64,32]{3,2,1,0} add(conv_general_dilated.10, add.75)
+  v__params____Conv_2____kernel__.1 = f32[1,1,3,32]{3,2,1,0} parameter(17)
+  conv_general_dilated.11 = f32[32,64,64,32]{3,2,1,0} convolution(x.1, v__params____Conv_2____kernel__.1), window={size=1x1}, dim_labels=b01f_01io->b01f
+  v__params____Conv_2____bias__.1 = f32[32]{0} parameter(16)
+  reshape.20 = f32[1,1,1,32]{3,2,1,0} reshape(v__params____Conv_2____bias__.1)
+  add.77 = f32[1,1,1,32]{3,2,1,0} broadcast(reshape.20), dimensions={0,1,2,3}
+  add.78 = f32[32]{0} reshape(add.77)
+  add.79 = f32[32,64,64,32]{3,2,1,0} broadcast(add.78), dimensions={3}
+  add.80 = f32[32,64,64,32]{3,2,1,0} add(conv_general_dilated.11, add.79)
+  add.81 = f32[32,64,64,32]{3,2,1,0} add(add.76, add.80)
+  jit_relu_.7 = f32[32,64,64,32]{3,2,1,0} call(add.81), to_apply=relu.1
+  constant.15 = f32[] constant(-inf)
+  reduce_window_max.21 = f32[32,32,32,32]{3,2,1,0} reduce-window(jit_relu_.7, constant.15), window={size=1x2x2x1 stride=1x2x2x1}, to_apply=region_0.2
+  v__params____Conv_3____kernel__.1 = f32[3,3,32,64]{3,2,1,0} parameter(19)
+  conv_general_dilated.12 = f32[32,32,32,64]{3,2,1,0} convolution(reduce_window_max.21, v__params____Conv_3____kernel__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  v__params____Conv_3____bias__.1 = f32[64]{0} parameter(18)
+  reshape.21 = f32[1,1,1,64]{3,2,1,0} reshape(v__params____Conv_3____bias__.1)
+  add.82 = f32[1,1,1,64]{3,2,1,0} broadcast(reshape.21), dimensions={0,1,2,3}
+  add.83 = f32[64]{0} reshape(add.82)
+  add.84 = f32[32,32,32,64]{3,2,1,0} broadcast(add.83), dimensions={3}
+  add.85 = f32[32,32,32,64]{3,2,1,0} add(conv_general_dilated.12, add.84)
+  v__batch_stats____BatchNorm_1____mean__.1 = f32[64]{0} parameter(2)
+  broadcast_in_dim.8 = f32[1,1,1,64]{3,2,1,0} reshape(v__batch_stats____BatchNorm_1____mean__.1)
+  sub.16 = f32[1,1,1,64]{3,2,1,0} broadcast(broadcast_in_dim.8), dimensions={0,1,2,3}
+  sub.17 = f32[64]{0} reshape(sub.16)
+  sub.18 = f32[32,32,32,64]{3,2,1,0} broadcast(sub.17), dimensions={3}
+  sub.19 = f32[32,32,32,64]{3,2,1,0} subtract(add.85, sub.18)
+  v__batch_stats____BatchNorm_1____var__.1 = f32[64]{0} parameter(3)
+  broadcast_in_dim.9 = f32[1,1,1,64]{3,2,1,0} reshape(v__batch_stats____BatchNorm_1____var__.1)
+  constant.14 = f32[] constant(1e-05)
+  add.62 = f32[1,1,1,64]{3,2,1,0} broadcast(constant.14), dimensions={}
+  add.86 = f32[1,1,1,64]{3,2,1,0} add(broadcast_in_dim.9, add.62)
+  rsqrt.4 = f32[1,1,1,64]{3,2,1,0} rsqrt(add.86)
+  v__params____BatchNorm_1____scale__.1 = f32[64]{0} parameter(9)
+  reshape.22 = f32[1,1,1,64]{3,2,1,0} reshape(v__params____BatchNorm_1____scale__.1)
+  mul.20 = f32[1,1,1,64]{3,2,1,0} multiply(rsqrt.4, reshape.22)
+  mul.21 = f32[1,1,1,64]{3,2,1,0} broadcast(mul.20), dimensions={0,1,2,3}
+  mul.22 = f32[64]{0} reshape(mul.21)
+  mul.23 = f32[32,32,32,64]{3,2,1,0} broadcast(mul.22), dimensions={3}
+  mul.24 = f32[32,32,32,64]{3,2,1,0} multiply(sub.19, mul.23)
+  v__params____BatchNorm_1____bias__.1 = f32[64]{0} parameter(8)
+  reshape.23 = f32[1,1,1,64]{3,2,1,0} reshape(v__params____BatchNorm_1____bias__.1)
+  add.87 = f32[1,1,1,64]{3,2,1,0} broadcast(reshape.23), dimensions={0,1,2,3}
+  add.88 = f32[64]{0} reshape(add.87)
+  add.89 = f32[32,32,32,64]{3,2,1,0} broadcast(add.88), dimensions={3}
+  add.90 = f32[32,32,32,64]{3,2,1,0} add(mul.24, add.89)
+  jit_relu_.8 = f32[32,32,32,64]{3,2,1,0} call(add.90), to_apply=relu_0.3
+  v__params____Conv_4____kernel__.1 = f32[3,3,64,64]{3,2,1,0} parameter(21)
+  conv_general_dilated.13 = f32[32,32,32,64]{3,2,1,0} convolution(jit_relu_.8, v__params____Conv_4____kernel__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  v__params____Conv_4____bias__.1 = f32[64]{0} parameter(20)
+  reshape.24 = f32[1,1,1,64]{3,2,1,0} reshape(v__params____Conv_4____bias__.1)
+  add.91 = f32[1,1,1,64]{3,2,1,0} broadcast(reshape.24), dimensions={0,1,2,3}
+  add.92 = f32[64]{0} reshape(add.91)
+  add.93 = f32[32,32,32,64]{3,2,1,0} broadcast(add.92), dimensions={3}
+  add.94 = f32[32,32,32,64]{3,2,1,0} add(conv_general_dilated.13, add.93)
+  v__params____Conv_5____kernel__.1 = f32[1,1,32,64]{3,2,1,0} parameter(23)
+  conv_general_dilated.14 = f32[32,32,32,64]{3,2,1,0} convolution(reduce_window_max.21, v__params____Conv_5____kernel__.1), window={size=1x1}, dim_labels=b01f_01io->b01f
+  v__params____Conv_5____bias__.1 = f32[64]{0} parameter(22)
+  reshape.25 = f32[1,1,1,64]{3,2,1,0} reshape(v__params____Conv_5____bias__.1)
+  add.95 = f32[1,1,1,64]{3,2,1,0} broadcast(reshape.25), dimensions={0,1,2,3}
+  add.96 = f32[64]{0} reshape(add.95)
+  add.97 = f32[32,32,32,64]{3,2,1,0} broadcast(add.96), dimensions={3}
+  add.98 = f32[32,32,32,64]{3,2,1,0} add(conv_general_dilated.14, add.97)
+  add.99 = f32[32,32,32,64]{3,2,1,0} add(add.94, add.98)
+  jit_relu_.9 = f32[32,32,32,64]{3,2,1,0} call(add.99), to_apply=relu_0.3
+  reduce_window_max.22 = f32[32,16,16,64]{3,2,1,0} reduce-window(jit_relu_.9, constant.15), window={size=1x2x2x1 stride=1x2x2x1}, to_apply=region_1.4
+  v__params____Conv_6____kernel__.1 = f32[3,3,64,128]{3,2,1,0} parameter(25)
+  conv_general_dilated.15 = f32[32,16,16,128]{3,2,1,0} convolution(reduce_window_max.22, v__params____Conv_6____kernel__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  v__params____Conv_6____bias__.1 = f32[128]{0} parameter(24)
+  reshape.26 = f32[1,1,1,128]{3,2,1,0} reshape(v__params____Conv_6____bias__.1)
+  add.100 = f32[1,1,1,128]{3,2,1,0} broadcast(reshape.26), dimensions={0,1,2,3}
+  add.101 = f32[128]{0} reshape(add.100)
+  add.102 = f32[32,16,16,128]{3,2,1,0} broadcast(add.101), dimensions={3}
+  add.103 = f32[32,16,16,128]{3,2,1,0} add(conv_general_dilated.15, add.102)
+  v__batch_stats____BatchNorm_2____mean__.1 = f32[128]{0} parameter(4)
+  broadcast_in_dim.10 = f32[1,1,1,128]{3,2,1,0} reshape(v__batch_stats____BatchNorm_2____mean__.1)
+  sub.20 = f32[1,1,1,128]{3,2,1,0} broadcast(broadcast_in_dim.10), dimensions={0,1,2,3}
+  sub.21 = f32[128]{0} reshape(sub.20)
+  sub.22 = f32[32,16,16,128]{3,2,1,0} broadcast(sub.21), dimensions={3}
+  sub.23 = f32[32,16,16,128]{3,2,1,0} subtract(add.103, sub.22)
+  v__batch_stats____BatchNorm_2____var__.1 = f32[128]{0} parameter(5)
+  broadcast_in_dim.11 = f32[1,1,1,128]{3,2,1,0} reshape(v__batch_stats____BatchNorm_2____var__.1)
+  constant.13 = f32[] constant(1e-05)
+  add.61 = f32[1,1,1,128]{3,2,1,0} broadcast(constant.13), dimensions={}
+  add.104 = f32[1,1,1,128]{3,2,1,0} add(broadcast_in_dim.11, add.61)
+  rsqrt.5 = f32[1,1,1,128]{3,2,1,0} rsqrt(add.104)
+  v__params____BatchNorm_2____scale__.1 = f32[128]{0} parameter(11)
+  reshape.27 = f32[1,1,1,128]{3,2,1,0} reshape(v__params____BatchNorm_2____scale__.1)
+  mul.25 = f32[1,1,1,128]{3,2,1,0} multiply(rsqrt.5, reshape.27)
+  mul.26 = f32[1,1,1,128]{3,2,1,0} broadcast(mul.25), dimensions={0,1,2,3}
+  mul.27 = f32[128]{0} reshape(mul.26)
+  mul.28 = f32[32,16,16,128]{3,2,1,0} broadcast(mul.27), dimensions={3}
+  mul.29 = f32[32,16,16,128]{3,2,1,0} multiply(sub.23, mul.28)
+  v__params____BatchNorm_2____bias__.1 = f32[128]{0} parameter(10)
+  reshape.28 = f32[1,1,1,128]{3,2,1,0} reshape(v__params____BatchNorm_2____bias__.1)
+  add.105 = f32[1,1,1,128]{3,2,1,0} broadcast(reshape.28), dimensions={0,1,2,3}
+  add.106 = f32[128]{0} reshape(add.105)
+  add.107 = f32[32,16,16,128]{3,2,1,0} broadcast(add.106), dimensions={3}
+  add.108 = f32[32,16,16,128]{3,2,1,0} add(mul.29, add.107)
+  jit_relu_.10 = f32[32,16,16,128]{3,2,1,0} call(add.108), to_apply=relu_1.5
+  v__params____Conv_7____kernel__.1 = f32[3,3,128,128]{3,2,1,0} parameter(27)
+  conv_general_dilated.16 = f32[32,16,16,128]{3,2,1,0} convolution(jit_relu_.10, v__params____Conv_7____kernel__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  v__params____Conv_7____bias__.1 = f32[128]{0} parameter(26)
+  reshape.29 = f32[1,1,1,128]{3,2,1,0} reshape(v__params____Conv_7____bias__.1)
+  add.109 = f32[1,1,1,128]{3,2,1,0} broadcast(reshape.29), dimensions={0,1,2,3}
+  add.110 = f32[128]{0} reshape(add.109)
+  add.111 = f32[32,16,16,128]{3,2,1,0} broadcast(add.110), dimensions={3}
+  add.112 = f32[32,16,16,128]{3,2,1,0} add(conv_general_dilated.16, add.111)
+  v__params____Conv_8____kernel__.1 = f32[1,1,64,128]{3,2,1,0} parameter(29)
+  conv_general_dilated.17 = f32[32,16,16,128]{3,2,1,0} convolution(reduce_window_max.22, v__params____Conv_8____kernel__.1), window={size=1x1}, dim_labels=b01f_01io->b01f
+  v__params____Conv_8____bias__.1 = f32[128]{0} parameter(28)
+  reshape.30 = f32[1,1,1,128]{3,2,1,0} reshape(v__params____Conv_8____bias__.1)
+  add.113 = f32[1,1,1,128]{3,2,1,0} broadcast(reshape.30), dimensions={0,1,2,3}
+  add.114 = f32[128]{0} reshape(add.113)
+  add.115 = f32[32,16,16,128]{3,2,1,0} broadcast(add.114), dimensions={3}
+  add.116 = f32[32,16,16,128]{3,2,1,0} add(conv_general_dilated.17, add.115)
+  add.117 = f32[32,16,16,128]{3,2,1,0} add(add.112, add.116)
+  jit_relu_.11 = f32[32,16,16,128]{3,2,1,0} call(add.117), to_apply=relu_1.5
+  reduce_window_max.23 = f32[32,8,8,128]{3,2,1,0} reduce-window(jit_relu_.11, constant.15), window={size=1x2x2x1 stride=1x2x2x1}, to_apply=region_2.6
+  constant.17 = f32[] constant(0)
+  reduce_sum.7 = f32[32,128]{1,0} reduce(reduce_window_max.23, constant.17), dimensions={1,2}, to_apply=region_3.7
+  constant.12 = f32[] constant(64)
+  div.2 = f32[32,128]{1,0} broadcast(constant.12), dimensions={}
+  div.3 = f32[32,128]{1,0} divide(reduce_sum.7, div.2)
+  v__params____Dense_0____kernel__.1 = f32[128,10]{1,0} parameter(31)
+  dot_general.1 = f32[32,10]{1,0} dot(div.3, v__params____Dense_0____kernel__.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  v__params____Dense_0____bias__.1 = f32[10]{0} parameter(30)
+  reshape.31 = f32[1,10]{1,0} reshape(v__params____Dense_0____bias__.1)
+  add.118 = f32[1,10]{1,0} broadcast(reshape.31), dimensions={0,1}
+  add.119 = f32[10]{0} reshape(add.118)
+  add.120 = f32[32,10]{1,0} broadcast(add.119), dimensions={1}
+  ROOT add.121 = f32[32,10]{1,0} add(dot_general.1, add.120)
+}
+

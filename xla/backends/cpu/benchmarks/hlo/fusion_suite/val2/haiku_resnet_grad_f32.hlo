@@ -1,0 +1,1638 @@
+HloModule jit_resnet_loss, entry_computation_layout={(f32[32]{0}, f32[3,3,3,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, /*index=5*/f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, /*index=10*/f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, /*index=15*/f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, /*index=20*/f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, /*index=25*/f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, /*index=30*/f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, /*index=35*/f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, /*index=40*/f32[32]{0}, f32[32]{0}, f32[10]{0}, f32[32,10]{1,0}, f32[8,32,32,3]{3,2,1,0})->(f32[], f32[32]{0}, f32[3,3,3,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, /*index=5*/f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, /*index=10*/f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, /*index=15*/f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, /*index=20*/f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[32]{0}, /*index=25*/f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, /*index=30*/f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, /*index=35*/f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, /*index=40*/f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[10]{0}, f32[32,10]{0,1})}
+
+region_0.1 {
+  reduce_sum.3 = f32[] parameter(0)
+  reduce_sum.4 = f32[] parameter(1)
+  ROOT reduce_sum.5 = f32[] add(reduce_sum.3, reduce_sum.4)
+}
+
+region_1.2 {
+  reduce_sum.10 = f32[] parameter(0)
+  reduce_sum.11 = f32[] parameter(1)
+  ROOT reduce_sum.12 = f32[] add(reduce_sum.10, reduce_sum.11)
+}
+
+region_2.3 {
+  reduce_sum.17 = f32[] parameter(0)
+  reduce_sum.18 = f32[] parameter(1)
+  ROOT reduce_sum.19 = f32[] add(reduce_sum.17, reduce_sum.18)
+}
+
+_where.4 {
+  Arg_0.2 = pred[] parameter(0)
+  select_n.2 = pred[8,1,1,8,1]{4,3,2,1,0} broadcast(Arg_0.2), dimensions={}
+  Arg_1.2 = f32[8,1,1,8,1]{4,3,2,1,0} parameter(1)
+  Arg_2.1 = f32[] parameter(2)
+  broadcast_in_dim.6 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(Arg_2.1), dimensions={}
+  ROOT select_n.3 = f32[8,1,1,8,1]{4,3,2,1,0} select(select_n.2, Arg_1.2, broadcast_in_dim.6)
+}
+
+_var.5 {
+  constant.23 = f32[] constant(4096)
+  Arg_1.3 = s32[] parameter(1)
+  convert_element_type.1 = f32[] convert(Arg_1.3)
+  sub.9 = f32[] subtract(constant.23, convert_element_type.1)
+  constant.24 = f32[] constant(0)
+  gt.1 = pred[] compare(sub.9, constant.24), direction=GT
+  Arg_0.3 = f32[8,32,32,8,4]{4,3,2,1,0} parameter(0)
+  reduce_sum.21 = f32[8,8]{1,0} reduce(Arg_0.3, constant.24), dimensions={1,2,4}, to_apply=region_1.2
+  broadcast_in_dim.7 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.21)
+  constant.21 = f32[] constant(4096)
+  div.5 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(constant.21), dimensions={}
+  div.6 = f32[8,1,1,8,1]{4,3,2,1,0} divide(broadcast_in_dim.7, div.5)
+  sub.5 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(div.6), dimensions={0,1,2,3,4}
+  sub.6 = f32[8,8]{1,0} reshape(sub.5)
+  sub.7 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(sub.6), dimensions={0,3}
+  sub.8 = f32[8,32,32,8,4]{4,3,2,1,0} subtract(Arg_0.3, sub.7)
+  square.1 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(sub.8, sub.8)
+  reduce_sum.22 = f32[8,8]{1,0} reduce(square.1, constant.24), dimensions={1,2,4}, to_apply=region_2.3
+  broadcast_in_dim.8 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.22)
+  div.7 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(sub.9), dimensions={}
+  div.8 = f32[8,1,1,8,1]{4,3,2,1,0} divide(broadcast_in_dim.8, div.7)
+  constant.22 = f32[] constant(nan)
+  jit__where_.1 = f32[8,1,1,8,1]{4,3,2,1,0} call(gt.1, div.8, constant.22), to_apply=_where.4
+  constant.20 = f32[] constant(2)
+  mul.2 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(constant.20), dimensions={}
+  mul.3 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(sub.8, mul.2)
+  ROOT tuple.1 = (f32[8,1,1,8,1]{4,3,2,1,0}, f32[8,32,32,8,4]{4,3,2,1,0}, f32[], pred[]) tuple(jit__where_.1, mul.3, sub.9, gt.1)
+}
+
+relu.6 {
+  Arg_0.5 = f32[8,32,32,32]{3,2,1,0} parameter(0)
+  constant.26 = f32[] constant(0)
+  max.2 = f32[8,32,32,32]{3,2,1,0} broadcast(constant.26), dimensions={}
+  ROOT max.3 = f32[8,32,32,32]{3,2,1,0} maximum(Arg_0.5, max.2)
+}
+
+region_3.7 {
+  reduce_sum.26 = f32[] parameter(0)
+  reduce_sum.27 = f32[] parameter(1)
+  ROOT reduce_sum.28 = f32[] add(reduce_sum.26, reduce_sum.27)
+}
+
+region_4.8 {
+  reduce_sum.33 = f32[] parameter(0)
+  reduce_sum.34 = f32[] parameter(1)
+  ROOT reduce_sum.35 = f32[] add(reduce_sum.33, reduce_sum.34)
+}
+
+region_5.9 {
+  reduce_sum.40 = f32[] parameter(0)
+  reduce_sum.41 = f32[] parameter(1)
+  ROOT reduce_sum.42 = f32[] add(reduce_sum.40, reduce_sum.41)
+}
+
+region_6.10 {
+  reduce_sum.47 = f32[] parameter(0)
+  reduce_sum.48 = f32[] parameter(1)
+  ROOT reduce_sum.49 = f32[] add(reduce_sum.47, reduce_sum.48)
+}
+
+region_7.11 {
+  reduce_sum.54 = f32[] parameter(0)
+  reduce_sum.55 = f32[] parameter(1)
+  ROOT reduce_sum.56 = f32[] add(reduce_sum.54, reduce_sum.55)
+}
+
+region_8.12 {
+  reduce_window_sum.3 = f32[] parameter(0)
+  reduce_window_sum.4 = f32[] parameter(1)
+  ROOT reduce_window_sum.5 = f32[] add(reduce_window_sum.3, reduce_window_sum.4)
+}
+
+region_9.13 {
+  reduce_sum.61 = f32[] parameter(0)
+  reduce_sum.62 = f32[] parameter(1)
+  ROOT reduce_sum.63 = f32[] add(reduce_sum.61, reduce_sum.62)
+}
+
+region_10.14 {
+  reduce_sum.68 = f32[] parameter(0)
+  reduce_sum.69 = f32[] parameter(1)
+  ROOT reduce_sum.70 = f32[] add(reduce_sum.68, reduce_sum.69)
+}
+
+region_11.15 {
+  reduce_sum.75 = f32[] parameter(0)
+  reduce_sum.76 = f32[] parameter(1)
+  ROOT reduce_sum.77 = f32[] add(reduce_sum.75, reduce_sum.76)
+}
+
+_var_0.16 {
+  constant.35 = f32[] constant(1024)
+  Arg_1.5 = s32[] parameter(1)
+  convert_element_type.3 = f32[] convert(Arg_1.5)
+  sub.43 = f32[] subtract(constant.35, convert_element_type.3)
+  constant.36 = f32[] constant(0)
+  gt.9 = pred[] compare(sub.43, constant.36), direction=GT
+  Arg_0.7 = f32[8,16,16,8,4]{4,3,2,1,0} parameter(0)
+  reduce_sum.79 = f32[8,8]{1,0} reduce(Arg_0.7, constant.36), dimensions={1,2,4}, to_apply=region_10.14
+  broadcast_in_dim.35 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.79)
+  constant.33 = f32[] constant(1024)
+  div.26 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(constant.33), dimensions={}
+  div.27 = f32[8,1,1,8,1]{4,3,2,1,0} divide(broadcast_in_dim.35, div.26)
+  sub.39 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(div.27), dimensions={0,1,2,3,4}
+  sub.40 = f32[8,8]{1,0} reshape(sub.39)
+  sub.41 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(sub.40), dimensions={0,3}
+  sub.42 = f32[8,16,16,8,4]{4,3,2,1,0} subtract(Arg_0.7, sub.41)
+  square.3 = f32[8,16,16,8,4]{4,3,2,1,0} multiply(sub.42, sub.42)
+  reduce_sum.80 = f32[8,8]{1,0} reduce(square.3, constant.36), dimensions={1,2,4}, to_apply=region_11.15
+  broadcast_in_dim.36 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.80)
+  div.28 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(sub.43), dimensions={}
+  div.29 = f32[8,1,1,8,1]{4,3,2,1,0} divide(broadcast_in_dim.36, div.28)
+  constant.34 = f32[] constant(nan)
+  jit__where_.3 = f32[8,1,1,8,1]{4,3,2,1,0} call(gt.9, div.29, constant.34), to_apply=_where.4
+  constant.32 = f32[] constant(2)
+  mul.60 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(constant.32), dimensions={}
+  mul.61 = f32[8,16,16,8,4]{4,3,2,1,0} multiply(sub.42, mul.60)
+  ROOT tuple.3 = (f32[8,1,1,8,1]{4,3,2,1,0}, f32[8,16,16,8,4]{4,3,2,1,0}, f32[], pred[]) tuple(jit__where_.3, mul.61, sub.43, gt.9)
+}
+
+relu_1.17 {
+  Arg_0.9 = f32[8,16,16,32]{3,2,1,0} parameter(0)
+  constant.38 = f32[] constant(0)
+  max.6 = f32[8,16,16,32]{3,2,1,0} broadcast(constant.38), dimensions={}
+  ROOT max.7 = f32[8,16,16,32]{3,2,1,0} maximum(Arg_0.9, max.6)
+}
+
+region_12.18 {
+  reduce_sum.84 = f32[] parameter(0)
+  reduce_sum.85 = f32[] parameter(1)
+  ROOT reduce_sum.86 = f32[] add(reduce_sum.84, reduce_sum.85)
+}
+
+region_13.19 {
+  reduce_sum.91 = f32[] parameter(0)
+  reduce_sum.92 = f32[] parameter(1)
+  ROOT reduce_sum.93 = f32[] add(reduce_sum.91, reduce_sum.92)
+}
+
+region_14.20 {
+  reduce_sum.98 = f32[] parameter(0)
+  reduce_sum.99 = f32[] parameter(1)
+  ROOT reduce_sum.100 = f32[] add(reduce_sum.98, reduce_sum.99)
+}
+
+region_15.21 {
+  reduce_sum.105 = f32[] parameter(0)
+  reduce_sum.106 = f32[] parameter(1)
+  ROOT reduce_sum.107 = f32[] add(reduce_sum.105, reduce_sum.106)
+}
+
+region_16.22 {
+  reduce_max.3 = f32[] parameter(0)
+  reduce_max.4 = f32[] parameter(1)
+  ROOT reduce_max.5 = f32[] maximum(reduce_max.3, reduce_max.4)
+}
+
+region_17.23 {
+  reduce_sum.112 = f32[] parameter(0)
+  reduce_sum.113 = f32[] parameter(1)
+  ROOT reduce_sum.114 = f32[] add(reduce_sum.112, reduce_sum.113)
+}
+
+region_18.24 {
+  reduce_sum.119 = f32[] parameter(0)
+  reduce_sum.120 = f32[] parameter(1)
+  ROOT reduce_sum.121 = f32[] add(reduce_sum.119, reduce_sum.120)
+}
+
+region_19.25 {
+  reduce_sum.126 = f32[] parameter(0)
+  reduce_sum.127 = f32[] parameter(1)
+  ROOT reduce_sum.128 = f32[] add(reduce_sum.126, reduce_sum.127)
+}
+
+region_20.26 {
+  reduce_sum.133 = f32[] parameter(0)
+  reduce_sum.134 = f32[] parameter(1)
+  ROOT reduce_sum.135 = f32[] add(reduce_sum.133, reduce_sum.134)
+}
+
+region_21.27 {
+  reduce_sum.140 = f32[] parameter(0)
+  reduce_sum.141 = f32[] parameter(1)
+  ROOT reduce_sum.142 = f32[] add(reduce_sum.140, reduce_sum.141)
+}
+
+region_22.28 {
+  reduce_sum.147 = f32[] parameter(0)
+  reduce_sum.148 = f32[] parameter(1)
+  ROOT reduce_sum.149 = f32[] add(reduce_sum.147, reduce_sum.148)
+}
+
+region_23.29 {
+  reduce_sum.154 = f32[] parameter(0)
+  reduce_sum.155 = f32[] parameter(1)
+  ROOT reduce_sum.156 = f32[] add(reduce_sum.154, reduce_sum.155)
+}
+
+region_24.30 {
+  reduce_sum.161 = f32[] parameter(0)
+  reduce_sum.162 = f32[] parameter(1)
+  ROOT reduce_sum.163 = f32[] add(reduce_sum.161, reduce_sum.162)
+}
+
+region_25.31 {
+  reduce_sum.168 = f32[] parameter(0)
+  reduce_sum.169 = f32[] parameter(1)
+  ROOT reduce_sum.170 = f32[] add(reduce_sum.168, reduce_sum.169)
+}
+
+_where_3.32 {
+  Arg_0.12 = pred[] parameter(0)
+  select_n.10 = pred[8,1,1,8,1]{4,3,2,1,0} broadcast(Arg_0.12), dimensions={}
+  Arg_1.8 = f32[8,1,1,8,1]{4,3,2,1,0} parameter(1)
+  constant.42 = f32[] constant(0)
+  broadcast_in_dim.56 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(constant.42), dimensions={}
+  ROOT select_n.11 = f32[8,1,1,8,1]{4,3,2,1,0} select(select_n.10, Arg_1.8, broadcast_in_dim.56)
+}
+
+region_26.33 {
+  reduce_sum.175 = f32[] parameter(0)
+  reduce_sum.176 = f32[] parameter(1)
+  ROOT reduce_sum.177 = f32[] add(reduce_sum.175, reduce_sum.176)
+}
+
+region_27.34 {
+  reduce_sum.182 = f32[] parameter(0)
+  reduce_sum.183 = f32[] parameter(1)
+  ROOT reduce_sum.184 = f32[] add(reduce_sum.182, reduce_sum.183)
+}
+
+region_28.35 {
+  reduce_sum.189 = f32[] parameter(0)
+  reduce_sum.190 = f32[] parameter(1)
+  ROOT reduce_sum.191 = f32[] add(reduce_sum.189, reduce_sum.190)
+}
+
+_var_2.36 {
+  Arg_2.3 = pred[] parameter(2)
+  Arg_3.1 = f32[8,1,1,8,1]{4,3,2,1,0} parameter(3)
+  jit__where_.5 = f32[8,1,1,8,1]{4,3,2,1,0} call(Arg_2.3, Arg_3.1), to_apply=_where_3.32
+  Arg_1.9 = f32[] parameter(1)
+  div.46 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(Arg_1.9), dimensions={}
+  div.47 = f32[8,1,1,8,1]{4,3,2,1,0} divide(jit__where_.5, div.46)
+  constant.44 = f32[] constant(0)
+  reduce_sum.193 = f32[8,8]{1,0} reduce(div.47, constant.44), dimensions={1,2,4}, to_apply=region_26.33
+  broadcast_in_dim.59 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(reduce_sum.193), dimensions={0,3}
+  Arg_0.13 = f32[8,16,16,8,4]{4,3,2,1,0} parameter(0)
+  mul.111 = f32[8,16,16,8,4]{4,3,2,1,0} multiply(broadcast_in_dim.59, Arg_0.13)
+  neg.3 = f32[8,16,16,8,4]{4,3,2,1,0} negate(mul.111)
+  reduce_sum.194 = f32[8,8]{1,0} reduce(neg.3, constant.44), dimensions={1,2,4}, to_apply=region_27.34
+  reshape.26 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.194)
+  constant.43 = f32[] constant(1024)
+  div.45 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(constant.43), dimensions={}
+  div.48 = f32[8,1,1,8,1]{4,3,2,1,0} divide(reshape.26, div.45)
+  reduce_sum.195 = f32[8,8]{1,0} reduce(div.48, constant.44), dimensions={1,2,4}, to_apply=region_28.35
+  broadcast_in_dim.60 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(reduce_sum.195), dimensions={0,3}
+  ROOT add_any.2 = f32[8,16,16,8,4]{4,3,2,1,0} add(mul.111, broadcast_in_dim.60)
+}
+
+region_29.37 {
+  reduce_sum.199 = f32[] parameter(0)
+  reduce_sum.200 = f32[] parameter(1)
+  ROOT reduce_sum.201 = f32[] add(reduce_sum.199, reduce_sum.200)
+}
+
+region_30.38 {
+  reduce_sum.206 = f32[] parameter(0)
+  reduce_sum.207 = f32[] parameter(1)
+  ROOT reduce_sum.208 = f32[] add(reduce_sum.206, reduce_sum.207)
+}
+
+region_31.39 {
+  reduce_sum.213 = f32[] parameter(0)
+  reduce_sum.214 = f32[] parameter(1)
+  ROOT reduce_sum.215 = f32[] add(reduce_sum.213, reduce_sum.214)
+}
+
+region_32.40 {
+  reduce_sum.220 = f32[] parameter(0)
+  reduce_sum.221 = f32[] parameter(1)
+  ROOT reduce_sum.222 = f32[] add(reduce_sum.220, reduce_sum.221)
+}
+
+region_33.41 {
+  reduce_sum.227 = f32[] parameter(0)
+  reduce_sum.228 = f32[] parameter(1)
+  ROOT reduce_sum.229 = f32[] add(reduce_sum.227, reduce_sum.228)
+}
+
+region_34.42 {
+  reduce_sum.234 = f32[] parameter(0)
+  reduce_sum.235 = f32[] parameter(1)
+  ROOT reduce_sum.236 = f32[] add(reduce_sum.234, reduce_sum.235)
+}
+
+region_35.43 {
+  reduce_sum.241 = f32[] parameter(0)
+  reduce_sum.242 = f32[] parameter(1)
+  ROOT reduce_sum.243 = f32[] add(reduce_sum.241, reduce_sum.242)
+}
+
+region_36.44 {
+  reduce_sum.248 = f32[] parameter(0)
+  reduce_sum.249 = f32[] parameter(1)
+  ROOT reduce_sum.250 = f32[] add(reduce_sum.248, reduce_sum.249)
+}
+
+region_37.45 {
+  reduce_sum.255 = f32[] parameter(0)
+  reduce_sum.256 = f32[] parameter(1)
+  ROOT reduce_sum.257 = f32[] add(reduce_sum.255, reduce_sum.256)
+}
+
+region_38.46 {
+  reduce_sum.262 = f32[] parameter(0)
+  reduce_sum.263 = f32[] parameter(1)
+  ROOT reduce_sum.264 = f32[] add(reduce_sum.262, reduce_sum.263)
+}
+
+region_39.47 {
+  reduce_sum.269 = f32[] parameter(0)
+  reduce_sum.270 = f32[] parameter(1)
+  ROOT reduce_sum.271 = f32[] add(reduce_sum.269, reduce_sum.270)
+}
+
+region_40.48 {
+  reduce_sum.276 = f32[] parameter(0)
+  reduce_sum.277 = f32[] parameter(1)
+  ROOT reduce_sum.278 = f32[] add(reduce_sum.276, reduce_sum.277)
+}
+
+region_41.49 {
+  reduce_sum.283 = f32[] parameter(0)
+  reduce_sum.284 = f32[] parameter(1)
+  ROOT reduce_sum.285 = f32[] add(reduce_sum.283, reduce_sum.284)
+}
+
+region_42.50 {
+  reduce_sum.290 = f32[] parameter(0)
+  reduce_sum.291 = f32[] parameter(1)
+  ROOT reduce_sum.292 = f32[] add(reduce_sum.290, reduce_sum.291)
+}
+
+region_43.51 {
+  reduce_sum.297 = f32[] parameter(0)
+  reduce_sum.298 = f32[] parameter(1)
+  ROOT reduce_sum.299 = f32[] add(reduce_sum.297, reduce_sum.298)
+}
+
+region_44.52 {
+  reduce_sum.304 = f32[] parameter(0)
+  reduce_sum.305 = f32[] parameter(1)
+  ROOT reduce_sum.306 = f32[] add(reduce_sum.304, reduce_sum.305)
+}
+
+region_45.53 {
+  reduce_sum.311 = f32[] parameter(0)
+  reduce_sum.312 = f32[] parameter(1)
+  ROOT reduce_sum.313 = f32[] add(reduce_sum.311, reduce_sum.312)
+}
+
+region_46.54 {
+  reduce_sum.318 = f32[] parameter(0)
+  reduce_sum.319 = f32[] parameter(1)
+  ROOT reduce_sum.320 = f32[] add(reduce_sum.318, reduce_sum.319)
+}
+
+region_47.55 {
+  reduce_sum.325 = f32[] parameter(0)
+  reduce_sum.326 = f32[] parameter(1)
+  ROOT reduce_sum.327 = f32[] add(reduce_sum.325, reduce_sum.326)
+}
+
+region_48.56 {
+  reduce_sum.332 = f32[] parameter(0)
+  reduce_sum.333 = f32[] parameter(1)
+  ROOT reduce_sum.334 = f32[] add(reduce_sum.332, reduce_sum.333)
+}
+
+region_49.57 {
+  reduce_sum.339 = f32[] parameter(0)
+  reduce_sum.340 = f32[] parameter(1)
+  ROOT reduce_sum.341 = f32[] add(reduce_sum.339, reduce_sum.340)
+}
+
+region_50.58 {
+  reduce_sum.346 = f32[] parameter(0)
+  reduce_sum.347 = f32[] parameter(1)
+  ROOT reduce_sum.348 = f32[] add(reduce_sum.346, reduce_sum.347)
+}
+
+region_51.59 {
+  reduce_sum.353 = f32[] parameter(0)
+  reduce_sum.354 = f32[] parameter(1)
+  ROOT reduce_sum.355 = f32[] add(reduce_sum.353, reduce_sum.354)
+}
+
+region_52.60 {
+  reduce_sum.360 = f32[] parameter(0)
+  reduce_sum.361 = f32[] parameter(1)
+  ROOT reduce_sum.362 = f32[] add(reduce_sum.360, reduce_sum.361)
+}
+
+region_53.61 {
+  reduce_sum.367 = f32[] parameter(0)
+  reduce_sum.368 = f32[] parameter(1)
+  ROOT reduce_sum.369 = f32[] add(reduce_sum.367, reduce_sum.368)
+}
+
+region_54.62 {
+  reduce_sum.374 = f32[] parameter(0)
+  reduce_sum.375 = f32[] parameter(1)
+  ROOT reduce_sum.376 = f32[] add(reduce_sum.374, reduce_sum.375)
+}
+
+region_55.63 {
+  reduce_window_sum.10 = f32[] parameter(0)
+  reduce_window_sum.11 = f32[] parameter(1)
+  ROOT reduce_window_sum.12 = f32[] add(reduce_window_sum.10, reduce_window_sum.11)
+}
+
+region_56.64 {
+  reduce_sum.381 = f32[] parameter(0)
+  reduce_sum.382 = f32[] parameter(1)
+  ROOT reduce_sum.383 = f32[] add(reduce_sum.381, reduce_sum.382)
+}
+
+region_57.65 {
+  reduce_sum.388 = f32[] parameter(0)
+  reduce_sum.389 = f32[] parameter(1)
+  ROOT reduce_sum.390 = f32[] add(reduce_sum.388, reduce_sum.389)
+}
+
+region_58.66 {
+  reduce_sum.395 = f32[] parameter(0)
+  reduce_sum.396 = f32[] parameter(1)
+  ROOT reduce_sum.397 = f32[] add(reduce_sum.395, reduce_sum.396)
+}
+
+region_59.67 {
+  reduce_sum.402 = f32[] parameter(0)
+  reduce_sum.403 = f32[] parameter(1)
+  ROOT reduce_sum.404 = f32[] add(reduce_sum.402, reduce_sum.403)
+}
+
+region_60.68 {
+  reduce_sum.409 = f32[] parameter(0)
+  reduce_sum.410 = f32[] parameter(1)
+  ROOT reduce_sum.411 = f32[] add(reduce_sum.409, reduce_sum.410)
+}
+
+region_61.69 {
+  reduce_sum.416 = f32[] parameter(0)
+  reduce_sum.417 = f32[] parameter(1)
+  ROOT reduce_sum.418 = f32[] add(reduce_sum.416, reduce_sum.417)
+}
+
+region_62.70 {
+  reduce_sum.423 = f32[] parameter(0)
+  reduce_sum.424 = f32[] parameter(1)
+  ROOT reduce_sum.425 = f32[] add(reduce_sum.423, reduce_sum.424)
+}
+
+region_63.71 {
+  reduce_sum.430 = f32[] parameter(0)
+  reduce_sum.431 = f32[] parameter(1)
+  ROOT reduce_sum.432 = f32[] add(reduce_sum.430, reduce_sum.431)
+}
+
+region_64.72 {
+  reduce_sum.437 = f32[] parameter(0)
+  reduce_sum.438 = f32[] parameter(1)
+  ROOT reduce_sum.439 = f32[] add(reduce_sum.437, reduce_sum.438)
+}
+
+_var_4.73 {
+  Arg_2.5 = pred[] parameter(2)
+  Arg_3.3 = f32[8,1,1,8,1]{4,3,2,1,0} parameter(3)
+  jit__where_.7 = f32[8,1,1,8,1]{4,3,2,1,0} call(Arg_2.5, Arg_3.3), to_apply=_where_3.32
+  Arg_1.11 = f32[] parameter(1)
+  div.59 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(Arg_1.11), dimensions={}
+  div.60 = f32[8,1,1,8,1]{4,3,2,1,0} divide(jit__where_.7, div.59)
+  constant.48 = f32[] constant(0)
+  reduce_sum.441 = f32[8,8]{1,0} reduce(div.60, constant.48), dimensions={1,2,4}, to_apply=region_62.70
+  broadcast_in_dim.67 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(reduce_sum.441), dimensions={0,3}
+  Arg_0.15 = f32[8,32,32,8,4]{4,3,2,1,0} parameter(0)
+  mul.157 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(broadcast_in_dim.67, Arg_0.15)
+  neg.9 = f32[8,32,32,8,4]{4,3,2,1,0} negate(mul.157)
+  reduce_sum.442 = f32[8,8]{1,0} reduce(neg.9, constant.48), dimensions={1,2,4}, to_apply=region_63.71
+  reshape.52 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.442)
+  constant.47 = f32[] constant(4096)
+  div.58 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(constant.47), dimensions={}
+  div.61 = f32[8,1,1,8,1]{4,3,2,1,0} divide(reshape.52, div.58)
+  reduce_sum.443 = f32[8,8]{1,0} reduce(div.61, constant.48), dimensions={1,2,4}, to_apply=region_64.72
+  broadcast_in_dim.68 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(reduce_sum.443), dimensions={0,3}
+  ROOT add_any.14 = f32[8,32,32,8,4]{4,3,2,1,0} add(mul.157, broadcast_in_dim.68)
+}
+
+region_65.74 {
+  reduce_sum.447 = f32[] parameter(0)
+  reduce_sum.448 = f32[] parameter(1)
+  ROOT reduce_sum.449 = f32[] add(reduce_sum.447, reduce_sum.448)
+}
+
+region_66.75 {
+  reduce_sum.454 = f32[] parameter(0)
+  reduce_sum.455 = f32[] parameter(1)
+  ROOT reduce_sum.456 = f32[] add(reduce_sum.454, reduce_sum.455)
+}
+
+region_67.76 {
+  reduce_sum.461 = f32[] parameter(0)
+  reduce_sum.462 = f32[] parameter(1)
+  ROOT reduce_sum.463 = f32[] add(reduce_sum.461, reduce_sum.462)
+}
+
+region_68.77 {
+  reduce_sum.468 = f32[] parameter(0)
+  reduce_sum.469 = f32[] parameter(1)
+  ROOT reduce_sum.470 = f32[] add(reduce_sum.468, reduce_sum.469)
+}
+
+region_69.78 {
+  reduce_sum.475 = f32[] parameter(0)
+  reduce_sum.476 = f32[] parameter(1)
+  ROOT reduce_sum.477 = f32[] add(reduce_sum.475, reduce_sum.476)
+}
+
+region_70.79 {
+  reduce_sum.482 = f32[] parameter(0)
+  reduce_sum.483 = f32[] parameter(1)
+  ROOT reduce_sum.484 = f32[] add(reduce_sum.482, reduce_sum.483)
+}
+
+region_71.80 {
+  reduce_sum.489 = f32[] parameter(0)
+  reduce_sum.490 = f32[] parameter(1)
+  ROOT reduce_sum.491 = f32[] add(reduce_sum.489, reduce_sum.490)
+}
+
+region_72.81 {
+  reduce_sum.496 = f32[] parameter(0)
+  reduce_sum.497 = f32[] parameter(1)
+  ROOT reduce_sum.498 = f32[] add(reduce_sum.496, reduce_sum.497)
+}
+
+region_73.82 {
+  reduce_sum.503 = f32[] parameter(0)
+  reduce_sum.504 = f32[] parameter(1)
+  ROOT reduce_sum.505 = f32[] add(reduce_sum.503, reduce_sum.504)
+}
+
+region_74.83 {
+  reduce_sum.510 = f32[] parameter(0)
+  reduce_sum.511 = f32[] parameter(1)
+  ROOT reduce_sum.512 = f32[] add(reduce_sum.510, reduce_sum.511)
+}
+
+region_75.84 {
+  reduce_sum.517 = f32[] parameter(0)
+  reduce_sum.518 = f32[] parameter(1)
+  ROOT reduce_sum.519 = f32[] add(reduce_sum.517, reduce_sum.518)
+}
+
+region_76.85 {
+  reduce_sum.524 = f32[] parameter(0)
+  reduce_sum.525 = f32[] parameter(1)
+  ROOT reduce_sum.526 = f32[] add(reduce_sum.524, reduce_sum.525)
+}
+
+region_77.86 {
+  reduce_sum.531 = f32[] parameter(0)
+  reduce_sum.532 = f32[] parameter(1)
+  ROOT reduce_sum.533 = f32[] add(reduce_sum.531, reduce_sum.532)
+}
+
+region_78.87 {
+  reduce_sum.538 = f32[] parameter(0)
+  reduce_sum.539 = f32[] parameter(1)
+  ROOT reduce_sum.540 = f32[] add(reduce_sum.538, reduce_sum.539)
+}
+
+region_79.88 {
+  reduce_sum.545 = f32[] parameter(0)
+  reduce_sum.546 = f32[] parameter(1)
+  ROOT reduce_sum.547 = f32[] add(reduce_sum.545, reduce_sum.546)
+}
+
+region_80.89 {
+  reduce_sum.552 = f32[] parameter(0)
+  reduce_sum.553 = f32[] parameter(1)
+  ROOT reduce_sum.554 = f32[] add(reduce_sum.552, reduce_sum.553)
+}
+
+region_81.90 {
+  reduce_sum.559 = f32[] parameter(0)
+  reduce_sum.560 = f32[] parameter(1)
+  ROOT reduce_sum.561 = f32[] add(reduce_sum.559, reduce_sum.560)
+}
+
+region_82.91 {
+  reduce_sum.566 = f32[] parameter(0)
+  reduce_sum.567 = f32[] parameter(1)
+  ROOT reduce_sum.568 = f32[] add(reduce_sum.566, reduce_sum.567)
+}
+
+region_83.92 {
+  reduce_sum.573 = f32[] parameter(0)
+  reduce_sum.574 = f32[] parameter(1)
+  ROOT reduce_sum.575 = f32[] add(reduce_sum.573, reduce_sum.574)
+}
+
+region_84.93 {
+  reduce_sum.580 = f32[] parameter(0)
+  reduce_sum.581 = f32[] parameter(1)
+  ROOT reduce_sum.582 = f32[] add(reduce_sum.580, reduce_sum.581)
+}
+
+region_85.94 {
+  reduce_sum.587 = f32[] parameter(0)
+  reduce_sum.588 = f32[] parameter(1)
+  ROOT reduce_sum.589 = f32[] add(reduce_sum.587, reduce_sum.588)
+}
+
+region_86.95 {
+  reduce_sum.594 = f32[] parameter(0)
+  reduce_sum.595 = f32[] parameter(1)
+  ROOT reduce_sum.596 = f32[] add(reduce_sum.594, reduce_sum.595)
+}
+
+region_87.96 {
+  reduce_sum.601 = f32[] parameter(0)
+  reduce_sum.602 = f32[] parameter(1)
+  ROOT reduce_sum.603 = f32[] add(reduce_sum.601, reduce_sum.602)
+}
+
+region_88.97 {
+  reduce_sum.608 = f32[] parameter(0)
+  reduce_sum.609 = f32[] parameter(1)
+  ROOT reduce_sum.610 = f32[] add(reduce_sum.608, reduce_sum.609)
+}
+
+region_89.98 {
+  reduce_sum.615 = f32[] parameter(0)
+  reduce_sum.616 = f32[] parameter(1)
+  ROOT reduce_sum.617 = f32[] add(reduce_sum.615, reduce_sum.616)
+}
+
+region_90.99 {
+  reduce_sum.622 = f32[] parameter(0)
+  reduce_sum.623 = f32[] parameter(1)
+  ROOT reduce_sum.624 = f32[] add(reduce_sum.622, reduce_sum.623)
+}
+
+region_91.100 {
+  reduce_sum.629 = f32[] parameter(0)
+  reduce_sum.630 = f32[] parameter(1)
+  ROOT reduce_sum.631 = f32[] add(reduce_sum.629, reduce_sum.630)
+}
+
+region_92.101 {
+  reduce_sum.636 = f32[] parameter(0)
+  reduce_sum.637 = f32[] parameter(1)
+  ROOT reduce_sum.638 = f32[] add(reduce_sum.636, reduce_sum.637)
+}
+
+region_93.102 {
+  reduce_sum.643 = f32[] parameter(0)
+  reduce_sum.644 = f32[] parameter(1)
+  ROOT reduce_sum.645 = f32[] add(reduce_sum.643, reduce_sum.644)
+}
+
+region_94.103 {
+  reduce_sum.650 = f32[] parameter(0)
+  reduce_sum.651 = f32[] parameter(1)
+  ROOT reduce_sum.652 = f32[] add(reduce_sum.650, reduce_sum.651)
+}
+
+region_95.104 {
+  reduce_sum.657 = f32[] parameter(0)
+  reduce_sum.658 = f32[] parameter(1)
+  ROOT reduce_sum.659 = f32[] add(reduce_sum.657, reduce_sum.658)
+}
+
+region_96.105 {
+  reduce_sum.664 = f32[] parameter(0)
+  reduce_sum.665 = f32[] parameter(1)
+  ROOT reduce_sum.666 = f32[] add(reduce_sum.664, reduce_sum.665)
+}
+
+region_97.106 {
+  reduce_sum.671 = f32[] parameter(0)
+  reduce_sum.672 = f32[] parameter(1)
+  ROOT reduce_sum.673 = f32[] add(reduce_sum.671, reduce_sum.672)
+}
+
+region_98.107 {
+  reduce_sum.678 = f32[] parameter(0)
+  reduce_sum.679 = f32[] parameter(1)
+  ROOT reduce_sum.680 = f32[] add(reduce_sum.678, reduce_sum.679)
+}
+
+region_99.108 {
+  reduce_sum.685 = f32[] parameter(0)
+  reduce_sum.686 = f32[] parameter(1)
+  ROOT reduce_sum.687 = f32[] add(reduce_sum.685, reduce_sum.686)
+}
+
+region_100.109 {
+  reduce_sum.692 = f32[] parameter(0)
+  reduce_sum.693 = f32[] parameter(1)
+  ROOT reduce_sum.694 = f32[] add(reduce_sum.692, reduce_sum.693)
+}
+
+region_101.110 {
+  reduce_sum.699 = f32[] parameter(0)
+  reduce_sum.700 = f32[] parameter(1)
+  ROOT reduce_sum.701 = f32[] add(reduce_sum.699, reduce_sum.700)
+}
+
+region_102.111 {
+  reduce_sum.706 = f32[] parameter(0)
+  reduce_sum.707 = f32[] parameter(1)
+  ROOT reduce_sum.708 = f32[] add(reduce_sum.706, reduce_sum.707)
+}
+
+region_103.112 {
+  reduce_sum.713 = f32[] parameter(0)
+  reduce_sum.714 = f32[] parameter(1)
+  ROOT reduce_sum.715 = f32[] add(reduce_sum.713, reduce_sum.714)
+}
+
+region_104.113 {
+  reduce_sum.720 = f32[] parameter(0)
+  reduce_sum.721 = f32[] parameter(1)
+  ROOT reduce_sum.722 = f32[] add(reduce_sum.720, reduce_sum.721)
+}
+
+region_105.114 {
+  reduce_sum.727 = f32[] parameter(0)
+  reduce_sum.728 = f32[] parameter(1)
+  ROOT reduce_sum.729 = f32[] add(reduce_sum.727, reduce_sum.728)
+}
+
+region_106.115 {
+  reduce_sum.734 = f32[] parameter(0)
+  reduce_sum.735 = f32[] parameter(1)
+  ROOT reduce_sum.736 = f32[] add(reduce_sum.734, reduce_sum.735)
+}
+
+region_107.116 {
+  reduce_sum.741 = f32[] parameter(0)
+  reduce_sum.742 = f32[] parameter(1)
+  ROOT reduce_sum.743 = f32[] add(reduce_sum.741, reduce_sum.742)
+}
+
+ENTRY main.117 {
+  x.1 = f32[8,32,32,3]{3,2,1,0} parameter(44)
+  p__conv2_d____w__.1 = f32[3,3,3,32]{3,2,1,0} parameter(1)
+  conv_general_dilated.32 = f32[8,32,32,32]{3,2,1,0} convolution(x.1, p__conv2_d____w__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  p__conv2_d____b__.1 = f32[32]{0} parameter(0)
+  broadcast_in_dim.75 = f32[8,32,32,32]{3,2,1,0} broadcast(p__conv2_d____b__.1), dimensions={3}
+  add.68 = f32[8,32,32,32]{3,2,1,0} add(conv_general_dilated.32, broadcast_in_dim.75)
+  p__conv2_d_1____w__.1 = f32[3,3,32,32]{3,2,1,0} parameter(3)
+  conv_general_dilated.33 = f32[8,32,32,32]{3,2,1,0} convolution(add.68, p__conv2_d_1____w__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  p__conv2_d_1____b__.1 = f32[32]{0} parameter(2)
+  broadcast_in_dim.76 = f32[8,32,32,32]{3,2,1,0} broadcast(p__conv2_d_1____b__.1), dimensions={3}
+  add.69 = f32[8,32,32,32]{3,2,1,0} add(conv_general_dilated.33, broadcast_in_dim.76)
+  reshape.84 = f32[8,32,32,8,4]{4,3,2,1,0} reshape(add.69)
+  constant.63 = f32[] constant(0)
+  reduce_sum.745 = f32[8,8]{1,0} reduce(reshape.84, constant.63), dimensions={1,2,4}, to_apply=region_0.1
+  broadcast_in_dim.77 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.745)
+  constant.59 = f32[] constant(4096)
+  broadcast.21 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(constant.59), dimensions={}
+  div.68 = f32[8,1,1,8,1]{4,3,2,1,0} divide(broadcast_in_dim.77, broadcast.21)
+  sub.64 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(div.68), dimensions={0,1,2,3,4}
+  sub.65 = f32[8,8]{1,0} reshape(sub.64)
+  sub.66 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(sub.65), dimensions={0,3}
+  sub.67 = f32[8,32,32,8,4]{4,3,2,1,0} subtract(reshape.84, sub.66)
+  constant.62 = s32[] constant(0)
+  jit__var_.60 = (f32[8,1,1,8,1]{4,3,2,1,0}, f32[8,32,32,8,4]{4,3,2,1,0}, f32[], pred[]) call(reshape.84, constant.62), to_apply=_var.5
+  jit__var_.61 = f32[8,1,1,8,1]{4,3,2,1,0} get-tuple-element(jit__var_.60), index=0
+  constant.58 = f32[] constant(1e-05)
+  broadcast.20 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(constant.58), dimensions={}
+  add.70 = f32[8,1,1,8,1]{4,3,2,1,0} add(jit__var_.61, broadcast.20)
+  rsqrt.10 = f32[8,1,1,8,1]{4,3,2,1,0} rsqrt(add.70)
+  mul.214 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.10), dimensions={0,1,2,3,4}
+  mul.215 = f32[8,8]{1,0} reshape(mul.214)
+  mul.216 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(mul.215), dimensions={0,3}
+  mul.217 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(sub.67, mul.216)
+  reshape.85 = f32[8,32,32,32]{3,2,1,0} reshape(mul.217)
+  p__group_norm____scale__.1 = f32[32]{0} parameter(23)
+  broadcast_in_dim.78 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm____scale__.1)
+  mul.218 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.78), dimensions={0,1,2,3}
+  mul.219 = f32[32]{0} reshape(mul.218)
+  mul.220 = f32[8,32,32,32]{3,2,1,0} broadcast(mul.219), dimensions={3}
+  mul.221 = f32[8,32,32,32]{3,2,1,0} multiply(reshape.85, mul.220)
+  p__group_norm____offset__.1 = f32[32]{0} parameter(22)
+  broadcast_in_dim.79 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm____offset__.1)
+  add.71 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.79), dimensions={0,1,2,3}
+  add.72 = f32[32]{0} reshape(add.71)
+  add.73 = f32[8,32,32,32]{3,2,1,0} broadcast(add.72), dimensions={3}
+  add.74 = f32[8,32,32,32]{3,2,1,0} add(mul.221, add.73)
+  jit_relu_.10 = f32[8,32,32,32]{3,2,1,0} call(add.74), to_apply=relu.6
+  p__conv2_d_2____w__.1 = f32[3,3,32,32]{3,2,1,0} parameter(7)
+  conv_general_dilated.34 = f32[8,32,32,32]{3,2,1,0} convolution(jit_relu_.10, p__conv2_d_2____w__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  p__conv2_d_2____b__.1 = f32[32]{0} parameter(6)
+  broadcast_in_dim.80 = f32[8,32,32,32]{3,2,1,0} broadcast(p__conv2_d_2____b__.1), dimensions={3}
+  add.75 = f32[8,32,32,32]{3,2,1,0} add(conv_general_dilated.34, broadcast_in_dim.80)
+  reshape.86 = f32[8,32,32,8,4]{4,3,2,1,0} reshape(add.75)
+  reduce_sum.746 = f32[8,8]{1,0} reduce(reshape.86, constant.63), dimensions={1,2,4}, to_apply=region_3.7
+  broadcast_in_dim.81 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.746)
+  div.70 = f32[8,1,1,8,1]{4,3,2,1,0} divide(broadcast_in_dim.81, broadcast.21)
+  sub.68 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(div.70), dimensions={0,1,2,3,4}
+  sub.69 = f32[8,8]{1,0} reshape(sub.68)
+  sub.70 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(sub.69), dimensions={0,3}
+  sub.71 = f32[8,32,32,8,4]{4,3,2,1,0} subtract(reshape.86, sub.70)
+  jit__var_.65 = (f32[8,1,1,8,1]{4,3,2,1,0}, f32[8,32,32,8,4]{4,3,2,1,0}, f32[], pred[]) call(reshape.86, constant.62), to_apply=_var.5
+  jit__var_.66 = f32[8,1,1,8,1]{4,3,2,1,0} get-tuple-element(jit__var_.65), index=0
+  add.76 = f32[8,1,1,8,1]{4,3,2,1,0} add(jit__var_.66, broadcast.20)
+  rsqrt.11 = f32[8,1,1,8,1]{4,3,2,1,0} rsqrt(add.76)
+  mul.223 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.11), dimensions={0,1,2,3,4}
+  mul.224 = f32[8,8]{1,0} reshape(mul.223)
+  mul.225 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(mul.224), dimensions={0,3}
+  mul.226 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(sub.71, mul.225)
+  reshape.87 = f32[8,32,32,32]{3,2,1,0} reshape(mul.226)
+  p__group_norm_1____scale__.1 = f32[32]{0} parameter(25)
+  broadcast_in_dim.82 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_1____scale__.1)
+  mul.227 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.82), dimensions={0,1,2,3}
+  mul.228 = f32[32]{0} reshape(mul.227)
+  mul.229 = f32[8,32,32,32]{3,2,1,0} broadcast(mul.228), dimensions={3}
+  mul.230 = f32[8,32,32,32]{3,2,1,0} multiply(reshape.87, mul.229)
+  p__group_norm_1____offset__.1 = f32[32]{0} parameter(24)
+  broadcast_in_dim.83 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_1____offset__.1)
+  add.77 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.83), dimensions={0,1,2,3}
+  add.78 = f32[32]{0} reshape(add.77)
+  add.79 = f32[8,32,32,32]{3,2,1,0} broadcast(add.78), dimensions={3}
+  add.80 = f32[8,32,32,32]{3,2,1,0} add(mul.230, add.79)
+  add.81 = f32[8,32,32,32]{3,2,1,0} add(add.80, add.68)
+  jit_relu_.11 = f32[8,32,32,32]{3,2,1,0} call(add.81), to_apply=relu.6
+  p__conv2_d_3____w__.1 = f32[3,3,32,32]{3,2,1,0} parameter(9)
+  conv_general_dilated.35 = f32[8,32,32,32]{3,2,1,0} convolution(jit_relu_.11, p__conv2_d_3____w__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  p__conv2_d_3____b__.1 = f32[32]{0} parameter(8)
+  broadcast_in_dim.84 = f32[8,32,32,32]{3,2,1,0} broadcast(p__conv2_d_3____b__.1), dimensions={3}
+  add.82 = f32[8,32,32,32]{3,2,1,0} add(conv_general_dilated.35, broadcast_in_dim.84)
+  reshape.88 = f32[8,32,32,8,4]{4,3,2,1,0} reshape(add.82)
+  reduce_sum.747 = f32[8,8]{1,0} reduce(reshape.88, constant.63), dimensions={1,2,4}, to_apply=region_4.8
+  broadcast_in_dim.85 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.747)
+  div.72 = f32[8,1,1,8,1]{4,3,2,1,0} divide(broadcast_in_dim.85, broadcast.21)
+  sub.72 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(div.72), dimensions={0,1,2,3,4}
+  sub.73 = f32[8,8]{1,0} reshape(sub.72)
+  sub.74 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(sub.73), dimensions={0,3}
+  sub.75 = f32[8,32,32,8,4]{4,3,2,1,0} subtract(reshape.88, sub.74)
+  jit__var_.70 = (f32[8,1,1,8,1]{4,3,2,1,0}, f32[8,32,32,8,4]{4,3,2,1,0}, f32[], pred[]) call(reshape.88, constant.62), to_apply=_var.5
+  jit__var_.71 = f32[8,1,1,8,1]{4,3,2,1,0} get-tuple-element(jit__var_.70), index=0
+  add.83 = f32[8,1,1,8,1]{4,3,2,1,0} add(jit__var_.71, broadcast.20)
+  rsqrt.12 = f32[8,1,1,8,1]{4,3,2,1,0} rsqrt(add.83)
+  mul.232 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.12), dimensions={0,1,2,3,4}
+  mul.233 = f32[8,8]{1,0} reshape(mul.232)
+  mul.234 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(mul.233), dimensions={0,3}
+  mul.235 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(sub.75, mul.234)
+  reshape.89 = f32[8,32,32,32]{3,2,1,0} reshape(mul.235)
+  p__group_norm_2____scale__.1 = f32[32]{0} parameter(27)
+  broadcast_in_dim.86 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_2____scale__.1)
+  mul.236 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.86), dimensions={0,1,2,3}
+  mul.237 = f32[32]{0} reshape(mul.236)
+  mul.238 = f32[8,32,32,32]{3,2,1,0} broadcast(mul.237), dimensions={3}
+  mul.239 = f32[8,32,32,32]{3,2,1,0} multiply(reshape.89, mul.238)
+  p__group_norm_2____offset__.1 = f32[32]{0} parameter(26)
+  broadcast_in_dim.87 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_2____offset__.1)
+  add.84 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.87), dimensions={0,1,2,3}
+  add.85 = f32[32]{0} reshape(add.84)
+  add.86 = f32[8,32,32,32]{3,2,1,0} broadcast(add.85), dimensions={3}
+  add.87 = f32[8,32,32,32]{3,2,1,0} add(mul.239, add.86)
+  jit_relu_.12 = f32[8,32,32,32]{3,2,1,0} call(add.87), to_apply=relu.6
+  p__conv2_d_4____w__.1 = f32[3,3,32,32]{3,2,1,0} parameter(11)
+  conv_general_dilated.36 = f32[8,32,32,32]{3,2,1,0} convolution(jit_relu_.12, p__conv2_d_4____w__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  p__conv2_d_4____b__.1 = f32[32]{0} parameter(10)
+  broadcast_in_dim.88 = f32[8,32,32,32]{3,2,1,0} broadcast(p__conv2_d_4____b__.1), dimensions={3}
+  add.88 = f32[8,32,32,32]{3,2,1,0} add(conv_general_dilated.36, broadcast_in_dim.88)
+  reshape.90 = f32[8,32,32,8,4]{4,3,2,1,0} reshape(add.88)
+  reduce_sum.748 = f32[8,8]{1,0} reduce(reshape.90, constant.63), dimensions={1,2,4}, to_apply=region_5.9
+  broadcast_in_dim.89 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.748)
+  div.74 = f32[8,1,1,8,1]{4,3,2,1,0} divide(broadcast_in_dim.89, broadcast.21)
+  sub.76 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(div.74), dimensions={0,1,2,3,4}
+  sub.77 = f32[8,8]{1,0} reshape(sub.76)
+  sub.78 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(sub.77), dimensions={0,3}
+  sub.79 = f32[8,32,32,8,4]{4,3,2,1,0} subtract(reshape.90, sub.78)
+  jit__var_.75 = (f32[8,1,1,8,1]{4,3,2,1,0}, f32[8,32,32,8,4]{4,3,2,1,0}, f32[], pred[]) call(reshape.90, constant.62), to_apply=_var.5
+  jit__var_.76 = f32[8,1,1,8,1]{4,3,2,1,0} get-tuple-element(jit__var_.75), index=0
+  add.89 = f32[8,1,1,8,1]{4,3,2,1,0} add(jit__var_.76, broadcast.20)
+  rsqrt.13 = f32[8,1,1,8,1]{4,3,2,1,0} rsqrt(add.89)
+  mul.241 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.13), dimensions={0,1,2,3,4}
+  mul.242 = f32[8,8]{1,0} reshape(mul.241)
+  mul.243 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(mul.242), dimensions={0,3}
+  mul.244 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(sub.79, mul.243)
+  reshape.91 = f32[8,32,32,32]{3,2,1,0} reshape(mul.244)
+  p__group_norm_3____scale__.1 = f32[32]{0} parameter(29)
+  broadcast_in_dim.90 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_3____scale__.1)
+  mul.245 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.90), dimensions={0,1,2,3}
+  mul.246 = f32[32]{0} reshape(mul.245)
+  mul.247 = f32[8,32,32,32]{3,2,1,0} broadcast(mul.246), dimensions={3}
+  mul.248 = f32[8,32,32,32]{3,2,1,0} multiply(reshape.91, mul.247)
+  p__group_norm_3____offset__.1 = f32[32]{0} parameter(28)
+  broadcast_in_dim.91 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_3____offset__.1)
+  add.90 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.91), dimensions={0,1,2,3}
+  add.91 = f32[32]{0} reshape(add.90)
+  add.92 = f32[8,32,32,32]{3,2,1,0} broadcast(add.91), dimensions={3}
+  add.93 = f32[8,32,32,32]{3,2,1,0} add(mul.248, add.92)
+  add.94 = f32[8,32,32,32]{3,2,1,0} add(add.93, jit_relu_.11)
+  jit_relu_.13 = f32[8,32,32,32]{3,2,1,0} call(add.94), to_apply=relu.6
+  p__conv2_d_5____w__.1 = f32[3,3,32,32]{3,2,1,0} parameter(13)
+  conv_general_dilated.37 = f32[8,32,32,32]{3,2,1,0} convolution(jit_relu_.13, p__conv2_d_5____w__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  p__conv2_d_5____b__.1 = f32[32]{0} parameter(12)
+  broadcast_in_dim.92 = f32[8,32,32,32]{3,2,1,0} broadcast(p__conv2_d_5____b__.1), dimensions={3}
+  add.95 = f32[8,32,32,32]{3,2,1,0} add(conv_general_dilated.37, broadcast_in_dim.92)
+  reshape.92 = f32[8,32,32,8,4]{4,3,2,1,0} reshape(add.95)
+  reduce_sum.749 = f32[8,8]{1,0} reduce(reshape.92, constant.63), dimensions={1,2,4}, to_apply=region_6.10
+  broadcast_in_dim.93 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.749)
+  div.76 = f32[8,1,1,8,1]{4,3,2,1,0} divide(broadcast_in_dim.93, broadcast.21)
+  sub.80 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(div.76), dimensions={0,1,2,3,4}
+  sub.81 = f32[8,8]{1,0} reshape(sub.80)
+  sub.82 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(sub.81), dimensions={0,3}
+  sub.83 = f32[8,32,32,8,4]{4,3,2,1,0} subtract(reshape.92, sub.82)
+  jit__var_.80 = (f32[8,1,1,8,1]{4,3,2,1,0}, f32[8,32,32,8,4]{4,3,2,1,0}, f32[], pred[]) call(reshape.92, constant.62), to_apply=_var.5
+  jit__var_.81 = f32[8,1,1,8,1]{4,3,2,1,0} get-tuple-element(jit__var_.80), index=0
+  add.96 = f32[8,1,1,8,1]{4,3,2,1,0} add(jit__var_.81, broadcast.20)
+  rsqrt.14 = f32[8,1,1,8,1]{4,3,2,1,0} rsqrt(add.96)
+  mul.250 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.14), dimensions={0,1,2,3,4}
+  mul.251 = f32[8,8]{1,0} reshape(mul.250)
+  mul.252 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(mul.251), dimensions={0,3}
+  mul.253 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(sub.83, mul.252)
+  reshape.93 = f32[8,32,32,32]{3,2,1,0} reshape(mul.253)
+  p__group_norm_4____scale__.1 = f32[32]{0} parameter(31)
+  broadcast_in_dim.94 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_4____scale__.1)
+  mul.254 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.94), dimensions={0,1,2,3}
+  mul.255 = f32[32]{0} reshape(mul.254)
+  mul.256 = f32[8,32,32,32]{3,2,1,0} broadcast(mul.255), dimensions={3}
+  mul.257 = f32[8,32,32,32]{3,2,1,0} multiply(reshape.93, mul.256)
+  p__group_norm_4____offset__.1 = f32[32]{0} parameter(30)
+  broadcast_in_dim.95 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_4____offset__.1)
+  add.97 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.95), dimensions={0,1,2,3}
+  add.98 = f32[32]{0} reshape(add.97)
+  add.99 = f32[8,32,32,32]{3,2,1,0} broadcast(add.98), dimensions={3}
+  add.100 = f32[8,32,32,32]{3,2,1,0} add(mul.257, add.99)
+  jit_relu_.14 = f32[8,32,32,32]{3,2,1,0} call(add.100), to_apply=relu.6
+  p__conv2_d_6____w__.1 = f32[3,3,32,32]{3,2,1,0} parameter(15)
+  conv_general_dilated.38 = f32[8,32,32,32]{3,2,1,0} convolution(jit_relu_.14, p__conv2_d_6____w__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  p__conv2_d_6____b__.1 = f32[32]{0} parameter(14)
+  broadcast_in_dim.96 = f32[8,32,32,32]{3,2,1,0} broadcast(p__conv2_d_6____b__.1), dimensions={3}
+  add.101 = f32[8,32,32,32]{3,2,1,0} add(conv_general_dilated.38, broadcast_in_dim.96)
+  reshape.94 = f32[8,32,32,8,4]{4,3,2,1,0} reshape(add.101)
+  reduce_sum.750 = f32[8,8]{1,0} reduce(reshape.94, constant.63), dimensions={1,2,4}, to_apply=region_7.11
+  broadcast_in_dim.97 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.750)
+  div.78 = f32[8,1,1,8,1]{4,3,2,1,0} divide(broadcast_in_dim.97, broadcast.21)
+  sub.84 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(div.78), dimensions={0,1,2,3,4}
+  sub.85 = f32[8,8]{1,0} reshape(sub.84)
+  sub.86 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(sub.85), dimensions={0,3}
+  sub.87 = f32[8,32,32,8,4]{4,3,2,1,0} subtract(reshape.94, sub.86)
+  jit__var_.85 = (f32[8,1,1,8,1]{4,3,2,1,0}, f32[8,32,32,8,4]{4,3,2,1,0}, f32[], pred[]) call(reshape.94, constant.62), to_apply=_var.5
+  jit__var_.86 = f32[8,1,1,8,1]{4,3,2,1,0} get-tuple-element(jit__var_.85), index=0
+  add.102 = f32[8,1,1,8,1]{4,3,2,1,0} add(jit__var_.86, broadcast.20)
+  rsqrt.15 = f32[8,1,1,8,1]{4,3,2,1,0} rsqrt(add.102)
+  mul.259 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.15), dimensions={0,1,2,3,4}
+  mul.260 = f32[8,8]{1,0} reshape(mul.259)
+  mul.261 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(mul.260), dimensions={0,3}
+  mul.262 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(sub.87, mul.261)
+  reshape.95 = f32[8,32,32,32]{3,2,1,0} reshape(mul.262)
+  p__group_norm_5____scale__.1 = f32[32]{0} parameter(33)
+  broadcast_in_dim.98 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_5____scale__.1)
+  mul.263 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.98), dimensions={0,1,2,3}
+  mul.264 = f32[32]{0} reshape(mul.263)
+  mul.265 = f32[8,32,32,32]{3,2,1,0} broadcast(mul.264), dimensions={3}
+  mul.266 = f32[8,32,32,32]{3,2,1,0} multiply(reshape.95, mul.265)
+  p__group_norm_5____offset__.1 = f32[32]{0} parameter(32)
+  broadcast_in_dim.99 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_5____offset__.1)
+  add.103 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.99), dimensions={0,1,2,3}
+  add.104 = f32[32]{0} reshape(add.103)
+  add.105 = f32[8,32,32,32]{3,2,1,0} broadcast(add.104), dimensions={3}
+  add.106 = f32[8,32,32,32]{3,2,1,0} add(mul.266, add.105)
+  add.107 = f32[8,32,32,32]{3,2,1,0} add(add.106, jit_relu_.13)
+  jit_relu_.15 = f32[8,32,32,32]{3,2,1,0} call(add.107), to_apply=relu.6
+  reduce_window_sum.14 = f32[8,16,16,32]{3,2,1,0} reduce-window(jit_relu_.15, constant.63), window={size=1x2x2x1 stride=1x2x2x1}, to_apply=region_8.12
+  constant.55 = f32[] constant(4)
+  broadcast.17 = f32[8,16,16,32]{3,2,1,0} broadcast(constant.55), dimensions={}
+  div.80 = f32[8,16,16,32]{3,2,1,0} divide(reduce_window_sum.14, broadcast.17)
+  p__conv2_d_7____w__.1 = f32[3,3,32,32]{3,2,1,0} parameter(17)
+  conv_general_dilated.39 = f32[8,16,16,32]{3,2,1,0} convolution(div.80, p__conv2_d_7____w__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  p__conv2_d_7____b__.1 = f32[32]{0} parameter(16)
+  broadcast_in_dim.100 = f32[8,16,16,32]{3,2,1,0} broadcast(p__conv2_d_7____b__.1), dimensions={3}
+  add.108 = f32[8,16,16,32]{3,2,1,0} add(conv_general_dilated.39, broadcast_in_dim.100)
+  reshape.96 = f32[8,16,16,8,4]{4,3,2,1,0} reshape(add.108)
+  reduce_sum.751 = f32[8,8]{1,0} reduce(reshape.96, constant.63), dimensions={1,2,4}, to_apply=region_9.13
+  broadcast_in_dim.101 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.751)
+  constant.54 = f32[] constant(1024)
+  broadcast.16 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(constant.54), dimensions={}
+  div.81 = f32[8,1,1,8,1]{4,3,2,1,0} divide(broadcast_in_dim.101, broadcast.16)
+  sub.88 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(div.81), dimensions={0,1,2,3,4}
+  sub.89 = f32[8,8]{1,0} reshape(sub.88)
+  sub.90 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(sub.89), dimensions={0,3}
+  sub.91 = f32[8,16,16,8,4]{4,3,2,1,0} subtract(reshape.96, sub.90)
+  jit__var_.90 = (f32[8,1,1,8,1]{4,3,2,1,0}, f32[8,16,16,8,4]{4,3,2,1,0}, f32[], pred[]) call(reshape.96, constant.62), to_apply=_var_0.16
+  jit__var_.91 = f32[8,1,1,8,1]{4,3,2,1,0} get-tuple-element(jit__var_.90), index=0
+  add.109 = f32[8,1,1,8,1]{4,3,2,1,0} add(jit__var_.91, broadcast.20)
+  rsqrt.16 = f32[8,1,1,8,1]{4,3,2,1,0} rsqrt(add.109)
+  mul.268 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.16), dimensions={0,1,2,3,4}
+  mul.269 = f32[8,8]{1,0} reshape(mul.268)
+  mul.270 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(mul.269), dimensions={0,3}
+  mul.271 = f32[8,16,16,8,4]{4,3,2,1,0} multiply(sub.91, mul.270)
+  reshape.97 = f32[8,16,16,32]{3,2,1,0} reshape(mul.271)
+  p__group_norm_6____scale__.1 = f32[32]{0} parameter(35)
+  broadcast_in_dim.102 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_6____scale__.1)
+  mul.272 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.102), dimensions={0,1,2,3}
+  mul.273 = f32[32]{0} reshape(mul.272)
+  mul.274 = f32[8,16,16,32]{3,2,1,0} broadcast(mul.273), dimensions={3}
+  mul.275 = f32[8,16,16,32]{3,2,1,0} multiply(reshape.97, mul.274)
+  p__group_norm_6____offset__.1 = f32[32]{0} parameter(34)
+  broadcast_in_dim.103 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_6____offset__.1)
+  add.110 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.103), dimensions={0,1,2,3}
+  add.111 = f32[32]{0} reshape(add.110)
+  add.112 = f32[8,16,16,32]{3,2,1,0} broadcast(add.111), dimensions={3}
+  add.113 = f32[8,16,16,32]{3,2,1,0} add(mul.275, add.112)
+  jit_relu_.16 = f32[8,16,16,32]{3,2,1,0} call(add.113), to_apply=relu_1.17
+  p__conv2_d_8____w__.1 = f32[3,3,32,32]{3,2,1,0} parameter(19)
+  conv_general_dilated.40 = f32[8,16,16,32]{3,2,1,0} convolution(jit_relu_.16, p__conv2_d_8____w__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  p__conv2_d_8____b__.1 = f32[32]{0} parameter(18)
+  broadcast_in_dim.104 = f32[8,16,16,32]{3,2,1,0} broadcast(p__conv2_d_8____b__.1), dimensions={3}
+  add.114 = f32[8,16,16,32]{3,2,1,0} add(conv_general_dilated.40, broadcast_in_dim.104)
+  reshape.98 = f32[8,16,16,8,4]{4,3,2,1,0} reshape(add.114)
+  reduce_sum.752 = f32[8,8]{1,0} reduce(reshape.98, constant.63), dimensions={1,2,4}, to_apply=region_12.18
+  broadcast_in_dim.105 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.752)
+  div.83 = f32[8,1,1,8,1]{4,3,2,1,0} divide(broadcast_in_dim.105, broadcast.16)
+  sub.92 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(div.83), dimensions={0,1,2,3,4}
+  sub.93 = f32[8,8]{1,0} reshape(sub.92)
+  sub.94 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(sub.93), dimensions={0,3}
+  sub.95 = f32[8,16,16,8,4]{4,3,2,1,0} subtract(reshape.98, sub.94)
+  jit__var_.95 = (f32[8,1,1,8,1]{4,3,2,1,0}, f32[8,16,16,8,4]{4,3,2,1,0}, f32[], pred[]) call(reshape.98, constant.62), to_apply=_var_0.16
+  jit__var_.96 = f32[8,1,1,8,1]{4,3,2,1,0} get-tuple-element(jit__var_.95), index=0
+  add.115 = f32[8,1,1,8,1]{4,3,2,1,0} add(jit__var_.96, broadcast.20)
+  rsqrt.17 = f32[8,1,1,8,1]{4,3,2,1,0} rsqrt(add.115)
+  mul.277 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.17), dimensions={0,1,2,3,4}
+  mul.278 = f32[8,8]{1,0} reshape(mul.277)
+  mul.279 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(mul.278), dimensions={0,3}
+  mul.280 = f32[8,16,16,8,4]{4,3,2,1,0} multiply(sub.95, mul.279)
+  reshape.99 = f32[8,16,16,32]{3,2,1,0} reshape(mul.280)
+  p__group_norm_7____scale__.1 = f32[32]{0} parameter(37)
+  broadcast_in_dim.106 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_7____scale__.1)
+  mul.281 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.106), dimensions={0,1,2,3}
+  mul.282 = f32[32]{0} reshape(mul.281)
+  mul.283 = f32[8,16,16,32]{3,2,1,0} broadcast(mul.282), dimensions={3}
+  mul.284 = f32[8,16,16,32]{3,2,1,0} multiply(reshape.99, mul.283)
+  p__group_norm_7____offset__.1 = f32[32]{0} parameter(36)
+  broadcast_in_dim.107 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_7____offset__.1)
+  add.116 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.107), dimensions={0,1,2,3}
+  add.117 = f32[32]{0} reshape(add.116)
+  add.118 = f32[8,16,16,32]{3,2,1,0} broadcast(add.117), dimensions={3}
+  add.119 = f32[8,16,16,32]{3,2,1,0} add(mul.284, add.118)
+  add.120 = f32[8,16,16,32]{3,2,1,0} add(add.119, div.80)
+  jit_relu_.17 = f32[8,16,16,32]{3,2,1,0} call(add.120), to_apply=relu_1.17
+  p__conv2_d_9____w__.1 = f32[3,3,32,32]{3,2,1,0} parameter(21)
+  conv_general_dilated.41 = f32[8,16,16,32]{3,2,1,0} convolution(jit_relu_.17, p__conv2_d_9____w__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  p__conv2_d_9____b__.1 = f32[32]{0} parameter(20)
+  broadcast_in_dim.108 = f32[8,16,16,32]{3,2,1,0} broadcast(p__conv2_d_9____b__.1), dimensions={3}
+  add.121 = f32[8,16,16,32]{3,2,1,0} add(conv_general_dilated.41, broadcast_in_dim.108)
+  reshape.100 = f32[8,16,16,8,4]{4,3,2,1,0} reshape(add.121)
+  reduce_sum.753 = f32[8,8]{1,0} reduce(reshape.100, constant.63), dimensions={1,2,4}, to_apply=region_13.19
+  broadcast_in_dim.109 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.753)
+  div.85 = f32[8,1,1,8,1]{4,3,2,1,0} divide(broadcast_in_dim.109, broadcast.16)
+  sub.96 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(div.85), dimensions={0,1,2,3,4}
+  sub.97 = f32[8,8]{1,0} reshape(sub.96)
+  sub.98 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(sub.97), dimensions={0,3}
+  sub.99 = f32[8,16,16,8,4]{4,3,2,1,0} subtract(reshape.100, sub.98)
+  jit__var_.100 = (f32[8,1,1,8,1]{4,3,2,1,0}, f32[8,16,16,8,4]{4,3,2,1,0}, f32[], pred[]) call(reshape.100, constant.62), to_apply=_var_0.16
+  jit__var_.101 = f32[8,1,1,8,1]{4,3,2,1,0} get-tuple-element(jit__var_.100), index=0
+  add.122 = f32[8,1,1,8,1]{4,3,2,1,0} add(jit__var_.101, broadcast.20)
+  rsqrt.18 = f32[8,1,1,8,1]{4,3,2,1,0} rsqrt(add.122)
+  mul.286 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.18), dimensions={0,1,2,3,4}
+  mul.287 = f32[8,8]{1,0} reshape(mul.286)
+  mul.288 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(mul.287), dimensions={0,3}
+  mul.289 = f32[8,16,16,8,4]{4,3,2,1,0} multiply(sub.99, mul.288)
+  reshape.101 = f32[8,16,16,32]{3,2,1,0} reshape(mul.289)
+  p__group_norm_8____scale__.1 = f32[32]{0} parameter(39)
+  broadcast_in_dim.110 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_8____scale__.1)
+  mul.290 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.110), dimensions={0,1,2,3}
+  mul.291 = f32[32]{0} reshape(mul.290)
+  mul.292 = f32[8,16,16,32]{3,2,1,0} broadcast(mul.291), dimensions={3}
+  mul.293 = f32[8,16,16,32]{3,2,1,0} multiply(reshape.101, mul.292)
+  p__group_norm_8____offset__.1 = f32[32]{0} parameter(38)
+  broadcast_in_dim.111 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_8____offset__.1)
+  add.123 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.111), dimensions={0,1,2,3}
+  add.124 = f32[32]{0} reshape(add.123)
+  add.125 = f32[8,16,16,32]{3,2,1,0} broadcast(add.124), dimensions={3}
+  add.126 = f32[8,16,16,32]{3,2,1,0} add(mul.293, add.125)
+  jit_relu_.18 = f32[8,16,16,32]{3,2,1,0} call(add.126), to_apply=relu_1.17
+  p__conv2_d_10____w__.1 = f32[3,3,32,32]{3,2,1,0} parameter(5)
+  conv_general_dilated.42 = f32[8,16,16,32]{3,2,1,0} convolution(jit_relu_.18, p__conv2_d_10____w__.1), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01io->b01f
+  p__conv2_d_10____b__.1 = f32[32]{0} parameter(4)
+  broadcast_in_dim.112 = f32[8,16,16,32]{3,2,1,0} broadcast(p__conv2_d_10____b__.1), dimensions={3}
+  add.127 = f32[8,16,16,32]{3,2,1,0} add(conv_general_dilated.42, broadcast_in_dim.112)
+  reshape.102 = f32[8,16,16,8,4]{4,3,2,1,0} reshape(add.127)
+  reduce_sum.754 = f32[8,8]{1,0} reduce(reshape.102, constant.63), dimensions={1,2,4}, to_apply=region_14.20
+  broadcast_in_dim.113 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.754)
+  div.87 = f32[8,1,1,8,1]{4,3,2,1,0} divide(broadcast_in_dim.113, broadcast.16)
+  sub.100 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(div.87), dimensions={0,1,2,3,4}
+  sub.101 = f32[8,8]{1,0} reshape(sub.100)
+  sub.102 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(sub.101), dimensions={0,3}
+  sub.103 = f32[8,16,16,8,4]{4,3,2,1,0} subtract(reshape.102, sub.102)
+  jit__var_.105 = (f32[8,1,1,8,1]{4,3,2,1,0}, f32[8,16,16,8,4]{4,3,2,1,0}, f32[], pred[]) call(reshape.102, constant.62), to_apply=_var_0.16
+  jit__var_.106 = f32[8,1,1,8,1]{4,3,2,1,0} get-tuple-element(jit__var_.105), index=0
+  add.128 = f32[8,1,1,8,1]{4,3,2,1,0} add(jit__var_.106, broadcast.20)
+  rsqrt.19 = f32[8,1,1,8,1]{4,3,2,1,0} rsqrt(add.128)
+  mul.295 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.19), dimensions={0,1,2,3,4}
+  mul.296 = f32[8,8]{1,0} reshape(mul.295)
+  mul.297 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(mul.296), dimensions={0,3}
+  mul.298 = f32[8,16,16,8,4]{4,3,2,1,0} multiply(sub.103, mul.297)
+  reshape.103 = f32[8,16,16,32]{3,2,1,0} reshape(mul.298)
+  p__group_norm_9____scale__.1 = f32[32]{0} parameter(41)
+  broadcast_in_dim.114 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_9____scale__.1)
+  mul.299 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.114), dimensions={0,1,2,3}
+  mul.300 = f32[32]{0} reshape(mul.299)
+  mul.301 = f32[8,16,16,32]{3,2,1,0} broadcast(mul.300), dimensions={3}
+  mul.302 = f32[8,16,16,32]{3,2,1,0} multiply(reshape.103, mul.301)
+  p__group_norm_9____offset__.1 = f32[32]{0} parameter(40)
+  broadcast_in_dim.115 = f32[1,1,1,32]{3,2,1,0} reshape(p__group_norm_9____offset__.1)
+  add.129 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.115), dimensions={0,1,2,3}
+  add.130 = f32[32]{0} reshape(add.129)
+  add.131 = f32[8,16,16,32]{3,2,1,0} broadcast(add.130), dimensions={3}
+  add.132 = f32[8,16,16,32]{3,2,1,0} add(mul.302, add.131)
+  add.133 = f32[8,16,16,32]{3,2,1,0} add(add.132, jit_relu_.17)
+  jit_relu_.19 = f32[8,16,16,32]{3,2,1,0} call(add.133), to_apply=relu_1.17
+  reduce_sum.755 = f32[8,32]{1,0} reduce(jit_relu_.19, constant.63), dimensions={1,2}, to_apply=region_15.21
+  constant.52 = f32[] constant(256)
+  broadcast.14 = f32[8,32]{1,0} broadcast(constant.52), dimensions={}
+  div.89 = f32[8,32]{1,0} divide(reduce_sum.755, broadcast.14)
+  p__linear____w__.1 = f32[32,10]{1,0} parameter(43)
+  dot_general.3 = f32[8,10]{1,0} dot(div.89, p__linear____w__.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  p__linear____b__.1 = f32[10]{0} parameter(42)
+  broadcast_in_dim.116 = f32[8,10]{1,0} broadcast(p__linear____b__.1), dimensions={1}
+  add.134 = f32[8,10]{1,0} add(dot_general.3, broadcast_in_dim.116)
+  constant.61 = f32[] constant(-inf)
+  reduce_max.7 = f32[8]{0} reduce(add.134, constant.61), dimensions={1}, to_apply=region_16.22
+  constant.51 = f32[] constant(-inf)
+  broadcast.13 = f32[8]{0} broadcast(constant.51), dimensions={}
+  max.9 = f32[8]{0} maximum(reduce_max.7, broadcast.13)
+  is_finite.1 = pred[8]{0} is-finite(max.9)
+  constant.50 = f32[] constant(0)
+  broadcast.12 = f32[8]{0} broadcast(constant.50), dimensions={}
+  select_n.21 = f32[8]{0} select(is_finite.1, max.9, broadcast.12)
+  broadcast_in_dim.117 = f32[8,1]{1,0} reshape(select_n.21)
+  sub.104 = f32[8,1]{1,0} broadcast(broadcast_in_dim.117), dimensions={0,1}
+  sub.105 = f32[8]{0} reshape(sub.104)
+  sub.106 = f32[8,10]{1,0} broadcast(sub.105), dimensions={0}
+  sub.107 = f32[8,10]{1,0} subtract(add.134, sub.106)
+  exp.1 = f32[8,10]{1,0} exponential(sub.107)
+  reduce_sum.756 = f32[8]{0} reduce(exp.1, constant.63), dimensions={1}, to_apply=region_17.23
+  abs.1 = f32[8]{0} abs(reduce_sum.756)
+  log.1 = f32[8]{0} log(abs.1)
+  add.135 = f32[8]{0} add(log.1, select_n.21)
+  reduce_sum.757 = f32[] reduce(add.135, constant.63), dimensions={0}, to_apply=region_18.24
+  constant.60 = f32[] constant(8)
+  div.90 = f32[] divide(reduce_sum.757, constant.60)
+  constant.56 = f32[] constant(0)
+  broadcast.18 = f32[8,32,32,32]{3,2,1,0} broadcast(constant.56), dimensions={}
+  gt.15 = pred[8,32,32,32]{3,2,1,0} compare(add.81, broadcast.18), direction=GT
+  gt.17 = pred[8,32,32,32]{3,2,1,0} compare(add.94, broadcast.18), direction=GT
+  gt.19 = pred[8,32,32,32]{3,2,1,0} compare(add.107, broadcast.18), direction=GT
+  constant.53 = f32[] constant(0)
+  broadcast.15 = f32[8,16,16,32]{3,2,1,0} broadcast(constant.53), dimensions={}
+  gt.21 = pred[8,16,16,32]{3,2,1,0} compare(add.120, broadcast.15), direction=GT
+  gt.23 = pred[8,16,16,32]{3,2,1,0} compare(add.133, broadcast.15), direction=GT
+  ge.1 = pred[8]{0} compare(reduce_sum.756, broadcast.12), direction=GE
+  constant.49 = f32[] constant(0.125)
+  broadcast.11 = f32[8]{0} broadcast(constant.49), dimensions={}
+  div.91 = f32[8]{0} divide(broadcast.11, abs.1)
+  select_n.23 = f32[8]{0} select(ge.1, div.91, broadcast.12)
+  select_n.22 = f32[8]{0} select(ge.1, broadcast.12, div.91)
+  neg.15 = f32[8]{0} negate(select_n.22)
+  add_any.30 = f32[8]{0} add(select_n.23, neg.15)
+  broadcast_in_dim.118 = f32[8,10]{1,0} broadcast(add_any.30), dimensions={0}
+  mul.303 = f32[8,10]{1,0} multiply(broadcast_in_dim.118, exp.1)
+  dot_general.5 = f32[8,32]{1,0} dot(mul.303, p__linear____w__.1), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  div.92 = f32[8,32]{1,0} divide(dot_general.5, broadcast.14)
+  broadcast_in_dim.119 = f32[8,16,16,32]{3,2,1,0} broadcast(div.92), dimensions={0,3}
+  select_n.24 = f32[8,16,16,32]{3,2,1,0} select(gt.23, broadcast_in_dim.119, broadcast.15)
+  gt.22 = pred[8,16,16,32]{3,2,1,0} compare(add.126, broadcast.15), direction=GT
+  mul.305 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.114), dimensions={0,1,2,3}
+  mul.306 = f32[32]{0} reshape(mul.305)
+  mul.307 = f32[8,16,16,32]{3,2,1,0} broadcast(mul.306), dimensions={3}
+  mul.308 = f32[8,16,16,32]{3,2,1,0} multiply(select_n.24, mul.307)
+  reshape.106 = f32[8,16,16,8,4]{4,3,2,1,0} reshape(mul.308)
+  mul.310 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.19), dimensions={0,1,2,3,4}
+  mul.311 = f32[8,8]{1,0} reshape(mul.310)
+  mul.312 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(mul.311), dimensions={0,3}
+  mul.313 = f32[8,16,16,8,4]{4,3,2,1,0} multiply(reshape.106, mul.312)
+  jit__var_.107 = f32[8,16,16,8,4]{4,3,2,1,0} get-tuple-element(jit__var_.105), index=1
+  jit__var_.108 = f32[] get-tuple-element(jit__var_.105), index=2
+  jit__var_.109 = pred[] get-tuple-element(jit__var_.105), index=3
+  mul.309 = f32[8,16,16,8,4]{4,3,2,1,0} multiply(sub.103, reshape.106)
+  reduce_sum.763 = f32[8,8]{1,0} reduce(mul.309, constant.63), dimensions={1,2,4}, to_apply=region_24.30
+  reshape.107 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.763)
+  div.88 = f32[8,1,1,8,1]{4,3,2,1,0} divide(rsqrt.19, add.128)
+  constant.57 = f32[] constant(-0.5)
+  broadcast.19 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(constant.57), dimensions={}
+  mul.294 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(div.88, broadcast.19)
+  mul.314 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(reshape.107, mul.294)
+  jit__var_.110 = f32[8,16,16,8,4]{4,3,2,1,0} call(jit__var_.107, jit__var_.108, jit__var_.109, mul.314), to_apply=_var_2.36
+  add_any.31 = f32[8,16,16,8,4]{4,3,2,1,0} add(mul.313, jit__var_.110)
+  neg.16 = f32[8,16,16,8,4]{4,3,2,1,0} negate(mul.313)
+  reduce_sum.764 = f32[8,8]{1,0} reduce(neg.16, constant.63), dimensions={1,2,4}, to_apply=region_25.31
+  reshape.108 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.764)
+  div.93 = f32[8,1,1,8,1]{4,3,2,1,0} divide(reshape.108, broadcast.16)
+  reduce_sum.765 = f32[8,8]{1,0} reduce(div.93, constant.63), dimensions={1,2,4}, to_apply=region_29.37
+  broadcast_in_dim.120 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(reduce_sum.765), dimensions={0,3}
+  add_any.32 = f32[8,16,16,8,4]{4,3,2,1,0} add(add_any.31, broadcast_in_dim.120)
+  reshape.109 = f32[8,16,16,32]{3,2,1,0} reshape(add_any.32)
+  rev.10 = f32[3,3,32,32]{3,2,1,0} reverse(p__conv2_d_10____w__.1), dimensions={0,1}
+  conv_general_dilated.44 = f32[8,16,16,32]{3,2,1,0} convolution(reshape.109, rev.10), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01oi->b01f
+  select_n.25 = f32[8,16,16,32]{3,2,1,0} select(gt.22, conv_general_dilated.44, broadcast.15)
+  mul.316 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.110), dimensions={0,1,2,3}
+  mul.317 = f32[32]{0} reshape(mul.316)
+  mul.318 = f32[8,16,16,32]{3,2,1,0} broadcast(mul.317), dimensions={3}
+  mul.319 = f32[8,16,16,32]{3,2,1,0} multiply(select_n.25, mul.318)
+  reshape.112 = f32[8,16,16,8,4]{4,3,2,1,0} reshape(mul.319)
+  mul.321 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.18), dimensions={0,1,2,3,4}
+  mul.322 = f32[8,8]{1,0} reshape(mul.321)
+  mul.323 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(mul.322), dimensions={0,3}
+  mul.324 = f32[8,16,16,8,4]{4,3,2,1,0} multiply(reshape.112, mul.323)
+  jit__var_.102 = f32[8,16,16,8,4]{4,3,2,1,0} get-tuple-element(jit__var_.100), index=1
+  jit__var_.103 = f32[] get-tuple-element(jit__var_.100), index=2
+  jit__var_.104 = pred[] get-tuple-element(jit__var_.100), index=3
+  mul.320 = f32[8,16,16,8,4]{4,3,2,1,0} multiply(sub.99, reshape.112)
+  reduce_sum.771 = f32[8,8]{1,0} reduce(mul.320, constant.63), dimensions={1,2,4}, to_apply=region_35.43
+  reshape.113 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.771)
+  div.86 = f32[8,1,1,8,1]{4,3,2,1,0} divide(rsqrt.18, add.122)
+  mul.285 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(div.86, broadcast.19)
+  mul.325 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(reshape.113, mul.285)
+  jit__var_.111 = f32[8,16,16,8,4]{4,3,2,1,0} call(jit__var_.102, jit__var_.103, jit__var_.104, mul.325), to_apply=_var_2.36
+  add_any.33 = f32[8,16,16,8,4]{4,3,2,1,0} add(mul.324, jit__var_.111)
+  neg.17 = f32[8,16,16,8,4]{4,3,2,1,0} negate(mul.324)
+  reduce_sum.772 = f32[8,8]{1,0} reduce(neg.17, constant.63), dimensions={1,2,4}, to_apply=region_36.44
+  reshape.114 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.772)
+  div.94 = f32[8,1,1,8,1]{4,3,2,1,0} divide(reshape.114, broadcast.16)
+  reduce_sum.773 = f32[8,8]{1,0} reduce(div.94, constant.63), dimensions={1,2,4}, to_apply=region_37.45
+  broadcast_in_dim.121 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(reduce_sum.773), dimensions={0,3}
+  add_any.34 = f32[8,16,16,8,4]{4,3,2,1,0} add(add_any.33, broadcast_in_dim.121)
+  reshape.115 = f32[8,16,16,32]{3,2,1,0} reshape(add_any.34)
+  rev.11 = f32[3,3,32,32]{3,2,1,0} reverse(p__conv2_d_9____w__.1), dimensions={0,1}
+  conv_general_dilated.46 = f32[8,16,16,32]{3,2,1,0} convolution(reshape.115, rev.11), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01oi->b01f
+  add_any.35 = f32[8,16,16,32]{3,2,1,0} add(select_n.24, conv_general_dilated.46)
+  select_n.26 = f32[8,16,16,32]{3,2,1,0} select(gt.21, add_any.35, broadcast.15)
+  gt.20 = pred[8,16,16,32]{3,2,1,0} compare(add.113, broadcast.15), direction=GT
+  mul.327 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.106), dimensions={0,1,2,3}
+  mul.328 = f32[32]{0} reshape(mul.327)
+  mul.329 = f32[8,16,16,32]{3,2,1,0} broadcast(mul.328), dimensions={3}
+  mul.330 = f32[8,16,16,32]{3,2,1,0} multiply(select_n.26, mul.329)
+  reshape.118 = f32[8,16,16,8,4]{4,3,2,1,0} reshape(mul.330)
+  mul.332 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.17), dimensions={0,1,2,3,4}
+  mul.333 = f32[8,8]{1,0} reshape(mul.332)
+  mul.334 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(mul.333), dimensions={0,3}
+  mul.335 = f32[8,16,16,8,4]{4,3,2,1,0} multiply(reshape.118, mul.334)
+  jit__var_.97 = f32[8,16,16,8,4]{4,3,2,1,0} get-tuple-element(jit__var_.95), index=1
+  jit__var_.98 = f32[] get-tuple-element(jit__var_.95), index=2
+  jit__var_.99 = pred[] get-tuple-element(jit__var_.95), index=3
+  mul.331 = f32[8,16,16,8,4]{4,3,2,1,0} multiply(sub.95, reshape.118)
+  reduce_sum.779 = f32[8,8]{1,0} reduce(mul.331, constant.63), dimensions={1,2,4}, to_apply=region_43.51
+  reshape.119 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.779)
+  div.84 = f32[8,1,1,8,1]{4,3,2,1,0} divide(rsqrt.17, add.115)
+  mul.276 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(div.84, broadcast.19)
+  mul.336 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(reshape.119, mul.276)
+  jit__var_.112 = f32[8,16,16,8,4]{4,3,2,1,0} call(jit__var_.97, jit__var_.98, jit__var_.99, mul.336), to_apply=_var_2.36
+  add_any.36 = f32[8,16,16,8,4]{4,3,2,1,0} add(mul.335, jit__var_.112)
+  neg.18 = f32[8,16,16,8,4]{4,3,2,1,0} negate(mul.335)
+  reduce_sum.780 = f32[8,8]{1,0} reduce(neg.18, constant.63), dimensions={1,2,4}, to_apply=region_44.52
+  reshape.120 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.780)
+  div.95 = f32[8,1,1,8,1]{4,3,2,1,0} divide(reshape.120, broadcast.16)
+  reduce_sum.781 = f32[8,8]{1,0} reduce(div.95, constant.63), dimensions={1,2,4}, to_apply=region_45.53
+  broadcast_in_dim.122 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(reduce_sum.781), dimensions={0,3}
+  add_any.37 = f32[8,16,16,8,4]{4,3,2,1,0} add(add_any.36, broadcast_in_dim.122)
+  reshape.121 = f32[8,16,16,32]{3,2,1,0} reshape(add_any.37)
+  rev.12 = f32[3,3,32,32]{3,2,1,0} reverse(p__conv2_d_8____w__.1), dimensions={0,1}
+  conv_general_dilated.48 = f32[8,16,16,32]{3,2,1,0} convolution(reshape.121, rev.12), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01oi->b01f
+  select_n.27 = f32[8,16,16,32]{3,2,1,0} select(gt.20, conv_general_dilated.48, broadcast.15)
+  mul.338 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.102), dimensions={0,1,2,3}
+  mul.339 = f32[32]{0} reshape(mul.338)
+  mul.340 = f32[8,16,16,32]{3,2,1,0} broadcast(mul.339), dimensions={3}
+  mul.341 = f32[8,16,16,32]{3,2,1,0} multiply(select_n.27, mul.340)
+  reshape.124 = f32[8,16,16,8,4]{4,3,2,1,0} reshape(mul.341)
+  mul.343 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.16), dimensions={0,1,2,3,4}
+  mul.344 = f32[8,8]{1,0} reshape(mul.343)
+  mul.345 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(mul.344), dimensions={0,3}
+  mul.346 = f32[8,16,16,8,4]{4,3,2,1,0} multiply(reshape.124, mul.345)
+  jit__var_.92 = f32[8,16,16,8,4]{4,3,2,1,0} get-tuple-element(jit__var_.90), index=1
+  jit__var_.93 = f32[] get-tuple-element(jit__var_.90), index=2
+  jit__var_.94 = pred[] get-tuple-element(jit__var_.90), index=3
+  mul.342 = f32[8,16,16,8,4]{4,3,2,1,0} multiply(sub.91, reshape.124)
+  reduce_sum.787 = f32[8,8]{1,0} reduce(mul.342, constant.63), dimensions={1,2,4}, to_apply=region_51.59
+  reshape.125 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.787)
+  div.82 = f32[8,1,1,8,1]{4,3,2,1,0} divide(rsqrt.16, add.109)
+  mul.267 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(div.82, broadcast.19)
+  mul.347 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(reshape.125, mul.267)
+  jit__var_.113 = f32[8,16,16,8,4]{4,3,2,1,0} call(jit__var_.92, jit__var_.93, jit__var_.94, mul.347), to_apply=_var_2.36
+  add_any.38 = f32[8,16,16,8,4]{4,3,2,1,0} add(mul.346, jit__var_.113)
+  neg.19 = f32[8,16,16,8,4]{4,3,2,1,0} negate(mul.346)
+  reduce_sum.788 = f32[8,8]{1,0} reduce(neg.19, constant.63), dimensions={1,2,4}, to_apply=region_52.60
+  reshape.126 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.788)
+  div.96 = f32[8,1,1,8,1]{4,3,2,1,0} divide(reshape.126, broadcast.16)
+  reduce_sum.789 = f32[8,8]{1,0} reduce(div.96, constant.63), dimensions={1,2,4}, to_apply=region_53.61
+  broadcast_in_dim.123 = f32[8,16,16,8,4]{4,3,2,1,0} broadcast(reduce_sum.789), dimensions={0,3}
+  add_any.39 = f32[8,16,16,8,4]{4,3,2,1,0} add(add_any.38, broadcast_in_dim.123)
+  reshape.127 = f32[8,16,16,32]{3,2,1,0} reshape(add_any.39)
+  rev.13 = f32[3,3,32,32]{3,2,1,0} reverse(p__conv2_d_7____w__.1), dimensions={0,1}
+  conv_general_dilated.50 = f32[8,16,16,32]{3,2,1,0} convolution(reshape.127, rev.13), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01oi->b01f
+  add_any.40 = f32[8,16,16,32]{3,2,1,0} add(select_n.26, conv_general_dilated.50)
+  div.97 = f32[8,16,16,32]{3,2,1,0} divide(add_any.40, broadcast.17)
+  pad.1 = f32[8,33,33,32]{3,2,1,0} pad(div.97, constant.63), padding=0_0_0x1_1_1x1_1_1x0_0_0
+  reduce_window_sum.15 = f32[8,32,32,32]{3,2,1,0} reduce-window(pad.1, constant.63), window={size=1x2x2x1}, to_apply=region_55.63
+  select_n.28 = f32[8,32,32,32]{3,2,1,0} select(gt.19, reduce_window_sum.15, broadcast.18)
+  gt.18 = pred[8,32,32,32]{3,2,1,0} compare(add.100, broadcast.18), direction=GT
+  mul.349 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.98), dimensions={0,1,2,3}
+  mul.350 = f32[32]{0} reshape(mul.349)
+  mul.351 = f32[8,32,32,32]{3,2,1,0} broadcast(mul.350), dimensions={3}
+  mul.352 = f32[8,32,32,32]{3,2,1,0} multiply(select_n.28, mul.351)
+  reshape.130 = f32[8,32,32,8,4]{4,3,2,1,0} reshape(mul.352)
+  mul.354 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.15), dimensions={0,1,2,3,4}
+  mul.355 = f32[8,8]{1,0} reshape(mul.354)
+  mul.356 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(mul.355), dimensions={0,3}
+  mul.357 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(reshape.130, mul.356)
+  jit__var_.87 = f32[8,32,32,8,4]{4,3,2,1,0} get-tuple-element(jit__var_.85), index=1
+  jit__var_.88 = f32[] get-tuple-element(jit__var_.85), index=2
+  jit__var_.89 = pred[] get-tuple-element(jit__var_.85), index=3
+  mul.353 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(sub.87, reshape.130)
+  reduce_sum.795 = f32[8,8]{1,0} reduce(mul.353, constant.63), dimensions={1,2,4}, to_apply=region_60.68
+  reshape.131 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.795)
+  div.79 = f32[8,1,1,8,1]{4,3,2,1,0} divide(rsqrt.15, add.102)
+  mul.258 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(div.79, broadcast.19)
+  mul.358 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(reshape.131, mul.258)
+  jit__var_.114 = f32[8,32,32,8,4]{4,3,2,1,0} call(jit__var_.87, jit__var_.88, jit__var_.89, mul.358), to_apply=_var_4.73
+  add_any.41 = f32[8,32,32,8,4]{4,3,2,1,0} add(mul.357, jit__var_.114)
+  neg.20 = f32[8,32,32,8,4]{4,3,2,1,0} negate(mul.357)
+  reduce_sum.796 = f32[8,8]{1,0} reduce(neg.20, constant.63), dimensions={1,2,4}, to_apply=region_61.69
+  reshape.132 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.796)
+  div.98 = f32[8,1,1,8,1]{4,3,2,1,0} divide(reshape.132, broadcast.21)
+  reduce_sum.797 = f32[8,8]{1,0} reduce(div.98, constant.63), dimensions={1,2,4}, to_apply=region_65.74
+  broadcast_in_dim.124 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(reduce_sum.797), dimensions={0,3}
+  add_any.42 = f32[8,32,32,8,4]{4,3,2,1,0} add(add_any.41, broadcast_in_dim.124)
+  reshape.133 = f32[8,32,32,32]{3,2,1,0} reshape(add_any.42)
+  rev.14 = f32[3,3,32,32]{3,2,1,0} reverse(p__conv2_d_6____w__.1), dimensions={0,1}
+  conv_general_dilated.52 = f32[8,32,32,32]{3,2,1,0} convolution(reshape.133, rev.14), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01oi->b01f
+  select_n.29 = f32[8,32,32,32]{3,2,1,0} select(gt.18, conv_general_dilated.52, broadcast.18)
+  mul.360 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.94), dimensions={0,1,2,3}
+  mul.361 = f32[32]{0} reshape(mul.360)
+  mul.362 = f32[8,32,32,32]{3,2,1,0} broadcast(mul.361), dimensions={3}
+  mul.363 = f32[8,32,32,32]{3,2,1,0} multiply(select_n.29, mul.362)
+  reshape.136 = f32[8,32,32,8,4]{4,3,2,1,0} reshape(mul.363)
+  mul.365 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.14), dimensions={0,1,2,3,4}
+  mul.366 = f32[8,8]{1,0} reshape(mul.365)
+  mul.367 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(mul.366), dimensions={0,3}
+  mul.368 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(reshape.136, mul.367)
+  jit__var_.82 = f32[8,32,32,8,4]{4,3,2,1,0} get-tuple-element(jit__var_.80), index=1
+  jit__var_.83 = f32[] get-tuple-element(jit__var_.80), index=2
+  jit__var_.84 = pred[] get-tuple-element(jit__var_.80), index=3
+  mul.364 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(sub.83, reshape.136)
+  reduce_sum.803 = f32[8,8]{1,0} reduce(mul.364, constant.63), dimensions={1,2,4}, to_apply=region_71.80
+  reshape.137 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.803)
+  div.77 = f32[8,1,1,8,1]{4,3,2,1,0} divide(rsqrt.14, add.96)
+  mul.249 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(div.77, broadcast.19)
+  mul.369 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(reshape.137, mul.249)
+  jit__var_.115 = f32[8,32,32,8,4]{4,3,2,1,0} call(jit__var_.82, jit__var_.83, jit__var_.84, mul.369), to_apply=_var_4.73
+  add_any.43 = f32[8,32,32,8,4]{4,3,2,1,0} add(mul.368, jit__var_.115)
+  neg.21 = f32[8,32,32,8,4]{4,3,2,1,0} negate(mul.368)
+  reduce_sum.804 = f32[8,8]{1,0} reduce(neg.21, constant.63), dimensions={1,2,4}, to_apply=region_72.81
+  reshape.138 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.804)
+  div.99 = f32[8,1,1,8,1]{4,3,2,1,0} divide(reshape.138, broadcast.21)
+  reduce_sum.805 = f32[8,8]{1,0} reduce(div.99, constant.63), dimensions={1,2,4}, to_apply=region_73.82
+  broadcast_in_dim.125 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(reduce_sum.805), dimensions={0,3}
+  add_any.44 = f32[8,32,32,8,4]{4,3,2,1,0} add(add_any.43, broadcast_in_dim.125)
+  reshape.139 = f32[8,32,32,32]{3,2,1,0} reshape(add_any.44)
+  rev.15 = f32[3,3,32,32]{3,2,1,0} reverse(p__conv2_d_5____w__.1), dimensions={0,1}
+  conv_general_dilated.54 = f32[8,32,32,32]{3,2,1,0} convolution(reshape.139, rev.15), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01oi->b01f
+  add_any.45 = f32[8,32,32,32]{3,2,1,0} add(select_n.28, conv_general_dilated.54)
+  select_n.30 = f32[8,32,32,32]{3,2,1,0} select(gt.17, add_any.45, broadcast.18)
+  gt.16 = pred[8,32,32,32]{3,2,1,0} compare(add.87, broadcast.18), direction=GT
+  mul.371 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.90), dimensions={0,1,2,3}
+  mul.372 = f32[32]{0} reshape(mul.371)
+  mul.373 = f32[8,32,32,32]{3,2,1,0} broadcast(mul.372), dimensions={3}
+  mul.374 = f32[8,32,32,32]{3,2,1,0} multiply(select_n.30, mul.373)
+  reshape.142 = f32[8,32,32,8,4]{4,3,2,1,0} reshape(mul.374)
+  mul.376 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.13), dimensions={0,1,2,3,4}
+  mul.377 = f32[8,8]{1,0} reshape(mul.376)
+  mul.378 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(mul.377), dimensions={0,3}
+  mul.379 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(reshape.142, mul.378)
+  jit__var_.77 = f32[8,32,32,8,4]{4,3,2,1,0} get-tuple-element(jit__var_.75), index=1
+  jit__var_.78 = f32[] get-tuple-element(jit__var_.75), index=2
+  jit__var_.79 = pred[] get-tuple-element(jit__var_.75), index=3
+  mul.375 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(sub.79, reshape.142)
+  reduce_sum.811 = f32[8,8]{1,0} reduce(mul.375, constant.63), dimensions={1,2,4}, to_apply=region_79.88
+  reshape.143 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.811)
+  div.75 = f32[8,1,1,8,1]{4,3,2,1,0} divide(rsqrt.13, add.89)
+  mul.240 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(div.75, broadcast.19)
+  mul.380 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(reshape.143, mul.240)
+  jit__var_.116 = f32[8,32,32,8,4]{4,3,2,1,0} call(jit__var_.77, jit__var_.78, jit__var_.79, mul.380), to_apply=_var_4.73
+  add_any.46 = f32[8,32,32,8,4]{4,3,2,1,0} add(mul.379, jit__var_.116)
+  neg.22 = f32[8,32,32,8,4]{4,3,2,1,0} negate(mul.379)
+  reduce_sum.812 = f32[8,8]{1,0} reduce(neg.22, constant.63), dimensions={1,2,4}, to_apply=region_80.89
+  reshape.144 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.812)
+  div.100 = f32[8,1,1,8,1]{4,3,2,1,0} divide(reshape.144, broadcast.21)
+  reduce_sum.813 = f32[8,8]{1,0} reduce(div.100, constant.63), dimensions={1,2,4}, to_apply=region_81.90
+  broadcast_in_dim.126 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(reduce_sum.813), dimensions={0,3}
+  add_any.47 = f32[8,32,32,8,4]{4,3,2,1,0} add(add_any.46, broadcast_in_dim.126)
+  reshape.145 = f32[8,32,32,32]{3,2,1,0} reshape(add_any.47)
+  rev.16 = f32[3,3,32,32]{3,2,1,0} reverse(p__conv2_d_4____w__.1), dimensions={0,1}
+  conv_general_dilated.56 = f32[8,32,32,32]{3,2,1,0} convolution(reshape.145, rev.16), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01oi->b01f
+  select_n.31 = f32[8,32,32,32]{3,2,1,0} select(gt.16, conv_general_dilated.56, broadcast.18)
+  mul.382 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.86), dimensions={0,1,2,3}
+  mul.383 = f32[32]{0} reshape(mul.382)
+  mul.384 = f32[8,32,32,32]{3,2,1,0} broadcast(mul.383), dimensions={3}
+  mul.385 = f32[8,32,32,32]{3,2,1,0} multiply(select_n.31, mul.384)
+  reshape.148 = f32[8,32,32,8,4]{4,3,2,1,0} reshape(mul.385)
+  mul.387 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.12), dimensions={0,1,2,3,4}
+  mul.388 = f32[8,8]{1,0} reshape(mul.387)
+  mul.389 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(mul.388), dimensions={0,3}
+  mul.390 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(reshape.148, mul.389)
+  jit__var_.72 = f32[8,32,32,8,4]{4,3,2,1,0} get-tuple-element(jit__var_.70), index=1
+  jit__var_.73 = f32[] get-tuple-element(jit__var_.70), index=2
+  jit__var_.74 = pred[] get-tuple-element(jit__var_.70), index=3
+  mul.386 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(sub.75, reshape.148)
+  reduce_sum.819 = f32[8,8]{1,0} reduce(mul.386, constant.63), dimensions={1,2,4}, to_apply=region_87.96
+  reshape.149 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.819)
+  div.73 = f32[8,1,1,8,1]{4,3,2,1,0} divide(rsqrt.12, add.83)
+  mul.231 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(div.73, broadcast.19)
+  mul.391 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(reshape.149, mul.231)
+  jit__var_.117 = f32[8,32,32,8,4]{4,3,2,1,0} call(jit__var_.72, jit__var_.73, jit__var_.74, mul.391), to_apply=_var_4.73
+  add_any.48 = f32[8,32,32,8,4]{4,3,2,1,0} add(mul.390, jit__var_.117)
+  neg.23 = f32[8,32,32,8,4]{4,3,2,1,0} negate(mul.390)
+  reduce_sum.820 = f32[8,8]{1,0} reduce(neg.23, constant.63), dimensions={1,2,4}, to_apply=region_88.97
+  reshape.150 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.820)
+  div.101 = f32[8,1,1,8,1]{4,3,2,1,0} divide(reshape.150, broadcast.21)
+  reduce_sum.821 = f32[8,8]{1,0} reduce(div.101, constant.63), dimensions={1,2,4}, to_apply=region_89.98
+  broadcast_in_dim.127 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(reduce_sum.821), dimensions={0,3}
+  add_any.49 = f32[8,32,32,8,4]{4,3,2,1,0} add(add_any.48, broadcast_in_dim.127)
+  reshape.151 = f32[8,32,32,32]{3,2,1,0} reshape(add_any.49)
+  rev.17 = f32[3,3,32,32]{3,2,1,0} reverse(p__conv2_d_3____w__.1), dimensions={0,1}
+  conv_general_dilated.58 = f32[8,32,32,32]{3,2,1,0} convolution(reshape.151, rev.17), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01oi->b01f
+  add_any.50 = f32[8,32,32,32]{3,2,1,0} add(select_n.30, conv_general_dilated.58)
+  select_n.32 = f32[8,32,32,32]{3,2,1,0} select(gt.15, add_any.50, broadcast.18)
+  gt.14 = pred[8,32,32,32]{3,2,1,0} compare(add.74, broadcast.18), direction=GT
+  mul.393 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.82), dimensions={0,1,2,3}
+  mul.394 = f32[32]{0} reshape(mul.393)
+  mul.395 = f32[8,32,32,32]{3,2,1,0} broadcast(mul.394), dimensions={3}
+  mul.396 = f32[8,32,32,32]{3,2,1,0} multiply(select_n.32, mul.395)
+  reshape.154 = f32[8,32,32,8,4]{4,3,2,1,0} reshape(mul.396)
+  mul.398 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.11), dimensions={0,1,2,3,4}
+  mul.399 = f32[8,8]{1,0} reshape(mul.398)
+  mul.400 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(mul.399), dimensions={0,3}
+  mul.401 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(reshape.154, mul.400)
+  jit__var_.67 = f32[8,32,32,8,4]{4,3,2,1,0} get-tuple-element(jit__var_.65), index=1
+  jit__var_.68 = f32[] get-tuple-element(jit__var_.65), index=2
+  jit__var_.69 = pred[] get-tuple-element(jit__var_.65), index=3
+  mul.397 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(sub.71, reshape.154)
+  reduce_sum.827 = f32[8,8]{1,0} reduce(mul.397, constant.63), dimensions={1,2,4}, to_apply=region_95.104
+  reshape.155 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.827)
+  div.71 = f32[8,1,1,8,1]{4,3,2,1,0} divide(rsqrt.11, add.76)
+  mul.222 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(div.71, broadcast.19)
+  mul.402 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(reshape.155, mul.222)
+  jit__var_.118 = f32[8,32,32,8,4]{4,3,2,1,0} call(jit__var_.67, jit__var_.68, jit__var_.69, mul.402), to_apply=_var_4.73
+  add_any.51 = f32[8,32,32,8,4]{4,3,2,1,0} add(mul.401, jit__var_.118)
+  neg.24 = f32[8,32,32,8,4]{4,3,2,1,0} negate(mul.401)
+  reduce_sum.828 = f32[8,8]{1,0} reduce(neg.24, constant.63), dimensions={1,2,4}, to_apply=region_96.105
+  reshape.156 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.828)
+  div.102 = f32[8,1,1,8,1]{4,3,2,1,0} divide(reshape.156, broadcast.21)
+  reduce_sum.829 = f32[8,8]{1,0} reduce(div.102, constant.63), dimensions={1,2,4}, to_apply=region_97.106
+  broadcast_in_dim.128 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(reduce_sum.829), dimensions={0,3}
+  add_any.52 = f32[8,32,32,8,4]{4,3,2,1,0} add(add_any.51, broadcast_in_dim.128)
+  reshape.157 = f32[8,32,32,32]{3,2,1,0} reshape(add_any.52)
+  rev.18 = f32[3,3,32,32]{3,2,1,0} reverse(p__conv2_d_2____w__.1), dimensions={0,1}
+  conv_general_dilated.60 = f32[8,32,32,32]{3,2,1,0} convolution(reshape.157, rev.18), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01oi->b01f
+  select_n.33 = f32[8,32,32,32]{3,2,1,0} select(gt.14, conv_general_dilated.60, broadcast.18)
+  mul.404 = f32[1,1,1,32]{3,2,1,0} broadcast(broadcast_in_dim.78), dimensions={0,1,2,3}
+  mul.405 = f32[32]{0} reshape(mul.404)
+  mul.406 = f32[8,32,32,32]{3,2,1,0} broadcast(mul.405), dimensions={3}
+  mul.407 = f32[8,32,32,32]{3,2,1,0} multiply(select_n.33, mul.406)
+  reshape.160 = f32[8,32,32,8,4]{4,3,2,1,0} reshape(mul.407)
+  mul.409 = f32[8,1,1,8,1]{4,3,2,1,0} broadcast(rsqrt.10), dimensions={0,1,2,3,4}
+  mul.410 = f32[8,8]{1,0} reshape(mul.409)
+  mul.411 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(mul.410), dimensions={0,3}
+  mul.412 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(reshape.160, mul.411)
+  jit__var_.62 = f32[8,32,32,8,4]{4,3,2,1,0} get-tuple-element(jit__var_.60), index=1
+  jit__var_.63 = f32[] get-tuple-element(jit__var_.60), index=2
+  jit__var_.64 = pred[] get-tuple-element(jit__var_.60), index=3
+  mul.408 = f32[8,32,32,8,4]{4,3,2,1,0} multiply(sub.67, reshape.160)
+  reduce_sum.835 = f32[8,8]{1,0} reduce(mul.408, constant.63), dimensions={1,2,4}, to_apply=region_103.112
+  reshape.161 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.835)
+  div.69 = f32[8,1,1,8,1]{4,3,2,1,0} divide(rsqrt.10, add.70)
+  mul.213 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(div.69, broadcast.19)
+  mul.413 = f32[8,1,1,8,1]{4,3,2,1,0} multiply(reshape.161, mul.213)
+  jit__var_.119 = f32[8,32,32,8,4]{4,3,2,1,0} call(jit__var_.62, jit__var_.63, jit__var_.64, mul.413), to_apply=_var_4.73
+  add_any.53 = f32[8,32,32,8,4]{4,3,2,1,0} add(mul.412, jit__var_.119)
+  neg.25 = f32[8,32,32,8,4]{4,3,2,1,0} negate(mul.412)
+  reduce_sum.836 = f32[8,8]{1,0} reduce(neg.25, constant.63), dimensions={1,2,4}, to_apply=region_104.113
+  reshape.162 = f32[8,1,1,8,1]{4,3,2,1,0} reshape(reduce_sum.836)
+  div.103 = f32[8,1,1,8,1]{4,3,2,1,0} divide(reshape.162, broadcast.21)
+  reduce_sum.837 = f32[8,8]{1,0} reduce(div.103, constant.63), dimensions={1,2,4}, to_apply=region_105.114
+  broadcast_in_dim.129 = f32[8,32,32,8,4]{4,3,2,1,0} broadcast(reduce_sum.837), dimensions={0,3}
+  add_any.54 = f32[8,32,32,8,4]{4,3,2,1,0} add(add_any.53, broadcast_in_dim.129)
+  reshape.163 = f32[8,32,32,32]{3,2,1,0} reshape(add_any.54)
+  rev.19 = f32[3,3,32,32]{3,2,1,0} reverse(p__conv2_d_1____w__.1), dimensions={0,1}
+  conv_general_dilated.62 = f32[8,32,32,32]{3,2,1,0} convolution(reshape.163, rev.19), window={size=3x3 pad=1_1x1_1}, dim_labels=b01f_01oi->b01f
+  add_any.55 = f32[8,32,32,32]{3,2,1,0} add(select_n.32, conv_general_dilated.62)
+  reduce_sum.839 = f32[32]{0} reduce(add_any.55, constant.63), dimensions={0,1,2}, to_apply=region_107.116
+  conv_general_dilated.63 = f32[3,3,3,32]{3,2,1,0} convolution(x.1, add_any.55), window={size=32x32 pad=1_1x1_1}, dim_labels=f01b_i01o->01bf
+  reduce_sum.838 = f32[32]{0} reduce(reshape.163, constant.63), dimensions={0,1,2}, to_apply=region_106.115
+  conv_general_dilated.61 = f32[3,3,32,32]{3,2,1,0} convolution(add.68, reshape.163), window={size=32x32 pad=1_1x1_1}, dim_labels=f01b_i01o->01bf
+  reduce_sum.766 = f32[32]{0} reduce(reshape.109, constant.63), dimensions={0,1,2}, to_apply=region_30.38
+  conv_general_dilated.43 = f32[3,3,32,32]{3,2,1,0} convolution(jit_relu_.18, reshape.109), window={size=16x16 pad=1_1x1_1}, dim_labels=f01b_i01o->01bf
+  reduce_sum.830 = f32[32]{0} reduce(reshape.157, constant.63), dimensions={0,1,2}, to_apply=region_98.107
+  conv_general_dilated.59 = f32[3,3,32,32]{3,2,1,0} convolution(jit_relu_.10, reshape.157), window={size=32x32 pad=1_1x1_1}, dim_labels=f01b_i01o->01bf
+  reduce_sum.822 = f32[32]{0} reduce(reshape.151, constant.63), dimensions={0,1,2}, to_apply=region_90.99
+  conv_general_dilated.57 = f32[3,3,32,32]{3,2,1,0} convolution(jit_relu_.11, reshape.151), window={size=32x32 pad=1_1x1_1}, dim_labels=f01b_i01o->01bf
+  reduce_sum.814 = f32[32]{0} reduce(reshape.145, constant.63), dimensions={0,1,2}, to_apply=region_82.91
+  conv_general_dilated.55 = f32[3,3,32,32]{3,2,1,0} convolution(jit_relu_.12, reshape.145), window={size=32x32 pad=1_1x1_1}, dim_labels=f01b_i01o->01bf
+  reduce_sum.806 = f32[32]{0} reduce(reshape.139, constant.63), dimensions={0,1,2}, to_apply=region_74.83
+  conv_general_dilated.53 = f32[3,3,32,32]{3,2,1,0} convolution(jit_relu_.13, reshape.139), window={size=32x32 pad=1_1x1_1}, dim_labels=f01b_i01o->01bf
+  reduce_sum.798 = f32[32]{0} reduce(reshape.133, constant.63), dimensions={0,1,2}, to_apply=region_66.75
+  conv_general_dilated.51 = f32[3,3,32,32]{3,2,1,0} convolution(jit_relu_.14, reshape.133), window={size=32x32 pad=1_1x1_1}, dim_labels=f01b_i01o->01bf
+  reduce_sum.790 = f32[32]{0} reduce(reshape.127, constant.63), dimensions={0,1,2}, to_apply=region_54.62
+  conv_general_dilated.49 = f32[3,3,32,32]{3,2,1,0} convolution(div.80, reshape.127), window={size=16x16 pad=1_1x1_1}, dim_labels=f01b_i01o->01bf
+  reduce_sum.782 = f32[32]{0} reduce(reshape.121, constant.63), dimensions={0,1,2}, to_apply=region_46.54
+  conv_general_dilated.47 = f32[3,3,32,32]{3,2,1,0} convolution(jit_relu_.16, reshape.121), window={size=16x16 pad=1_1x1_1}, dim_labels=f01b_i01o->01bf
+  reduce_sum.774 = f32[32]{0} reduce(reshape.115, constant.63), dimensions={0,1,2}, to_apply=region_38.46
+  conv_general_dilated.45 = f32[3,3,32,32]{3,2,1,0} convolution(jit_relu_.17, reshape.115), window={size=16x16 pad=1_1x1_1}, dim_labels=f01b_i01o->01bf
+  reduce_sum.831 = f32[32]{0} reduce(select_n.33, constant.63), dimensions={0,1,2}, to_apply=region_99.108
+  reshape.158 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.831)
+  reduce_sum.832 = f32[32]{0} reduce(reshape.158, constant.63), dimensions={0,1,2}, to_apply=region_100.109
+  mul.403 = f32[8,32,32,32]{3,2,1,0} multiply(reshape.85, select_n.33)
+  reduce_sum.833 = f32[32]{0} reduce(mul.403, constant.63), dimensions={0,1,2}, to_apply=region_101.110
+  reshape.159 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.833)
+  reduce_sum.834 = f32[32]{0} reduce(reshape.159, constant.63), dimensions={0,1,2}, to_apply=region_102.111
+  reduce_sum.823 = f32[32]{0} reduce(select_n.32, constant.63), dimensions={0,1,2}, to_apply=region_91.100
+  reshape.152 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.823)
+  reduce_sum.824 = f32[32]{0} reduce(reshape.152, constant.63), dimensions={0,1,2}, to_apply=region_92.101
+  mul.392 = f32[8,32,32,32]{3,2,1,0} multiply(reshape.87, select_n.32)
+  reduce_sum.825 = f32[32]{0} reduce(mul.392, constant.63), dimensions={0,1,2}, to_apply=region_93.102
+  reshape.153 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.825)
+  reduce_sum.826 = f32[32]{0} reduce(reshape.153, constant.63), dimensions={0,1,2}, to_apply=region_94.103
+  reduce_sum.815 = f32[32]{0} reduce(select_n.31, constant.63), dimensions={0,1,2}, to_apply=region_83.92
+  reshape.146 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.815)
+  reduce_sum.816 = f32[32]{0} reduce(reshape.146, constant.63), dimensions={0,1,2}, to_apply=region_84.93
+  mul.381 = f32[8,32,32,32]{3,2,1,0} multiply(reshape.89, select_n.31)
+  reduce_sum.817 = f32[32]{0} reduce(mul.381, constant.63), dimensions={0,1,2}, to_apply=region_85.94
+  reshape.147 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.817)
+  reduce_sum.818 = f32[32]{0} reduce(reshape.147, constant.63), dimensions={0,1,2}, to_apply=region_86.95
+  reduce_sum.807 = f32[32]{0} reduce(select_n.30, constant.63), dimensions={0,1,2}, to_apply=region_75.84
+  reshape.140 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.807)
+  reduce_sum.808 = f32[32]{0} reduce(reshape.140, constant.63), dimensions={0,1,2}, to_apply=region_76.85
+  mul.370 = f32[8,32,32,32]{3,2,1,0} multiply(reshape.91, select_n.30)
+  reduce_sum.809 = f32[32]{0} reduce(mul.370, constant.63), dimensions={0,1,2}, to_apply=region_77.86
+  reshape.141 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.809)
+  reduce_sum.810 = f32[32]{0} reduce(reshape.141, constant.63), dimensions={0,1,2}, to_apply=region_78.87
+  reduce_sum.799 = f32[32]{0} reduce(select_n.29, constant.63), dimensions={0,1,2}, to_apply=region_67.76
+  reshape.134 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.799)
+  reduce_sum.800 = f32[32]{0} reduce(reshape.134, constant.63), dimensions={0,1,2}, to_apply=region_68.77
+  mul.359 = f32[8,32,32,32]{3,2,1,0} multiply(reshape.93, select_n.29)
+  reduce_sum.801 = f32[32]{0} reduce(mul.359, constant.63), dimensions={0,1,2}, to_apply=region_69.78
+  reshape.135 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.801)
+  reduce_sum.802 = f32[32]{0} reduce(reshape.135, constant.63), dimensions={0,1,2}, to_apply=region_70.79
+  reduce_sum.791 = f32[32]{0} reduce(select_n.28, constant.63), dimensions={0,1,2}, to_apply=region_56.64
+  reshape.128 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.791)
+  reduce_sum.792 = f32[32]{0} reduce(reshape.128, constant.63), dimensions={0,1,2}, to_apply=region_57.65
+  mul.348 = f32[8,32,32,32]{3,2,1,0} multiply(reshape.95, select_n.28)
+  reduce_sum.793 = f32[32]{0} reduce(mul.348, constant.63), dimensions={0,1,2}, to_apply=region_58.66
+  reshape.129 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.793)
+  reduce_sum.794 = f32[32]{0} reduce(reshape.129, constant.63), dimensions={0,1,2}, to_apply=region_59.67
+  reduce_sum.783 = f32[32]{0} reduce(select_n.27, constant.63), dimensions={0,1,2}, to_apply=region_47.55
+  reshape.122 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.783)
+  reduce_sum.784 = f32[32]{0} reduce(reshape.122, constant.63), dimensions={0,1,2}, to_apply=region_48.56
+  mul.337 = f32[8,16,16,32]{3,2,1,0} multiply(reshape.97, select_n.27)
+  reduce_sum.785 = f32[32]{0} reduce(mul.337, constant.63), dimensions={0,1,2}, to_apply=region_49.57
+  reshape.123 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.785)
+  reduce_sum.786 = f32[32]{0} reduce(reshape.123, constant.63), dimensions={0,1,2}, to_apply=region_50.58
+  reduce_sum.775 = f32[32]{0} reduce(select_n.26, constant.63), dimensions={0,1,2}, to_apply=region_39.47
+  reshape.116 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.775)
+  reduce_sum.776 = f32[32]{0} reduce(reshape.116, constant.63), dimensions={0,1,2}, to_apply=region_40.48
+  mul.326 = f32[8,16,16,32]{3,2,1,0} multiply(reshape.99, select_n.26)
+  reduce_sum.777 = f32[32]{0} reduce(mul.326, constant.63), dimensions={0,1,2}, to_apply=region_41.49
+  reshape.117 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.777)
+  reduce_sum.778 = f32[32]{0} reduce(reshape.117, constant.63), dimensions={0,1,2}, to_apply=region_42.50
+  reduce_sum.767 = f32[32]{0} reduce(select_n.25, constant.63), dimensions={0,1,2}, to_apply=region_31.39
+  reshape.110 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.767)
+  reduce_sum.768 = f32[32]{0} reduce(reshape.110, constant.63), dimensions={0,1,2}, to_apply=region_32.40
+  mul.315 = f32[8,16,16,32]{3,2,1,0} multiply(reshape.101, select_n.25)
+  reduce_sum.769 = f32[32]{0} reduce(mul.315, constant.63), dimensions={0,1,2}, to_apply=region_33.41
+  reshape.111 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.769)
+  reduce_sum.770 = f32[32]{0} reduce(reshape.111, constant.63), dimensions={0,1,2}, to_apply=region_34.42
+  reduce_sum.759 = f32[32]{0} reduce(select_n.24, constant.63), dimensions={0,1,2}, to_apply=region_20.26
+  reshape.104 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.759)
+  reduce_sum.760 = f32[32]{0} reduce(reshape.104, constant.63), dimensions={0,1,2}, to_apply=region_21.27
+  mul.304 = f32[8,16,16,32]{3,2,1,0} multiply(reshape.103, select_n.24)
+  reduce_sum.761 = f32[32]{0} reduce(mul.304, constant.63), dimensions={0,1,2}, to_apply=region_22.28
+  reshape.105 = f32[1,1,1,32]{3,2,1,0} reshape(reduce_sum.761)
+  reduce_sum.762 = f32[32]{0} reduce(reshape.105, constant.63), dimensions={0,1,2}, to_apply=region_23.29
+  reduce_sum.758 = f32[10]{0} reduce(mul.303, constant.63), dimensions={0}, to_apply=region_19.25
+  dot_general.4 = f32[10,32]{1,0} dot(mul.303, div.89), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  transpose.1 = f32[32,10]{0,1} transpose(dot_general.4), dimensions={1,0}
+  ROOT tuple.5 = (f32[], f32[32]{0}, f32[3,3,3,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, /*index=5*/f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, /*index=10*/f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, /*index=15*/f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, /*index=20*/f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[3,3,32,32]{3,2,1,0}, f32[32]{0}, f32[32]{0}, /*index=25*/f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, /*index=30*/f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, /*index=35*/f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[32]{0}, /*index=40*/f32[32]{0}, f32[32]{0}, f32[32]{0}, f32[10]{0}, f32[32,10]{0,1}) tuple(div.90, reduce_sum.839, conv_general_dilated.63, reduce_sum.838, conv_general_dilated.61, reduce_sum.766, conv_general_dilated.43, reduce_sum.830, conv_general_dilated.59, reduce_sum.822, conv_general_dilated.57, reduce_sum.814, conv_general_dilated.55, reduce_sum.806, conv_general_dilated.53, reduce_sum.798, conv_general_dilated.51, reduce_sum.790, conv_general_dilated.49, reduce_sum.782, conv_general_dilated.47, reduce_sum.774, conv_general_dilated.45, reduce_sum.832, reduce_sum.834, reduce_sum.824, reduce_sum.826, reduce_sum.816, reduce_sum.818, reduce_sum.808, reduce_sum.810, reduce_sum.800, reduce_sum.802, reduce_sum.792, reduce_sum.794, reduce_sum.784, reduce_sum.786, reduce_sum.776, reduce_sum.778, reduce_sum.768, reduce_sum.770, reduce_sum.760, reduce_sum.762, reduce_sum.758, transpose.1)
+}
+

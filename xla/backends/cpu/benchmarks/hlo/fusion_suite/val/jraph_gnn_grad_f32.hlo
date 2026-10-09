@@ -1,0 +1,289 @@
+HloModule jit_f, entry_computation_layout={(f32[128,64]{1,0}, f32[192,64]{1,0}, f32[64,1]{1,0}, f32[20000,64]{1,0}, f32[120000,64]{1,0})->(f32[128,64]{0,1}, f32[192,64]{0,1}, f32[64,1]{1,0})}
+
+_where.1 {
+  Arg_0.2 = pred[] parameter(0)
+  Arg_1.2 = s64[] parameter(1)
+  Arg_2.1 = s64[] parameter(2)
+  ROOT select_n.1 = s64[] select(Arg_0.2, Arg_1.2, Arg_2.1)
+}
+
+remainder.2 {
+  Arg_0.3 = s64[120000]{0} parameter(0)
+  Arg_1.3 = s64[] parameter(1)
+  constant.18 = s64[] constant(0)
+  eq.1 = pred[] compare(Arg_1.3, constant.18), direction=EQ
+  constant.17 = s64[] constant(1)
+  jit__where_.1 = s64[] call(eq.1, constant.17, Arg_1.3), to_apply=_where.1
+  rem.2 = s64[120000]{0} broadcast(jit__where_.1), dimensions={}
+  rem.3 = s64[120000]{0} remainder(Arg_0.3, rem.2)
+  constant.16 = s64[] constant(0)
+  broadcast.7 = s64[120000]{0} broadcast(constant.16), dimensions={}
+  lt.2 = pred[120000]{0} compare(rem.3, broadcast.7), direction=LT
+  lt.3 = pred[] compare(jit__where_.1, constant.18), direction=LT
+  ne.4 = pred[120000]{0} broadcast(lt.3), dimensions={}
+  ne.5 = pred[120000]{0} compare(lt.2, ne.4), direction=NE
+  ne.3 = pred[120000]{0} compare(rem.3, broadcast.7), direction=NE
+  and.1 = pred[120000]{0} and(ne.5, ne.3)
+  add.3 = s64[120000]{0} broadcast(jit__where_.1), dimensions={}
+  add.4 = s64[120000]{0} add(rem.3, add.3)
+  ROOT select_n.3 = s64[120000]{0} select(and.1, add.4, rem.3)
+}
+
+relu.3 {
+  Arg_0.5 = f32[120000,64]{1,0} parameter(0)
+  constant.20 = f32[] constant(0)
+  max.2 = f32[120000,64]{1,0} broadcast(constant.20), dimensions={}
+  ROOT max.3 = f32[120000,64]{1,0} maximum(Arg_0.5, max.2)
+}
+
+region_0.4 {
+  scatter-add.2 = f32[] parameter(0)
+  scatter-add.3 = f32[] parameter(1)
+  ROOT add.9 = f32[] add(scatter-add.2, scatter-add.3)
+}
+
+relu_0.5 {
+  Arg_0.7 = f32[20000,64]{1,0} parameter(0)
+  constant.22 = f32[] constant(0)
+  max.6 = f32[20000,64]{1,0} broadcast(constant.22), dimensions={}
+  ROOT max.7 = f32[20000,64]{1,0} maximum(Arg_0.7, max.6)
+}
+
+region_1.6 {
+  scatter-add.7 = f32[] parameter(0)
+  scatter-add.8 = f32[] parameter(1)
+  ROOT add.13 = f32[] add(scatter-add.7, scatter-add.8)
+}
+
+region_2.7 {
+  scatter-add.12 = f32[] parameter(0)
+  scatter-add.13 = f32[] parameter(1)
+  ROOT add.17 = f32[] add(scatter-add.12, scatter-add.13)
+}
+
+region_3.8 {
+  reduce_and.3 = pred[] parameter(0)
+  reduce_and.4 = pred[] parameter(1)
+  ROOT reduce_and.5 = pred[] and(reduce_and.3, reduce_and.4)
+}
+
+region_4.9 {
+  scatter-add.17 = f32[] parameter(0)
+  scatter-add.18 = f32[] parameter(1)
+  ROOT add.19 = f32[] add(scatter-add.17, scatter-add.18)
+}
+
+region_5.10 {
+  scatter-add.22 = f32[] parameter(0)
+  scatter-add.23 = f32[] parameter(1)
+  ROOT add.21 = f32[] add(scatter-add.22, scatter-add.23)
+}
+
+region_6.11 {
+  reduce_and.10 = pred[] parameter(0)
+  reduce_and.11 = pred[] parameter(1)
+  ROOT reduce_and.12 = pred[] and(reduce_and.10, reduce_and.11)
+}
+
+region_7.12 {
+  scatter-add.27 = f32[] parameter(0)
+  scatter-add.28 = f32[] parameter(1)
+  ROOT add.23 = f32[] add(scatter-add.27, scatter-add.28)
+}
+
+region_8.13 {
+  scatter-add.32 = f32[] parameter(0)
+  scatter-add.33 = f32[] parameter(1)
+  ROOT add.25 = f32[] add(scatter-add.32, scatter-add.33)
+}
+
+region_9.14 {
+  reduce_and.17 = pred[] parameter(0)
+  reduce_and.18 = pred[] parameter(1)
+  ROOT reduce_and.19 = pred[] and(reduce_and.17, reduce_and.18)
+}
+
+ENTRY main.15 {
+  nodes.1 = f32[20000,64]{1,0} parameter(3)
+  constant.27 = f32[] constant(0)
+  broadcast.10 = f32[20000,64]{1,0} broadcast(constant.27), dimensions={}
+  iota.3 = s64[120000]{0} iota(), iota_dimension=0
+  constant.32 = s64[] constant(104729)
+  mul.7 = s64[120000]{0} broadcast(constant.32), dimensions={}
+  mul.10 = s64[120000]{0} multiply(iota.3, mul.7)
+  constant.31 = s64[] constant(13)
+  add.26 = s64[120000]{0} broadcast(constant.31), dimensions={}
+  add.27 = s64[120000]{0} add(mul.10, add.26)
+  constant.35 = s64[] constant(20000)
+  jit_remainder_.3 = s64[120000]{0} call(add.27, constant.35), to_apply=remainder.2
+  convert_element_type.11 = s32[120000]{0} convert(jit_remainder_.3)
+  broadcast_in_dim.17 = s32[120000,1]{1,0} reshape(convert_element_type.11)
+  edges.1 = f32[120000,64]{1,0} parameter(4)
+  iota.2 = s64[120000]{0} iota(), iota_dimension=0
+  constant.33 = s64[] constant(7919)
+  mul.8 = s64[120000]{0} broadcast(constant.33), dimensions={}
+  mul.9 = s64[120000]{0} multiply(iota.2, mul.8)
+  jit_remainder_.2 = s64[120000]{0} call(mul.9, constant.35), to_apply=remainder.2
+  constant.30 = s64[] constant(0)
+  broadcast.13 = s64[120000]{0} broadcast(constant.30), dimensions={}
+  lt.10 = pred[120000]{0} compare(jit_remainder_.2, broadcast.13), direction=LT
+  constant.29 = s64[] constant(20000)
+  broadcast.12 = s64[120000]{0} broadcast(constant.29), dimensions={}
+  add.28 = s64[120000]{0} add(jit_remainder_.2, broadcast.12)
+  select_n.19 = s64[120000]{0} select(lt.10, add.28, jit_remainder_.2)
+  convert_element_type.9 = s32[120000]{0} convert(select_n.19)
+  broadcast_in_dim.15 = s32[120000,1]{1,0} reshape(convert_element_type.9)
+  gather.9 = f32[120000,64]{1,0} gather(nodes.1, broadcast_in_dim.15), offset_dims={1}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1,64}
+  lt.11 = pred[120000]{0} compare(jit_remainder_.3, broadcast.13), direction=LT
+  add.29 = s64[120000]{0} add(jit_remainder_.3, broadcast.12)
+  select_n.20 = s64[120000]{0} select(lt.11, add.29, jit_remainder_.3)
+  convert_element_type.10 = s32[120000]{0} convert(select_n.20)
+  broadcast_in_dim.16 = s32[120000,1]{1,0} reshape(convert_element_type.10)
+  gather.10 = f32[120000,64]{1,0} gather(nodes.1, broadcast_in_dim.16), offset_dims={1}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1,64}
+  concatenate.6 = f32[120000,192]{1,0} concatenate(edges.1, gather.9, gather.10), dimensions={1}
+  We.1 = f32[192,64]{1,0} parameter(1)
+  dot_general.20 = f32[120000,64]{1,0} dot(concatenate.6, We.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  jit_relu_.6 = f32[120000,64]{1,0} call(dot_general.20), to_apply=relu.3
+  scatter-add.35 = f32[20000,64]{1,0} scatter(broadcast.10, broadcast_in_dim.17, jit_relu_.6), update_window_dims={1}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=region_0.4
+  concatenate.7 = f32[20000,128]{1,0} concatenate(nodes.1, scatter-add.35), dimensions={1}
+  Wn.1 = f32[128,64]{1,0} parameter(0)
+  dot_general.21 = f32[20000,64]{1,0} dot(concatenate.7, Wn.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  jit_relu_.7 = f32[20000,64]{1,0} call(dot_general.21), to_apply=relu_0.5
+  convert_element_type.14 = s32[120000]{0} convert(jit_remainder_.3)
+  broadcast_in_dim.20 = s32[120000,1]{1,0} reshape(convert_element_type.14)
+  lt.12 = pred[120000]{0} compare(jit_remainder_.2, broadcast.13), direction=LT
+  add.30 = s64[120000]{0} add(jit_remainder_.2, broadcast.12)
+  select_n.21 = s64[120000]{0} select(lt.12, add.30, jit_remainder_.2)
+  convert_element_type.12 = s32[120000]{0} convert(select_n.21)
+  broadcast_in_dim.18 = s32[120000,1]{1,0} reshape(convert_element_type.12)
+  gather.11 = f32[120000,64]{1,0} gather(jit_relu_.7, broadcast_in_dim.18), offset_dims={1}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1,64}
+  lt.13 = pred[120000]{0} compare(jit_remainder_.3, broadcast.13), direction=LT
+  add.31 = s64[120000]{0} add(jit_remainder_.3, broadcast.12)
+  select_n.22 = s64[120000]{0} select(lt.13, add.31, jit_remainder_.3)
+  convert_element_type.13 = s32[120000]{0} convert(select_n.22)
+  broadcast_in_dim.19 = s32[120000,1]{1,0} reshape(convert_element_type.13)
+  gather.12 = f32[120000,64]{1,0} gather(jit_relu_.7, broadcast_in_dim.19), offset_dims={1}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1,64}
+  concatenate.8 = f32[120000,192]{1,0} concatenate(jit_relu_.6, gather.11, gather.12), dimensions={1}
+  dot_general.22 = f32[120000,64]{1,0} dot(concatenate.8, We.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  jit_relu_.8 = f32[120000,64]{1,0} call(dot_general.22), to_apply=relu.3
+  scatter-add.36 = f32[20000,64]{1,0} scatter(broadcast.10, broadcast_in_dim.20, jit_relu_.8), update_window_dims={1}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=region_1.6
+  concatenate.9 = f32[20000,128]{1,0} concatenate(jit_relu_.7, scatter-add.36), dimensions={1}
+  dot_general.23 = f32[20000,64]{1,0} dot(concatenate.9, Wn.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  jit_relu_.9 = f32[20000,64]{1,0} call(dot_general.23), to_apply=relu_0.5
+  convert_element_type.17 = s32[120000]{0} convert(jit_remainder_.3)
+  broadcast_in_dim.23 = s32[120000,1]{1,0} reshape(convert_element_type.17)
+  lt.14 = pred[120000]{0} compare(jit_remainder_.2, broadcast.13), direction=LT
+  add.32 = s64[120000]{0} add(jit_remainder_.2, broadcast.12)
+  select_n.23 = s64[120000]{0} select(lt.14, add.32, jit_remainder_.2)
+  convert_element_type.15 = s32[120000]{0} convert(select_n.23)
+  broadcast_in_dim.21 = s32[120000,1]{1,0} reshape(convert_element_type.15)
+  gather.13 = f32[120000,64]{1,0} gather(jit_relu_.9, broadcast_in_dim.21), offset_dims={1}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1,64}
+  lt.15 = pred[120000]{0} compare(jit_remainder_.3, broadcast.13), direction=LT
+  add.33 = s64[120000]{0} add(jit_remainder_.3, broadcast.12)
+  select_n.24 = s64[120000]{0} select(lt.15, add.33, jit_remainder_.3)
+  convert_element_type.16 = s32[120000]{0} convert(select_n.24)
+  broadcast_in_dim.22 = s32[120000,1]{1,0} reshape(convert_element_type.16)
+  gather.14 = f32[120000,64]{1,0} gather(jit_relu_.9, broadcast_in_dim.22), offset_dims={1}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1,64}
+  concatenate.10 = f32[120000,192]{1,0} concatenate(jit_relu_.8, gather.13, gather.14), dimensions={1}
+  dot_general.24 = f32[120000,64]{1,0} dot(concatenate.10, We.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  jit_relu_.10 = f32[120000,64]{1,0} call(dot_general.24), to_apply=relu.3
+  scatter-add.37 = f32[20000,64]{1,0} scatter(broadcast.10, broadcast_in_dim.23, jit_relu_.10), update_window_dims={1}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=region_2.7
+  concatenate.11 = f32[20000,128]{1,0} concatenate(jit_relu_.9, scatter-add.37), dimensions={1}
+  dot_general.25 = f32[20000,64]{1,0} dot(concatenate.11, Wn.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  gt.11 = pred[20000,64]{1,0} compare(dot_general.25, broadcast.10), direction=GT
+  jit_relu_.11 = f32[20000,64]{1,0} call(dot_general.25), to_apply=relu_0.5
+  Wg.1 = f32[64,1]{1,0} parameter(2)
+  dot_general.26 = f32[20000,1]{1,0} dot(jit_relu_.11, Wg.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  constant.26 = f32[] constant(2)
+  mul.6 = f32[20000,1]{1,0} broadcast(constant.26), dimensions={}
+  mul.11 = f32[20000,1]{1,0} multiply(dot_general.26, mul.6)
+  constant.25 = f32[] constant(5e-05)
+  broadcast_in_dim.14 = f32[20000,1]{1,0} broadcast(constant.25), dimensions={}
+  broadcast_in_dim.24 = f32[20000,1]{1,0} multiply(mul.11, broadcast_in_dim.14)
+  dot_general.28 = f32[20000,64]{1,0} dot(broadcast_in_dim.24, Wg.1), lhs_contracting_dims={1}, rhs_contracting_dims={1}, operand_precision={highest,highest}
+  select_n.25 = f32[20000,64]{1,0} select(gt.11, dot_general.28, broadcast.10)
+  dot_general.29 = f32[64,128]{1,0} dot(select_n.25, concatenate.11), lhs_contracting_dims={0}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  transpose.8 = f32[128,64]{0,1} transpose(dot_general.29), dimensions={1,0}
+  gt.9 = pred[20000,64]{1,0} compare(dot_general.23, broadcast.10), direction=GT
+  dot_general.30 = f32[20000,128]{1,0} dot(select_n.25, Wn.1), lhs_contracting_dims={1}, rhs_contracting_dims={1}, operand_precision={highest,highest}
+  split.11 = f32[20000,64]{1,0} slice(dot_general.30), slice={[0:20000], [0:64]}
+  constant.28 = f32[] constant(0)
+  broadcast.11 = f32[120000,64]{1,0} broadcast(constant.28), dimensions={}
+  gt.10 = pred[120000,64]{1,0} compare(dot_general.24, broadcast.11), direction=GT
+  constant.24 = s32[] constant(0)
+  broadcast.9 = s32[120000,1]{1,0} broadcast(constant.24), dimensions={}
+  ge.3 = pred[120000,1]{1,0} compare(broadcast_in_dim.23, broadcast.9), direction=GE
+  constant.23 = s32[] constant(19999)
+  broadcast.8 = s32[120000,1]{1,0} broadcast(constant.23), dimensions={}
+  le.3 = pred[120000,1]{1,0} compare(broadcast_in_dim.23, broadcast.8), direction=LE
+  and.5 = pred[120000,1]{1,0} and(ge.3, le.3)
+  constant.34 = pred[] constant(true)
+  reduce_and.21 = pred[120000]{0} reduce(and.5, constant.34), dimensions={1}, to_apply=region_3.8
+  broadcast_in_dim.25 = pred[120000,64]{1,0} broadcast(reduce_and.21), dimensions={0}
+  split.12 = f32[20000,64]{1,0} slice(dot_general.30), slice={[0:20000], [64:128]}
+  gather.15 = f32[120000,64]{1,0} gather(split.12, broadcast_in_dim.23), offset_dims={1}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1,64}
+  select_n.26 = f32[120000,64]{1,0} select(broadcast_in_dim.25, gather.15, broadcast.11)
+  select_n.27 = f32[120000,64]{1,0} select(gt.10, select_n.26, broadcast.11)
+  dot_general.32 = f32[120000,192]{1,0} dot(select_n.27, We.1), lhs_contracting_dims={1}, rhs_contracting_dims={1}, operand_precision={highest,highest}
+  split.15 = f32[120000,64]{1,0} slice(dot_general.32), slice={[0:120000], [128:192]}
+  scatter-add.38 = f32[20000,64]{1,0} scatter(broadcast.10, broadcast_in_dim.22, split.15), update_window_dims={1}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=region_4.9
+  add_any.10 = f32[20000,64]{1,0} add(split.11, scatter-add.38)
+  split.14 = f32[120000,64]{1,0} slice(dot_general.32), slice={[0:120000], [64:128]}
+  scatter-add.39 = f32[20000,64]{1,0} scatter(broadcast.10, broadcast_in_dim.21, split.14), update_window_dims={1}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=region_5.10
+  add_any.11 = f32[20000,64]{1,0} add(add_any.10, scatter-add.39)
+  select_n.28 = f32[20000,64]{1,0} select(gt.9, add_any.11, broadcast.10)
+  dot_general.33 = f32[64,128]{1,0} dot(select_n.28, concatenate.9), lhs_contracting_dims={0}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  transpose.10 = f32[128,64]{0,1} transpose(dot_general.33), dimensions={1,0}
+  add_any.12 = f32[128,64]{0,1} add(transpose.8, transpose.10)
+  gt.7 = pred[20000,64]{1,0} compare(dot_general.21, broadcast.10), direction=GT
+  dot_general.34 = f32[20000,128]{1,0} dot(select_n.28, Wn.1), lhs_contracting_dims={1}, rhs_contracting_dims={1}, operand_precision={highest,highest}
+  split.16 = f32[20000,64]{1,0} slice(dot_general.34), slice={[0:20000], [0:64]}
+  gt.8 = pred[120000,64]{1,0} compare(dot_general.22, broadcast.11), direction=GT
+  split.13 = f32[120000,64]{1,0} slice(dot_general.32), slice={[0:120000], [0:64]}
+  ge.4 = pred[120000,1]{1,0} compare(broadcast_in_dim.20, broadcast.9), direction=GE
+  le.4 = pred[120000,1]{1,0} compare(broadcast_in_dim.20, broadcast.8), direction=LE
+  and.6 = pred[120000,1]{1,0} and(ge.4, le.4)
+  reduce_and.22 = pred[120000]{0} reduce(and.6, constant.34), dimensions={1}, to_apply=region_6.11
+  broadcast_in_dim.26 = pred[120000,64]{1,0} broadcast(reduce_and.22), dimensions={0}
+  split.17 = f32[20000,64]{1,0} slice(dot_general.34), slice={[0:20000], [64:128]}
+  gather.16 = f32[120000,64]{1,0} gather(split.17, broadcast_in_dim.20), offset_dims={1}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1,64}
+  select_n.29 = f32[120000,64]{1,0} select(broadcast_in_dim.26, gather.16, broadcast.11)
+  add_any.13 = f32[120000,64]{1,0} add(split.13, select_n.29)
+  select_n.30 = f32[120000,64]{1,0} select(gt.8, add_any.13, broadcast.11)
+  dot_general.36 = f32[120000,192]{1,0} dot(select_n.30, We.1), lhs_contracting_dims={1}, rhs_contracting_dims={1}, operand_precision={highest,highest}
+  split.20 = f32[120000,64]{1,0} slice(dot_general.36), slice={[0:120000], [128:192]}
+  scatter-add.40 = f32[20000,64]{1,0} scatter(broadcast.10, broadcast_in_dim.19, split.20), update_window_dims={1}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=region_7.12
+  add_any.15 = f32[20000,64]{1,0} add(split.16, scatter-add.40)
+  split.19 = f32[120000,64]{1,0} slice(dot_general.36), slice={[0:120000], [64:128]}
+  scatter-add.41 = f32[20000,64]{1,0} scatter(broadcast.10, broadcast_in_dim.18, split.19), update_window_dims={1}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=region_8.13
+  add_any.16 = f32[20000,64]{1,0} add(add_any.15, scatter-add.41)
+  select_n.31 = f32[20000,64]{1,0} select(gt.7, add_any.16, broadcast.10)
+  dot_general.37 = f32[64,128]{1,0} dot(select_n.31, concatenate.7), lhs_contracting_dims={0}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  transpose.12 = f32[128,64]{0,1} transpose(dot_general.37), dimensions={1,0}
+  add_any.17 = f32[128,64]{0,1} add(add_any.12, transpose.12)
+  dot_general.31 = f32[64,192]{1,0} dot(select_n.27, concatenate.10), lhs_contracting_dims={0}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  transpose.9 = f32[192,64]{0,1} transpose(dot_general.31), dimensions={1,0}
+  dot_general.35 = f32[64,192]{1,0} dot(select_n.30, concatenate.8), lhs_contracting_dims={0}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  transpose.11 = f32[192,64]{0,1} transpose(dot_general.35), dimensions={1,0}
+  add_any.14 = f32[192,64]{0,1} add(transpose.9, transpose.11)
+  gt.6 = pred[120000,64]{1,0} compare(dot_general.20, broadcast.11), direction=GT
+  split.18 = f32[120000,64]{1,0} slice(dot_general.36), slice={[0:120000], [0:64]}
+  ge.5 = pred[120000,1]{1,0} compare(broadcast_in_dim.17, broadcast.9), direction=GE
+  le.5 = pred[120000,1]{1,0} compare(broadcast_in_dim.17, broadcast.8), direction=LE
+  and.7 = pred[120000,1]{1,0} and(ge.5, le.5)
+  reduce_and.23 = pred[120000]{0} reduce(and.7, constant.34), dimensions={1}, to_apply=region_9.14
+  broadcast_in_dim.27 = pred[120000,64]{1,0} broadcast(reduce_and.23), dimensions={0}
+  dot_general.38 = f32[20000,128]{1,0} dot(select_n.31, Wn.1), lhs_contracting_dims={1}, rhs_contracting_dims={1}, operand_precision={highest,highest}
+  split.21 = f32[20000,64]{1,0} slice(dot_general.38), slice={[0:20000], [64:128]}
+  gather.17 = f32[120000,64]{1,0} gather(split.21, broadcast_in_dim.17), offset_dims={1}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1,64}
+  select_n.32 = f32[120000,64]{1,0} select(broadcast_in_dim.27, gather.17, broadcast.11)
+  add_any.18 = f32[120000,64]{1,0} add(split.18, select_n.32)
+  select_n.33 = f32[120000,64]{1,0} select(gt.6, add_any.18, broadcast.11)
+  dot_general.39 = f32[64,192]{1,0} dot(select_n.33, concatenate.6), lhs_contracting_dims={0}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  transpose.13 = f32[192,64]{0,1} transpose(dot_general.39), dimensions={1,0}
+  add_any.19 = f32[192,64]{0,1} add(add_any.14, transpose.13)
+  dot_general.27 = f32[1,64]{1,0} dot(broadcast_in_dim.24, jit_relu_.11), lhs_contracting_dims={0}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  transpose.7 = f32[64,1]{1,0} reshape(dot_general.27)
+  ROOT tuple.1 = (f32[128,64]{0,1}, f32[192,64]{0,1}, f32[64,1]{1,0}) tuple(add_any.17, add_any.19, transpose.7)
+}
+

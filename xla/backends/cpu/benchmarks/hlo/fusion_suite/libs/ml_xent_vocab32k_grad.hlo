@@ -1,0 +1,79 @@
+HloModule jit_xent, entry_computation_layout={(f32[2048,32000]{1,0}, s32[2048]{0})->f32[2048,32000]{1,0}}
+
+region_0.1 {
+  reduce_max.3 = f32[] parameter(0)
+  reduce_max.4 = f32[] parameter(1)
+  ROOT reduce_max.5 = f32[] maximum(reduce_max.3, reduce_max.4)
+}
+
+region_1.2 {
+  reduce_sum.3 = f32[] parameter(0)
+  reduce_sum.4 = f32[] parameter(1)
+  ROOT reduce_sum.5 = f32[] add(reduce_sum.3, reduce_sum.4)
+}
+
+take_along_axis.3 {
+  Arg_0.1 = s32[2048,1]{1,0} parameter(0)
+  constant.9 = s32[] constant(0)
+  lt.2 = s32[2048,1]{1,0} broadcast(constant.9), dimensions={}
+  lt.3 = pred[2048,1]{1,0} compare(Arg_0.1, lt.2), direction=LT
+  constant.8 = s32[] constant(32000)
+  add.2 = s32[2048,1]{1,0} broadcast(constant.8), dimensions={}
+  add.3 = s32[2048,1]{1,0} add(Arg_0.1, add.2)
+  select_n.2 = s32[2048,1]{1,0} select(lt.3, add.3, Arg_0.1)
+  ROOT reshape.1 = s32[2048,1,1]{2,1,0} reshape(select_n.2)
+}
+
+region_2.4 {
+  scatter-add.2 = f32[] parameter(0)
+  scatter-add.3 = f32[] parameter(1)
+  ROOT add.5 = f32[] add(scatter-add.2, scatter-add.3)
+}
+
+take_along_axis_0.5 {
+  constant.11 = f32[] constant(0)
+  broadcast_in_dim.5 = f32[2048,32000]{1,0} broadcast(constant.11), dimensions={}
+  Arg_0.3 = s32[2048,1,1]{2,1,0} parameter(0)
+  Arg_1.1 = f32[2048,1]{1,0} parameter(1)
+  ROOT scatter-add.5 = f32[2048,32000]{1,0} scatter(broadcast_in_dim.5, Arg_0.3, Arg_1.1), update_window_dims={}, inserted_window_dims={1}, scatter_dims_to_operand_dims={1}, input_batching_dims={0}, scatter_indices_batching_dims={0}, index_vector_dim=2, to_apply=region_2.4
+}
+
+ENTRY main.6 {
+  y.1 = s32[2048]{0} parameter(1)
+  broadcast_in_dim.10 = s32[2048,1]{1,0} reshape(y.1)
+  jvp_jit_take_along_axis__.1 = s32[2048,1,1]{2,1,0} call(broadcast_in_dim.10), to_apply=take_along_axis.3
+  constant.12 = f32[] constant(-0.00048828125)
+  broadcast_in_dim.7 = f32[2048,1]{1,0} broadcast(constant.12), dimensions={}
+  transpose_jvp_jit_take_along_axis___.1 = f32[2048,32000]{1,0} call(jvp_jit_take_along_axis__.1, broadcast_in_dim.7), to_apply=take_along_axis_0.5
+  z.1 = f32[2048,32000]{1,0} parameter(0)
+  constant.17 = f32[] constant(-inf)
+  reduce_max.7 = f32[2048]{0} reduce(z.1, constant.17), dimensions={1}, to_apply=region_0.1
+  constant.15 = f32[] constant(-inf)
+  max.2 = f32[2048]{0} broadcast(constant.15), dimensions={}
+  max.3 = f32[2048]{0} maximum(reduce_max.7, max.2)
+  is_finite.1 = pred[2048]{0} is-finite(max.3)
+  constant.14 = f32[] constant(0)
+  broadcast.1 = f32[2048]{0} broadcast(constant.14), dimensions={}
+  select_n.5 = f32[2048]{0} select(is_finite.1, max.3, broadcast.1)
+  broadcast_in_dim.9 = f32[2048,1]{1,0} reshape(select_n.5)
+  sub.4 = f32[2048,1]{1,0} broadcast(broadcast_in_dim.9), dimensions={0,1}
+  sub.5 = f32[2048]{0} reshape(sub.4)
+  sub.6 = f32[2048,32000]{1,0} broadcast(sub.5), dimensions={0}
+  sub.7 = f32[2048,32000]{1,0} subtract(z.1, sub.6)
+  exp.1 = f32[2048,32000]{1,0} exponential(sub.7)
+  constant.16 = f32[] constant(0)
+  reduce_sum.7 = f32[2048]{0} reduce(exp.1, constant.16), dimensions={1}, to_apply=region_1.2
+  ge.1 = pred[2048]{0} compare(reduce_sum.7, broadcast.1), direction=GE
+  constant.13 = f32[] constant(0.00048828125)
+  broadcast_in_dim.8 = f32[2048]{0} broadcast(constant.13), dimensions={}
+  abs.1 = f32[2048]{0} abs(reduce_sum.7)
+  div.1 = f32[2048]{0} divide(broadcast_in_dim.8, abs.1)
+  select_n.7 = f32[2048]{0} select(ge.1, div.1, broadcast.1)
+  select_n.6 = f32[2048]{0} select(ge.1, broadcast.1, div.1)
+  neg.1 = f32[2048]{0} negate(select_n.6)
+  add_any.2 = f32[2048]{0} add(select_n.7, neg.1)
+  broadcast_in_dim.11 = f32[2048,32000]{1,0} broadcast(add_any.2), dimensions={0}
+  mul.1 = f32[2048,32000]{1,0} multiply(broadcast_in_dim.11, exp.1)
+  ROOT add_any.3 = f32[2048,32000]{1,0} add(transpose_jvp_jit_take_along_axis___.1, mul.1)
+}
+
