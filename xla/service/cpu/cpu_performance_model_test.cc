@@ -183,5 +183,99 @@ TEST(CpuPerformanceModelHostTest, ParallelKernelsPayForkJoin) {
             CpuPerformanceModel::KernelOverhead(4));
 }
 
+TEST_F(CpuPerformanceModelTest, EntryTempCountsThePeakOfLiveValues) {
+  // `big` dies before `small` is computed, so they share memory and
+  // materializing `small` does not grow the temp buffer.
+  absl::string_view hlo_string = R"(
+HloModule m
+
+add {
+  a = f32[] parameter(0)
+  b = f32[] parameter(1)
+  ROOT s = f32[] add(a, b)
+}
+
+ENTRY e {
+  p = f32[8388608] parameter(0)
+  q = f32[1024] parameter(1)
+  z = f32[] constant(0)
+  big = f32[8388608] exponential(p)
+  r1 = f32[] reduce(big, z), dimensions={0}, to_apply=add
+  r2 = f32[] reduce(big, z), dimensions={0}, to_apply=add
+  small = f32[1024] exponential(q)
+  m1 = f32[1024] multiply(small, q)
+  m2 = f32[1024] add(small, q)
+  ROOT t = (f32[], f32[], f32[1024], f32[1024]) tuple(r1, r2, m1, m2)
+})";
+  auto module = ParseAndReturnVerifiedModule(hlo_string).value();
+  const HloComputation& entry = *module->entry_computation();
+  CpuPerformanceModel::EntryTemp temp(
+      entry,
+      [](const HloInstruction& instr) {
+        return instr.opcode() != HloOpcode::kParameter &&
+               instr.opcode() != HloOpcode::kConstant &&
+               instr.shape().IsArray() &&
+               (instr.user_count() > 1 ||
+                instr.users().front()->opcode() == HloOpcode::kTuple);
+      },
+      [](const HloInstruction& instr) {
+        return instr.opcode() != HloOpcode::kTuple;
+      });
+  constexpr int64_t kBigBytes = int64_t{32} << 20;
+  // `big` and the two scalar reductions of it.
+  EXPECT_EQ(temp.peak_bytes(), kBigBytes + 8);
+  EXPECT_EQ(temp.PeakIncrease(*FindInstruction(module.get(), "small"), 4096),
+            0);
+  // Without `big`, only the small values are live.
+  const int64_t big_increase =
+      temp.PeakIncrease(*FindInstruction(module.get(), "big"), kBigBytes);
+  EXPECT_GT(big_increase, kBigBytes - 4 * 4096);
+  EXPECT_LE(big_increase, kBigBytes);
+  // A value that is not counted adds its bytes where it is live.
+  EXPECT_EQ(temp.PeakIncrease(*FindInstruction(module.get(), "r1"), 64), 64);
+  // Once `big` is materialized, a value of its size live at the same time
+  // doubles the peak.
+  temp.Materialize(*FindInstruction(module.get(), "big"));
+  EXPECT_EQ(temp.PeakIncrease(*FindInstruction(module.get(), "r1"), kBigBytes),
+            kBigBytes);
+}
+
+TEST_F(CpuPerformanceModelTest, EntryTempValueIsLiveUntilTheKernelsOfItsUsers) {
+  // `n` is not materialized, so it is computed in the kernel of `m`, and a
+  // materialized `g` is read there, while `big` is live.
+  absl::string_view hlo_string = R"(
+HloModule m
+
+add {
+  a = f32[] parameter(0)
+  b = f32[] parameter(1)
+  ROOT s = f32[] add(a, b)
+}
+
+ENTRY e {
+  p = f32[8388608] parameter(0)
+  z = f32[] constant(0)
+  g = f32[8388608] exponential(p)
+  n = f32[8388608] negate(g)
+  big = f32[8388608] sine(p)
+  r = f32[] reduce(big, z), dimensions={0}, to_apply=add
+  b = f32[8388608] broadcast(r), dimensions={}
+  ROOT m = f32[8388608] add(n, b)
+})";
+  auto module = ParseAndReturnVerifiedModule(hlo_string).value();
+  CpuPerformanceModel::EntryTemp temp(
+      *module->entry_computation(),
+      [](const HloInstruction& instr) { return instr.name() == "big"; },
+      [](const HloInstruction& instr) { return true; });
+  constexpr int64_t kBigBytes = int64_t{32} << 20;
+  EXPECT_EQ(temp.peak_bytes(), kBigBytes);
+  const HloInstruction& g = *FindInstruction(module.get(), "g");
+  EXPECT_EQ(temp.PeakIncrease(g, kBigBytes), kBigBytes);
+  // Once `n` is materialized, `g` is read only by its kernel.
+  temp.Materialize(*FindInstruction(module.get(), "n"));
+  EXPECT_EQ(temp.peak_bytes(), 2 * kBigBytes);
+  EXPECT_EQ(temp.PeakIncrease(g, kBigBytes), 0);
+}
+
 }  // namespace
 }  // namespace xla::cpu

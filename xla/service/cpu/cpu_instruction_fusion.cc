@@ -622,6 +622,30 @@ HloInstruction::FusionKind CpuInstructionFusion::ChooseKind(
              : HloInstruction::FusionKind::kLoop;
 }
 
+/*static*/
+bool CpuInstructionFusion::MaterializedAnyway(const HloInstruction& instr) {
+  // Results of instructions that a loop fusion cannot absorb, and values read
+  // by them, are in memory whatever fusion decides; values whose users can
+  // all fuse them are what fusion decides about. Results of the computation
+  // are outputs, not temp.
+  if (!instr.shape().IsArray() || instr.opcode() == HloOpcode::kParameter ||
+      instr.opcode() == HloOpcode::kConstant ||
+      instr.opcode() == HloOpcode::kBitcast ||
+      instr.opcode() == HloOpcode::kGetTupleElement ||
+      instr.IsRoot()) {
+    return false;
+  }
+  auto is_output = [](const HloInstruction* user) {
+    return user->IsRoot() && user->opcode() == HloOpcode::kTuple;
+  };
+  if (!CanBeLoopFused(instr)) {
+    return !absl::c_all_of(instr.users(), is_output);
+  }
+  return absl::c_any_of(instr.users(), [&](const HloInstruction* user) {
+    return !CanBeLoopFused(*user) && !is_output(user);
+  });
+}
+
 absl::StatusOr<bool> CpuInstructionFusion::RunImpl(
     HloModule* module,
     const absl::flat_hash_set<absl::string_view>& execution_threads) {
@@ -642,6 +666,9 @@ absl::StatusOr<bool> CpuInstructionFusion::RunImpl(
       break;
     }
   }
+  entry_temp_ = std::make_unique<CpuPerformanceModel::EntryTemp>(
+      *module->entry_computation(), &MaterializedAnyway, &CanBeLoopFused);
+  performance_model_.set_entry_temp(entry_temp_.get());
   set_is_expensive([this](const HloInstruction& instruction) {
     if (cost_analysis_ == nullptr) {
       return IsExpensive(instruction);
@@ -653,6 +680,8 @@ absl::StatusOr<bool> CpuInstructionFusion::RunImpl(
       InstructionFusion::RunImpl(module, execution_threads);
   cost_analysis_.reset();
   fusion_is_faster_.clear();
+  performance_model_.set_entry_temp(nullptr);
+  entry_temp_.reset();
   return changed;
 }
 
@@ -678,6 +707,11 @@ bool CpuInstructionFusion::FusionIntoAllUsersIsFaster(
   // `it` may be invalidated.
   bool faster = EstimateFusionIntoAllUsersIsFaster(producer);
   fusion_is_faster_[producer.unique_id()] = faster;
+  // A materialized producer occupies temp memory that later decisions cannot
+  // count on.
+  if (!faster && entry_temp_ != nullptr) {
+    entry_temp_->Materialize(producer);
+  }
   return faster;
 }
 

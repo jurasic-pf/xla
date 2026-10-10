@@ -18,9 +18,13 @@ limitations under the License.
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/functional/function_ref.h"
 #include "absl/time/time.h"
 #include "absl/types/span.h"
+#include "xla/hlo/ir/hlo_computation.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/service/cpu/cpu_hlo_cost_analysis.h"
 #include "xla/stream_executor/device_description.h"
@@ -128,6 +132,75 @@ class CpuPerformanceModel {
   // pool and waiting for them: kForkJoinTime + tasks * kForkJoinTaskTime.
   static constexpr absl::Duration kForkJoinTime = absl::Nanoseconds(4700);
   static constexpr absl::Duration kForkJoinTaskTime = absl::Nanoseconds(1230);
+  // The C library returns freed allocations larger than its maximum mmap
+  // threshold to the system, so a temp buffer that large is faulted in again
+  // by every execution, at this cost per page.
+  static constexpr int64_t kFreshAllocationBytes = int64_t{32} << 20;
+  static constexpr int64_t kPageFaultBytes = 4096;
+  static constexpr absl::Duration kPageFaultTime = absl::Nanoseconds(900);
+  // Returns the cost of the page faults of materializing `bytes` once per
+  // execution.
+  static absl::Duration FreshAllocationTime(int64_t bytes);
+  // Returns true if `instr` runs once per execution, not in a loop body.
+  static bool RunsOncePerExecution(const HloInstruction& instr);
+
+  // Live temp bytes of the entry computation over its instruction order.
+  // Buffer assignment shares memory between values that are not live at the
+  // same time, so the temp buffer is as large as the peak, and materializing
+  // a value adds only the bytes by which it raises the peak.
+  class EntryTemp {
+   public:
+    // `materialized` selects the values that are in memory regardless of
+    // fusion decisions; `fusible` the instructions that can be fused into
+    // their users.
+    EntryTemp(const HloComputation& computation,
+              absl::FunctionRef<bool(const HloInstruction&)> materialized,
+              absl::FunctionRef<bool(const HloInstruction&)> fusible);
+
+    int64_t peak_bytes() const { return MaxLive(0, size_ - 1); }
+    // Returns the increase of the peak if `instr`, an instruction of the
+    // computation, is materialized as `bytes` over its live range.
+    int64_t PeakIncrease(const HloInstruction& instr, int64_t bytes) const;
+    // Records that `instr` is materialized, so that later values that are
+    // live at the same time do not count on the same memory.
+    void Materialize(const HloInstruction& instr);
+
+   private:
+    struct Value {
+      int64_t bytes = 0;
+      bool fusible = false;
+      // Whether the value is counted in the live bytes, and until where.
+      bool counted = false;
+      int64_t end = 0;
+      std::vector<int64_t> users;
+    };
+    // The last position at which the value at `position`, if materialized,
+    // is read. A user that is neither materialized nor a kernel of its own
+    // is computed in the kernels of its users, which read the value there.
+    int64_t End(int64_t position) const;
+    // Maximum of the live bytes in [begin, end].
+    int64_t MaxLive(int64_t begin, int64_t end) const;
+    int64_t MaxLive(int64_t begin, int64_t end, int64_t node, int64_t lo,
+                    int64_t hi) const;
+    void Add(int64_t begin, int64_t end, int64_t bytes, int64_t node,
+             int64_t lo, int64_t hi);
+
+    // Positions in the instruction order, by unique id.
+    absl::flat_hash_map<int, int64_t> positions_;
+    std::vector<Value> values_;
+    // Segment tree over the instruction order of the live bytes: the maximum
+    // of each node's interval, and the bytes added to all of it.
+    int64_t size_ = 0;
+    std::vector<int64_t> max_;
+    std::vector<int64_t> add_;
+  };
+  void set_entry_temp(const EntryTemp* entry_temp) { entry_temp_ = entry_temp; }
+  // Cost of the page faults of materializing `bytes` of `producer`: once the
+  // temp buffer is larger than kFreshAllocationBytes, every page of it is
+  // faulted in by every execution.
+  absl::Duration MaterializeFaultTime(const HloInstruction& producer,
+                                      int64_t bytes) const;
+
   // Bandwidth of one core streaming from memory, and from its L2 cache.
   static constexpr double kCoreMemoryBandwidth = 20e9;
   static constexpr double kCoreCacheBandwidth = 170e9;
@@ -170,6 +243,7 @@ class CpuPerformanceModel {
 
  private:
   se::DeviceDescription device_info_;
+  const EntryTemp* entry_temp_ = nullptr;
 };
 
 }  // namespace xla::cpu
