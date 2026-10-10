@@ -104,6 +104,7 @@ limitations under the License.
 #include "xla/backends/cpu/transforms/collectives/all_reduce_combiner.h"
 #include "xla/backends/cpu/transforms/embedded_while_loop_unroller.h"
 #include "xla/backends/cpu/transforms/library_rewriter.h"
+#include "xla/backends/cpu/transforms/ynn_matcher.h"
 #include "xla/backends/cpu/ynn_support.h"
 #include "xla/comparison_util.h"
 #include "xla/hlo/analysis/alias_info.h"
@@ -520,6 +521,7 @@ std::unique_ptr<HloPassFix<HloPassPipeline>> CreateSimplificationPipeline(
   // Conversion to MLIR only works with simplified gathers.
   pipeline->AddPass<GatherSimplifier>();
 
+  const DebugOptions& debug_options = module->config().debug_options();
   if (!IsHostOffload(module) &&
       absl::c_contains(module->config()
                            .debug_options()
@@ -529,10 +531,18 @@ std::unique_ptr<HloPassFix<HloPassPipeline>> CreateSimplificationPipeline(
     // - Improving numerical properties by hierarchically performing reductions.
     // - Improving performance by allowing parallelism.
     // YNNPACK doesn't need TreeReductionRewriter to do either of these.
-    pipeline->AddPass<TreeReductionRewriter>([](const HloInstruction* hlo) {
-      return !(IsInstructionPreferredByYnn(hlo) &&
-               IsReduceLikeOpSupportedByYnn(hlo));
-    });
+    // Reductions that the performance model leaves to loop fusion are split
+    // if the loop fusion needs the split to use the thread pool.
+    auto matcher = std::make_shared<YnnMatcher>(
+        /*target_machine_features=*/nullptr,
+        &debug_options.xla_cpu_experimental_ynn_fusion_type());
+    pipeline->AddPass<TreeReductionRewriter>(
+        [matcher](const HloInstruction* hlo) {
+          return !(IsInstructionPreferredByYnn(hlo) &&
+                   IsReduceLikeOpSupportedByYnn(hlo)) ||
+                 (hlo->opcode() == HloOpcode::kReduce &&
+                  matcher->LoopFusionNeedsTreeReduction(hlo));
+        });
   } else {
     pipeline->AddPass<TreeReductionRewriter>();
   }

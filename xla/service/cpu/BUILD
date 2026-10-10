@@ -199,6 +199,7 @@ cc_library(
         "//xla/backends/cpu/runtime:thunk_proto_serdes",
         "//xla/backends/cpu/transforms:embedded_while_loop_unroller",
         "//xla/backends/cpu/transforms:library_rewriter",
+        "//xla/backends/cpu/transforms:ynn_matcher",
         "//xla/backends/cpu/transforms/collectives:all_reduce_combiner",
         "//xla/hlo/analysis:alias_info",
         "//xla/hlo/analysis:hlo_ordering",
