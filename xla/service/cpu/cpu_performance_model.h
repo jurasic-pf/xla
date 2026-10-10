@@ -128,6 +128,8 @@ class CpuPerformanceModel {
   // Fixed costs, measured with microbenchmarks of single operations on an
   // 8-core, 16-thread AVX2 x86 host. Launching one kernel thunk:
   static constexpr absl::Duration kKernelLaunchTime = absl::Nanoseconds(20);
+  // Calling a library (YNNPACK) fusion:
+  static constexpr absl::Duration kLibraryCallTime = absl::Nanoseconds(150);
   // Running a kernel as `tasks` > 1 parallel tasks on the intra-op thread
   // pool and waiting for them: kForkJoinTime + tasks * kForkJoinTaskTime.
   static constexpr absl::Duration kForkJoinTime = absl::Nanoseconds(4700);
@@ -204,6 +206,19 @@ class CpuPerformanceModel {
   // Bandwidth of one core streaming from memory, and from its L2 cache.
   static constexpr double kCoreMemoryBandwidth = 20e9;
   static constexpr double kCoreCacheBandwidth = 170e9;
+  // A reduction streaming its input from memory reads less per core, measured
+  // with loop and library reductions of 2^24 elements: 28 GB/s on 4 cores,
+  // 40-51 GB/s on 7.
+  static constexpr double kCoreReduceReadBandwidth = 7e9;
+  static constexpr double kReduceReadBandwidth = 51e9;
+  // Time for a reduction on `cores` cores to read `bytes`.
+  absl::Duration ReduceReadTime(int64_t bytes, double cores) const;
+  // A library reduction computes tiles of this many input bytes as parallel
+  // tasks. If one output reduces more than a tile, it splits the reduced
+  // dimensions into partial reductions, and needs this many tiles per thread
+  // to balance them.
+  static constexpr int64_t kLibraryReduceTileBytes = 128 << 10;
+  static constexpr int64_t kLibraryPartialReduceTilesPerThread = 4;
   // A loop that reads an array along a dimension whose stride is at least a
   // page defeats the hardware prefetchers and loads a cache line per element.
   static constexpr int64_t kPageBytes = 4096;
@@ -218,6 +233,29 @@ class CpuPerformanceModel {
   // with a large stride loads a cache line per element.
   static int64_t ReadFactor(const HloInstruction* consumer,
                             const HloInstruction* operand);
+
+  // A library reduction over the minor dimension computes other ops of its
+  // input faster than a loop fusion, as it vectorizes along that dimension.
+  // Measured with a 5-op chain from broadcasts, reduced in cache on one
+  // thread: f32 0.048 vs 0.181 ns, f64 0.084 vs 0.256 ns per element. Keeping
+  // a minor dimension of 3 or 8 elements, it has no such advantage (0.9-1.5x
+  // at 16 threads).
+  static constexpr double kLibraryArithmeticSpeedupF32 = 3.8;
+  static constexpr double kLibraryArithmeticSpeedupF64 = 3.0;
+
+  // Fraction of the cores that a library fusion keeps busy.
+  static constexpr double kLibraryParallelEfficiency = 0.85;
+
+  // Time to compute `flops` of `type` on `threads` cores. Unlike
+  // ComputeTime, counts the vector width of `type`.
+  static absl::Duration ComputeTime(const se::DeviceDescription& device_info,
+                                    int64_t flops, PrimitiveType type,
+                                    int64_t threads);
+
+  // Time to read or write `bytes` on `threads` cores, from their L2 caches if
+  // the bytes fit into them.
+  static absl::Duration MemoryTime(const se::DeviceDescription& device_info,
+                                   int64_t bytes, int64_t threads);
 
   // Fixed cost of running `tasks` parallel tasks, and of a kernel that runs
   // as `tasks` parallel tasks.
@@ -240,6 +278,80 @@ class CpuPerformanceModel {
                               absl::Duration* write_time) const;
   // Hardware threads of the intra-op thread pool.
   int64_t Threads() const;
+
+  // Work of a loop-fusible computation, per element unless noted.
+  struct ChainWork {
+    // Time of one element in a loop fusion and in a library fusion, which
+    // vectorizes transcendentals, in units of an add. Fractional where a
+    // value is shared by several elements.
+    double flops = 0;
+    double library_flops = 0;
+    // Part of `flops` and `library_flops` spent in transcendental ops.
+    double transcendental_flops = 0;
+    double library_transcendental_flops = 0;
+    // Total bytes of the chain's leaves, e.g. parameters, and of those that
+    // are read along the loop rather than through broadcasts.
+    int64_t leaf_bytes = 0;
+    int64_t streamed_bytes = 0;
+  };
+
+  // Work of a reduction whose input is computed by a chain of loop-fusible
+  // instructions.
+  struct ReduceWork {
+    std::string ToString() const;
+
+    int64_t input_elements = 0;
+    int64_t outputs = 0;
+    // Computing the reduction input from the chain's leaves and reducing it.
+    ChainWork chain;
+    // An input that a library fusion cannot absorb, which a loop fusion
+    // writes and the library fusion reads: its bytes, and the work to
+    // compute it. The library fusion computes the rest of the chain.
+    int64_t materialized_bytes = 0;
+    int64_t materialized_elements = 0;
+    bool materialized_anyway = false;
+    // Whether the reduction runs once per execution, not in a loop body.
+    bool once_per_execution = false;
+    ChainWork materialized;
+    // Other inputs that the library fusion cannot absorb, which are written
+    // for it as well: totals of their work and bytes.
+    int64_t extra_materialized_flops = 0;
+    int64_t extra_materialized_transcendental_flops = 0;
+    int64_t extra_materialized_bytes = 0;
+    int64_t extra_materialized_leaf_bytes = 0;
+    // Bytes loaded per byte of streamed input, see StridedReadFactor.
+    int64_t strided_read_factor = 1;
+    // Whether the minor dimension of the input is reduced.
+    bool reduces_minor_dim = true;
+    // Whether a loop fusion can vectorize the reducer, i.e. reassociate it.
+    bool loop_reducer_vectorizes = true;
+    PrimitiveType type = F32;
+  };
+
+  // Returns the work of `reduce`, computing its input in a loop fusion. A
+  // library fusion of `reduce` reads `materialized`, if not null. If it is
+  // `materialized_anyway`, e.g. for other users, the loop fusion reads it as
+  // well and neither fusion pays for writing it.
+  static ReduceWork AnalyzeReduce(
+      const HloInstruction& reduce, const HloInstruction* materialized,
+      bool materialized_anyway = false,
+      absl::Span<const HloInstruction* const> also_materialized = {});
+
+  // Number of parallel tasks of `work` as a loop fusion, and whether the loop
+  // fusion needs TreeReductionRewriter to split it into a reduce-window and a
+  // small reduction to use them: the loop emitter only partitions outputs.
+  int64_t LoopFusionTasks(const ReduceWork& work) const;
+  bool LoopFusionSplitsReduce(const ReduceWork& work) const;
+
+  struct ReduceRunTimes {
+    absl::Duration loop_fusion;
+    absl::Duration library;
+  };
+
+  // Estimates `work` as a loop fusion and as a library fusion, which
+  // vectorizes transcendentals and splits large reductions across threads,
+  // but reads materialized inputs.
+  ReduceRunTimes EstimateReduce(const ReduceWork& work) const;
 
  private:
   se::DeviceDescription device_info_;
