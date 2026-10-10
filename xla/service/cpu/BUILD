@@ -1093,6 +1093,51 @@ xla_cc_test(
 )
 
 cc_library(
+    name = "cpu_performance_model",
+    srcs = ["cpu_performance_model.cc"],
+    hdrs = ["cpu_performance_model.h"],
+    deps = [
+        ":cpu_hlo_cost_analysis",
+        ":parallel_task_assignment",
+        "//xla:shape_util",
+        "//xla:xla_data_proto_cc",
+        "//xla/hlo/ir:hlo",
+        "//xla/service:hlo_cost_analysis",
+        "//xla/stream_executor:device_description",
+        "@com_google_absl//absl/algorithm:container",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/time",
+        "@com_google_absl//absl/types:span",
+        "@tsl//tsl/platform:platform_port",
+    ],
+)
+
+xla_cc_test(
+    name = "cpu_performance_model_test",
+    srcs = ["cpu_performance_model_test.cc"],
+    deps = [
+        ":cpu_hlo_cost_analysis",
+        ":cpu_performance_model",
+        "//xla/hlo/ir:hlo",
+        "//xla/hlo/testlib:hlo_hardware_independent_test_base",
+        "//xla/hlo/testlib:test_helpers",
+        "//xla:shape_util",
+        "//xla:xla_data_proto_cc",
+        "//xla/service:hlo_cost_analysis",
+        "//xla/stream_executor:device_description",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/status:status_matchers",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "cpu_instruction_fusion",
     srcs = ["cpu_instruction_fusion.cc"],
     hdrs = ["cpu_instruction_fusion.h"],
