@@ -23,12 +23,15 @@ limitations under the License.
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/time.h"
 #include "absl/types/span.h"
 #include "tsl/platform/cpu_info.h"
+#include "xla/hlo/ir/hlo_computation.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_opcode.h"
 #include "xla/primitive_util.h"
@@ -234,6 +237,8 @@ CpuPerformanceModel::RunTimes CpuPerformanceModel::EstimateRunTimes(
         producer_runtime.flops,
         cost_analysis->transcendental_flop_count(*producer),
         producer_runtime.bytes_read + producer_runtime.bytes_written));
+    time_unfused +=
+        MaterializeFaultTime(*producer, producer_runtime.bytes_written);
   }
   absl::Duration time_fused;
 
@@ -412,6 +417,162 @@ int64_t CpuPerformanceModel::StridedReadFactor(
 absl::Duration CpuPerformanceModel::ForkJoinTime(int64_t tasks) {
   return tasks > 1 ? kForkJoinTime + tasks * kForkJoinTaskTime
                    : absl::ZeroDuration();
+}
+
+/*static*/
+absl::Duration CpuPerformanceModel::FreshAllocationTime(int64_t bytes) {
+  return bytes >= kFreshAllocationBytes
+             ? kPageFaultTime * ((bytes + kPageFaultBytes - 1) / kPageFaultBytes)
+             : absl::ZeroDuration();
+}
+
+CpuPerformanceModel::EntryTemp::EntryTemp(
+    const HloComputation& computation,
+    absl::FunctionRef<bool(const HloInstruction&)> materialized,
+    absl::FunctionRef<bool(const HloInstruction&)> fusible) {
+  const std::vector<HloInstruction*> order =
+      computation.MakeInstructionPostOrder();
+  size_ = std::max<int64_t>(1, order.size());
+  max_.assign(4 * size_, 0);
+  add_.assign(4 * size_, 0);
+  values_.resize(order.size());
+  for (int64_t i = 0; i < order.size(); ++i) {
+    positions_[order[i]->unique_id()] = i;
+  }
+  for (int64_t i = 0; i < order.size(); ++i) {
+    const HloInstruction* instr = order[i];
+    Value& value = values_[i];
+    value.fusible = fusible(*instr) && !instr->IsRoot();
+    if (instr->shape().IsArray()) {
+      value.bytes = ShapeUtil::ByteSizeOfElements(instr->shape());
+    }
+    for (const HloInstruction* user : instr->users()) {
+      value.users.push_back(positions_.at(user->unique_id()));
+    }
+  }
+  // The live ranges end at materialized users, so mark all of them first.
+  for (int64_t i = 0; i < order.size(); ++i) {
+    values_[i].counted = values_[i].bytes > 0 && materialized(*order[i]);
+  }
+  for (int64_t i = 0; i < order.size(); ++i) {
+    Value& value = values_[i];
+    if (value.counted) {
+      value.end = End(i);
+      Add(i, value.end, value.bytes, 1, 0, size_ - 1);
+    }
+  }
+}
+
+int64_t CpuPerformanceModel::EntryTemp::End(int64_t position) const {
+  int64_t end = position;
+  std::vector<int64_t> worklist = {position};
+  absl::flat_hash_set<int64_t> visited = {position};
+  while (!worklist.empty()) {
+    const int64_t current = worklist.back();
+    worklist.pop_back();
+    for (int64_t user : values_[current].users) {
+      if (!visited.insert(user).second) {
+        continue;
+      }
+      if (values_[user].counted || !values_[user].fusible) {
+        end = std::max(end, user);
+      } else {
+        worklist.push_back(user);
+      }
+    }
+  }
+  return end;
+}
+
+void CpuPerformanceModel::EntryTemp::Add(int64_t begin, int64_t end,
+                                         int64_t bytes, int64_t node,
+                                         int64_t lo, int64_t hi) {
+  if (end < lo || hi < begin) {
+    return;
+  }
+  if (begin <= lo && hi <= end) {
+    max_[node] += bytes;
+    add_[node] += bytes;
+    return;
+  }
+  const int64_t mid = (lo + hi) / 2;
+  Add(begin, end, bytes, 2 * node, lo, mid);
+  Add(begin, end, bytes, 2 * node + 1, mid + 1, hi);
+  max_[node] = add_[node] + std::max(max_[2 * node], max_[2 * node + 1]);
+}
+
+int64_t CpuPerformanceModel::EntryTemp::MaxLive(int64_t begin, int64_t end,
+                                                int64_t node, int64_t lo,
+                                                int64_t hi) const {
+  if (end < lo || hi < begin) {
+    return 0;
+  }
+  if (begin <= lo && hi <= end) {
+    return max_[node];
+  }
+  const int64_t mid = (lo + hi) / 2;
+  return add_[node] + std::max(MaxLive(begin, end, 2 * node, lo, mid),
+                               MaxLive(begin, end, 2 * node + 1, mid + 1, hi));
+}
+
+int64_t CpuPerformanceModel::EntryTemp::MaxLive(int64_t begin,
+                                                int64_t end) const {
+  return begin > end ? 0 : MaxLive(begin, end, 1, 0, size_ - 1);
+}
+
+void CpuPerformanceModel::EntryTemp::Materialize(const HloInstruction& instr) {
+  auto it = positions_.find(instr.unique_id());
+  if (it == positions_.end() || values_[it->second].counted) {
+    return;
+  }
+  Value& value = values_[it->second];
+  value.counted = true;
+  value.end = End(it->second);
+  Add(it->second, value.end, value.bytes, 1, 0, size_ - 1);
+}
+
+int64_t CpuPerformanceModel::EntryTemp::PeakIncrease(
+    const HloInstruction& instr, int64_t bytes) const {
+  auto it = positions_.find(instr.unique_id());
+  if (it == positions_.end()) {
+    return bytes;
+  }
+  const int64_t begin = it->second;
+  const Value& value = values_[begin];
+  const int64_t end = value.counted ? value.end : End(begin);
+  const int64_t outside =
+      std::max(MaxLive(0, begin - 1), MaxLive(end + 1, size_ - 1));
+  int64_t inside = MaxLive(begin, end);
+  if (value.counted) {
+    inside -= value.bytes;
+  }
+  // The peak without the value, and with it.
+  const int64_t without = std::max(outside, inside);
+  return std::max<int64_t>(0, std::max(outside, inside + bytes) - without);
+}
+
+absl::Duration CpuPerformanceModel::MaterializeFaultTime(
+    const HloInstruction& producer, int64_t bytes) const {
+  if (!RunsOncePerExecution(producer)) {
+    return absl::ZeroDuration();
+  }
+  if (entry_temp_ == nullptr) {
+    return FreshAllocationTime(bytes);
+  }
+  // Without the value, the temp buffer is `peak` bytes; with it, `new_peak`.
+  // Above kFreshAllocationBytes, all of it is faulted in every execution.
+  const int64_t peak = entry_temp_->peak_bytes();
+  const int64_t new_peak = peak + entry_temp_->PeakIncrease(producer, bytes);
+  const int64_t faulted = new_peak < kFreshAllocationBytes ? 0
+                          : peak < kFreshAllocationBytes  ? new_peak
+                                                          : new_peak - peak;
+  return kPageFaultTime * ((faulted + kPageFaultBytes - 1) / kPageFaultBytes);
+}
+
+/*static*/
+bool CpuPerformanceModel::RunsOncePerExecution(const HloInstruction& instr) {
+  const HloComputation* computation = instr.parent();
+  return computation != nullptr && computation->IsEntryComputation();
 }
 
 absl::Duration CpuPerformanceModel::KernelOverhead(int64_t tasks) {

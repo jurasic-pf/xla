@@ -72,6 +72,9 @@ class CpuInstructionFusion : public InstructionFusion {
   // into all of its users is at least as fast as materializing it.
   bool FusionIntoAllUsersIsFaster(const HloInstruction& producer);
   bool EstimateFusionIntoAllUsersIsFaster(const HloInstruction& producer);
+  // Whether `instr` is in temp memory whatever fusion decides: a loop fusion
+  // cannot absorb it, or an instruction that reads it.
+  static bool MaterializedAnyway(const HloInstruction& instr);
 
   HloInstruction* FuseInstruction(HloInstruction* fusion_instruction,
                                   HloInstruction* producer) override;
@@ -91,6 +94,8 @@ class CpuInstructionFusion : public InstructionFusion {
   CpuPerformanceModel performance_model_;
   // Reset in RunImpl. Null if the module could not be analyzed.
   std::unique_ptr<CpuHloCostAnalysis> cost_analysis_;
+  // Live temp bytes of the entry computation, for the page-fault cost.
+  std::unique_ptr<CpuPerformanceModel::EntryTemp> entry_temp_;
   // Results of FusionIntoAllUsersIsFaster by unique id, invalidated in
   // FuseInstruction.
   absl::flat_hash_map<int64_t, bool> fusion_is_faster_;
