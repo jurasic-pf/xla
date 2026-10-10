@@ -484,6 +484,20 @@ bool CpuInstructionFusion::ShouldSkip(const HloInstruction* inst) const {
 
 FusionDecision CpuInstructionFusion::ShouldFuse(HloInstruction* consumer,
                                                 int64_t operand_index) {
+  FusionDecision decision = ShouldFuseImpl(consumer, operand_index);
+  const HloInstruction* producer = consumer->operand(operand_index);
+  if (!decision && producer->user_count() > 1 &&
+      refusing_users_[producer->unique_id()]
+          .insert(consumer->unique_id())
+          .second) {
+    // Fusing the producer into its other users no longer removes it.
+    fusion_is_faster_.erase(producer->unique_id());
+  }
+  return decision;
+}
+
+FusionDecision CpuInstructionFusion::ShouldFuseImpl(HloInstruction* consumer,
+                                                    int64_t operand_index) {
   if (ShouldSkip(consumer)) {
     return FusionDecision::Forbid(
         "Don't fuse instructions from custom fusions/calls");
@@ -738,6 +752,7 @@ absl::StatusOr<bool> CpuInstructionFusion::RunImpl(
     const absl::flat_hash_set<absl::string_view>& execution_threads) {
   fusion_node_evaluations_.clear();
   fusion_is_faster_.clear();
+  refusing_users_.clear();
   ComputeInstructionsToSkip(module, execution_threads);
 
   HloCostAnalysis::Options options;
@@ -805,6 +820,13 @@ bool CpuInstructionFusion::FusionIntoAllUsersIsFaster(
 bool CpuInstructionFusion::EstimateFusionIntoAllUsersIsFaster(
     const HloInstruction& producer) {
   // If any user is not fused, the producer is materialized anyway.
+  if (auto it = refusing_users_.find(producer.unique_id());
+      it != refusing_users_.end() &&
+      absl::c_any_of(producer.users(), [&](const HloInstruction* user) {
+        return it->second.contains(user->unique_id());
+      })) {
+    return false;
+  }
   for (const HloInstruction* user : producer.users()) {
     if (!user->IsLoopFusion() && !CanBeLoopFused(*user)) {
       return false;
@@ -1064,6 +1086,19 @@ CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) {
 HloInstruction* CpuInstructionFusion::FuseInstruction(
     HloInstruction* fusion_instruction, HloInstruction* producer) {
   fusion_is_faster_.erase(producer->unique_id());
+  // The fusion reconsiders its operands, and the fused producer, now computed
+  // in the fusion, may not be materialized after all.
+  auto forget_refusals = [&](const HloInstruction* user) {
+    for (const HloInstruction* operand : user->operands()) {
+      if (auto it = refusing_users_.find(operand->unique_id());
+          it != refusing_users_.end() &&
+          it->second.erase(user->unique_id()) > 0) {
+        fusion_is_faster_.erase(operand->unique_id());
+      }
+    }
+  };
+  forget_refusals(fusion_instruction);
+  forget_refusals(producer);
   HloInstruction* new_producer = FuseInstructionImpl(fusion_instruction,
                                                      producer);
   // The estimates for these instructions depend on the fused instructions or

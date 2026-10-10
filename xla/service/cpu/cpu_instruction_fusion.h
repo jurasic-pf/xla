@@ -55,6 +55,8 @@ class CpuInstructionFusion : public InstructionFusion {
  protected:
   FusionDecision ShouldFuse(HloInstruction* consumer,
                             int64_t operand_index) override;
+  FusionDecision ShouldFuseImpl(HloInstruction* consumer,
+                                int64_t operand_index);
   HloInstructionSet ComputeGloballyUnfusible(
       absl::Span<HloInstruction* const> post_order,
       const HloReachabilityMap& reachability) override;
@@ -127,6 +129,11 @@ class CpuInstructionFusion : public InstructionFusion {
   // Results of FusionIntoAllUsersIsFaster by unique id, invalidated in
   // FuseInstruction.
   absl::flat_hash_map<int64_t, bool> fusion_is_faster_;
+  // Unique ids of the users that refused to fuse a producer, by the unique id
+  // of the producer. The fusion pass revisits a user's operands only after the
+  // user fuses another instruction, so until then the producer stays
+  // materialized.
+  absl::flat_hash_map<int64_t, absl::flat_hash_set<int64_t>> refusing_users_;
 
   absl::flat_hash_set<const HloInstruction*> instructions_to_skip_;
 };

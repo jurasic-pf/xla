@@ -1049,6 +1049,60 @@ ENTRY main {
                         op::Fusion(op::Parameter(0))));
 }
 
+TEST_F(InstructionFusionTest, RefusedProducerIsNotDuplicatedIntoOtherUsers) {
+  // The mask has two users. Once one of them refuses to fuse it, the mask
+  // stays materialized, and fusing it into the other user only recomputes it
+  // (and, here, makes the loop copy `z` before updating it in place).
+  absl::string_view module_string = R"(
+HloModule module
+
+cond {
+  pc = (s32[], c64[400,400]{1,0}, s32[400,400]{1,0}, c64[400,400]{1,0}) parameter(0)
+  i = s32[] get-tuple-element(pc), index=0
+  limit = s32[] constant(256)
+  ROOT lt = pred[] compare(i, limit), direction=LT
+}
+
+body {
+  pb = (s32[], c64[400,400]{1,0}, s32[400,400]{1,0}, c64[400,400]{1,0}) parameter(0)
+  i = s32[] get-tuple-element(pb), index=0
+  z = c64[400,400]{1,0} get-tuple-element(pb), index=1
+  count = s32[400,400]{1,0} get-tuple-element(pb), index=2
+  c = c64[400,400]{1,0} get-tuple-element(pb), index=3
+  one = s32[] constant(1)
+  inext = s32[] add(i, one)
+  a = f32[400,400]{1,0} abs(z)
+  two = f32[] constant(2)
+  twos = f32[400,400]{1,0} broadcast(two), dimensions={}
+  m = pred[400,400]{1,0} compare(a, twos), direction=LE
+  zz = c64[400,400]{1,0} multiply(z, z)
+  next = c64[400,400]{1,0} add(zz, c)
+  sel = c64[400,400]{1,0} select(m, next, z)
+  mi = s32[400,400]{1,0} convert(m)
+  newcount = s32[400,400]{1,0} add(count, mi)
+  ROOT t = (s32[], c64[400,400]{1,0}, s32[400,400]{1,0}, c64[400,400]{1,0}) tuple(inext, sel, newcount, c)
+}
+
+ENTRY main {
+  init = (s32[], c64[400,400]{1,0}, s32[400,400]{1,0}, c64[400,400]{1,0}) parameter(0)
+  ROOT w = (s32[], c64[400,400]{1,0}, s32[400,400]{1,0}, c64[400,400]{1,0}) while(init), condition=cond, body=body
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  int64_t abs_count = 0;
+  for (const HloComputation* computation : module->computations()) {
+    for (const HloInstruction* instruction : computation->instructions()) {
+      abs_count += instruction->opcode() == HloOpcode::kAbs;
+    }
+  }
+  EXPECT_EQ(abs_count, 1) << module->ToString();
+}
+
 TEST_F(InstructionFusionTest, FuseExpensiveProducerIntoReductionsOverDifferentDims) {
   // The pattern of a pairwise gradient: two reductions over different
   // dimensions of a large intermediate that is computed from small inputs.
