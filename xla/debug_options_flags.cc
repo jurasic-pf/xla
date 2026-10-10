@@ -299,6 +299,7 @@ DebugOptions DefaultDebugOptionsIgnoringFlags() {
 
   // By default, copy TF's Eigen style min_max behavior with nans.
   opts.set_xla_cpu_enable_fast_min_max(true);
+  opts.set_xla_cpu_experimental_split_kept_dim_reductions(true);
 
   opts.set_xla_gpu_enable_cublaslt(true);
   opts.set_xla_gpu_trace_annotation_level(0);
@@ -1485,6 +1486,11 @@ void MakeDebugOptionsFlags(std::vector<tsl::Flag>* flag_list,
       debug_options->xla_cpu_enable_fast_min_max(),
       "Enable fast floating point min/max lowering that might not propagate "
       "NaNs."));
+  flag_list->push_back(tsl::Flag(
+      "xla_cpu_experimental_split_kept_dim_reductions",
+      bool_setter_for(&DebugOptions::set_xla_cpu_experimental_split_kept_dim_reductions),
+      debug_options->xla_cpu_experimental_split_kept_dim_reductions(),
+      "Split reductions that keep a small minor dimension into a variadic reduction over its slices."));
   flag_list->push_back(tsl::Flag(
       "xla_gpu_enable_fast_min_max",
       bool_setter_for(&DebugOptions::set_xla_gpu_enable_fast_min_max),
