@@ -255,12 +255,17 @@ TEST(CpuPerformanceModelHostTest, DefaultDeviceInfoCountsPhysicalCores) {
   EXPECT_GE(info.threads_per_core_limit(), 1);
 }
 
-TEST(CpuPerformanceModelHostTest, OnlyPageStridesLoadACacheLinePerElement) {
+TEST(CpuPerformanceModelHostTest, LineStridesLoadACacheLinePerElement) {
   Shape rows = ShapeUtil::MakeShapeWithDescendingLayout(F32, {4096, 4096});
   Shape narrow = ShapeUtil::MakeShapeWithDescendingLayout(F32, {4096, 64});
+  Shape tiny = ShapeUtil::MakeShapeWithDescendingLayout(F32, {4096, 8});
   EXPECT_EQ(CpuPerformanceModel::StridedReadFactor(rows, {1}), 1);
   EXPECT_EQ(CpuPerformanceModel::StridedReadFactor(rows, {0}), 16);
-  EXPECT_EQ(CpuPerformanceModel::StridedReadFactor(narrow, {0}), 1);
+  EXPECT_EQ(CpuPerformanceModel::StridedReadFactor(narrow, {0}), 16);
+  EXPECT_EQ(CpuPerformanceModel::StridedReadFactor(tiny, {0}), 1);
+  // Few rows are read like sequential streams.
+  Shape few_rows = ShapeUtil::MakeShapeWithDescendingLayout(F32, {4, 65536});
+  EXPECT_EQ(CpuPerformanceModel::StridedReadFactor(few_rows, {0}), 1);
 }
 
 TEST(CpuPerformanceModelHostTest, ParallelKernelsPayForkJoin) {
@@ -268,6 +273,27 @@ TEST(CpuPerformanceModelHostTest, ParallelKernelsPayForkJoin) {
             CpuPerformanceModel::kKernelLaunchTime);
   EXPECT_GT(CpuPerformanceModel::KernelOverhead(16),
             CpuPerformanceModel::KernelOverhead(4));
+}
+
+TEST_F(CpuPerformanceModelTest, TransposingCopiesLoadACacheLinePerElement) {
+  absl::string_view hlo_string = R"(
+HloModule m
+
+ENTRY e {
+  x = f32[2048,2048]{1,0} parameter(0)
+  t = f32[2048,2048]{0,1} transpose(x), dimensions={1,0}
+  c = f32[2048,2048]{1,0} copy(t)
+  same = f32[2048,2048]{1,0} copy(x)
+  ROOT r = (f32[2048,2048]{1,0}, f32[2048,2048]{1,0}) tuple(c, same)
+})";
+  ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(hlo_string));
+  const HloInstruction* root = module->entry_computation()->root_instruction();
+  const HloInstruction* transposing_copy = root->operand(0);
+  const HloInstruction* transpose = transposing_copy->operand(0);
+  // The transpose only relabels the dimensions of x.
+  EXPECT_EQ(CpuPerformanceModel::PermutedReadFactor(*transpose), 1);
+  EXPECT_EQ(CpuPerformanceModel::PermutedReadFactor(*transposing_copy), 16);
+  EXPECT_EQ(CpuPerformanceModel::PermutedReadFactor(*root->operand(1)), 1);
 }
 
 TEST_F(CpuPerformanceModelTest, AnalyzeReduceCountsTheRecomputedChain) {

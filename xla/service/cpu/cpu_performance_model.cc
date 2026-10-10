@@ -398,7 +398,32 @@ int64_t CpuPerformanceModel::ReadFactor(const HloInstruction* consumer,
   const HloInstruction* root = consumer->opcode() == HloOpcode::kFusion
                                    ? consumer->fused_expression_root()
                                    : consumer;
-  if (root->opcode() != HloOpcode::kReduce || !operand->shape().IsArray()) {
+  if (!operand->shape().IsArray()) {
+    return 1;
+  }
+  if (consumer->opcode() == HloOpcode::kTranspose ||
+      consumer->opcode() == HloOpcode::kCopy) {
+    return PermutedReadFactor(*consumer);
+  }
+  if (consumer->opcode() == HloOpcode::kFusion) {
+    int64_t factor = 1;
+    for (int64_t i = 0; i < consumer->operand_count(); ++i) {
+      if (consumer->operand(i) != operand) {
+        continue;
+      }
+      for (const HloInstruction* user :
+           consumer->fused_parameter(i)->users()) {
+        if (user->opcode() == HloOpcode::kTranspose ||
+            user->opcode() == HloOpcode::kCopy) {
+          factor = std::max(factor, PermutedReadFactor(*user));
+        }
+      }
+    }
+    if (factor > 1) {
+      return factor;
+    }
+  }
+  if (root->opcode() != HloOpcode::kReduce) {
     return 1;
   }
   const Shape& input = root->operand(0)->shape();
@@ -410,6 +435,26 @@ int64_t CpuPerformanceModel::ReadFactor(const HloInstruction* consumer,
 
 
 /*static*/
+int64_t CpuPerformanceModel::PermutedReadFactor(const HloInstruction& instr) {
+  const Shape& shape = instr.shape();
+  if ((instr.opcode() != HloOpcode::kTranspose &&
+       instr.opcode() != HloOpcode::kCopy) ||
+      !shape.IsArray() || !shape.has_layout()) {
+    return 1;
+  }
+  for (int64_t dim : shape.layout().minor_to_major()) {
+    if (shape.dimensions(dim) == 1) {
+      continue;
+    }
+    return StridedReadFactor(
+        instr.operand(0)->shape(),
+        {instr.opcode() == HloOpcode::kTranspose ? instr.dimensions(dim)
+                                                 : dim});
+  }
+  return 1;
+}
+
+/*static*/
 int64_t CpuPerformanceModel::StridedReadFactor(
     const Shape& input, absl::Span<const int64_t> reduced_dims) {
   if (!input.has_layout() || reduced_dims.empty()) {
@@ -419,15 +464,17 @@ int64_t CpuPerformanceModel::StridedReadFactor(
       std::max<int64_t>(1, primitive_util::ByteWidth(input.element_type()));
   // Bytes between consecutive elements of the innermost reduced dimension.
   int64_t stride = elem_bytes;
+  int64_t extent = 1;
   for (int64_t dim : input.layout().minor_to_major()) {
     if (absl::c_linear_search(reduced_dims, dim)) {
+      extent = input.dimensions(dim);
       break;
     }
     stride *= input.dimensions(dim);
   }
-  // Hardware prefetchers do not cross pages.
-  return stride >= kPageBytes ? std::max<int64_t>(1, kCacheLineBytes / elem_bytes)
-                              : 1;
+  return stride >= kCacheLineBytes && extent > kPrefetchStreams
+             ? std::max<int64_t>(1, kCacheLineBytes / elem_bytes)
+             : 1;
 }
 
 /*static*/

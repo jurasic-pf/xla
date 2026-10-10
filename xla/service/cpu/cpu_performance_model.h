@@ -220,17 +220,31 @@ class CpuPerformanceModel {
   static constexpr int64_t kLibraryReduceTileBytes = 128 << 10;
   static constexpr int64_t kLibraryPartialReduceTilesPerThread = 4;
   // A loop that reads an array along a dimension whose stride is at least a
-  // page defeats the hardware prefetchers and loads a cache line per element.
-  static constexpr int64_t kPageBytes = 4096;
+  // cache line loads a line per element. Measured with a column sum on one
+  // core, relative to a row sum: 3x at a 256 B stride, 6x at 1 KiB and 15-30x
+  // from 2 KiB, where the stride prefetcher gives up.
   static constexpr int64_t kCacheLineBytes = 64;
+  // Unless the dimension has at most this many elements: then the loop walks
+  // as many lines, which stay in the cache until the next iteration reads
+  // their next elements, like sequential streams. Measured with transposing
+  // copies of [k, N] f32 arrays on one core, relative to a plain copy: 1x up
+  // to k = 8, 2x at 16, 5x at 64 and 15x from 256.
+  static constexpr int64_t kPrefetchStreams = 16;
   // Returns the bytes a loop fusion loads per byte of `input` when it reduces
   // `reduced_dims`, iterating over the innermost reduced dimension.
   static int64_t StridedReadFactor(const Shape& input,
                                    absl::Span<const int64_t> reduced_dims);
 
+  // Returns the bytes a loop kernel loads per byte of the operand of
+  // `instr`, a transpose or a copy. The kernel walks the minor dimension of
+  // its output, which a transpose or a layout change maps to another dimension
+  // of the operand. Measured on one core, a transposing 2048x2048 f32 copy
+  // takes 25x the time of a plain one.
+  static int64_t PermutedReadFactor(const HloInstruction& instr);
+
   // Returns how many times more bytes `consumer` loads to read `operand` than
   // the operand has: a reduction that reads its input along a major dimension
-  // with a large stride loads a cache line per element.
+  // with a large stride, or a transpose, loads a cache line per element.
   static int64_t ReadFactor(const HloInstruction* consumer,
                             const HloInstruction* operand);
 

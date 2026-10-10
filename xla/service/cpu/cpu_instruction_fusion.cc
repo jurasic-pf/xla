@@ -490,6 +490,8 @@ FusionDecision CpuInstructionFusion::ShouldFuse(HloInstruction* consumer,
       refusing_users_[producer->unique_id()]
           .insert(consumer->unique_id())
           .second) {
+    VLOG(3) << consumer->name() << " refuses " << producer->name() << ": "
+            << decision.Explain();
     // Fusing the producer into its other users no longer removes it.
     fusion_is_faster_.erase(producer->unique_id());
   }
@@ -825,6 +827,7 @@ bool CpuInstructionFusion::EstimateFusionIntoAllUsersIsFaster(
       absl::c_any_of(producer.users(), [&](const HloInstruction* user) {
         return it->second.contains(user->unique_id());
       })) {
+    VLOG(3) << "Producer " << producer.name() << " was refused by a user.";
     return false;
   }
   for (const HloInstruction* user : producer.users()) {
@@ -862,18 +865,27 @@ CpuInstructionFusion::Destinations CpuInstructionFusion::FindDestinations(
   static constexpr int64_t kMaxVisited = 64;
   Destinations destinations{/*read_factor=*/1,
                             /*outputs=*/std::numeric_limits<int64_t>::max()};
+  // Transposes and copies on the way permute the order in which the kernel
+  // reads the producer.
   absl::flat_hash_set<const HloInstruction*> visited = {&user};
-  std::vector<const HloInstruction*> worklist = {&user};
+  std::vector<std::pair<const HloInstruction*, int64_t>> worklist = {
+      {&user, 1}};
   while (!worklist.empty() && visited.size() < kMaxVisited) {
-    const HloInstruction* instr = worklist.back();
+    auto [instr, path_factor] = worklist.back();
     worklist.pop_back();
-    if (instr->opcode() == HloOpcode::kFusion ||
-        instr->opcode() == HloOpcode::kReduce || !instr->IsElementwise() ||
-        instr->user_count() == 0) {
+    const bool permutes = instr->opcode() == HloOpcode::kTranspose ||
+                          instr->opcode() == HloOpcode::kCopy;
+    if (permutes && instr->user_count() > 0) {
+      path_factor = std::max(path_factor,
+                             CpuPerformanceModel::PermutedReadFactor(*instr));
+    } else if (instr->opcode() == HloOpcode::kFusion ||
+               instr->opcode() == HloOpcode::kReduce ||
+               !instr->IsElementwise() || instr->user_count() == 0) {
       destinations.kernels.insert(instr);
-      destinations.read_factor =
-          std::max(destinations.read_factor,
-                   CpuPerformanceModel::ReadFactor(instr, &producer));
+      destinations.read_factor = std::max(
+          {destinations.read_factor, path_factor,
+           permutes ? CpuPerformanceModel::PermutedReadFactor(*instr)
+                    : CpuPerformanceModel::ReadFactor(instr, &producer)});
       const Shape& shape = instr->shape().IsTuple() &&
                                    instr->shape().tuple_shapes_size() > 0
                                ? instr->shape().tuple_shapes(0)
@@ -887,7 +899,7 @@ CpuInstructionFusion::Destinations CpuInstructionFusion::FindDestinations(
     }
     for (const HloInstruction* next : instr->users()) {
       if (visited.insert(next).second) {
-        worklist.push_back(next);
+        worklist.push_back({next, path_factor});
       }
     }
   }
