@@ -300,6 +300,7 @@ DebugOptions DefaultDebugOptionsIgnoringFlags() {
   // By default, copy TF's Eigen style min_max behavior with nans.
   opts.set_xla_cpu_enable_fast_min_max(true);
   opts.set_xla_cpu_experimental_split_kept_dim_reductions(true);
+  opts.set_xla_cpu_experimental_unroll_small_reductions(true);
 
   opts.set_xla_gpu_enable_cublaslt(true);
   opts.set_xla_gpu_trace_annotation_level(0);
@@ -1491,6 +1492,11 @@ void MakeDebugOptionsFlags(std::vector<tsl::Flag>* flag_list,
       bool_setter_for(&DebugOptions::set_xla_cpu_experimental_split_kept_dim_reductions),
       debug_options->xla_cpu_experimental_split_kept_dim_reductions(),
       "Split reductions that keep a small minor dimension into a variadic reduction over its slices."));
+  flag_list->push_back(tsl::Flag(
+      "xla_cpu_experimental_unroll_small_reductions",
+      bool_setter_for(&DebugOptions::set_xla_cpu_experimental_unroll_small_reductions),
+      debug_options->xla_cpu_experimental_unroll_small_reductions(),
+      "Rewrite reductions over at most 8 elements into elementwise ops. Needs xla_cpu_experimental_split_kept_dim_reductions."));
   flag_list->push_back(tsl::Flag(
       "xla_gpu_enable_fast_min_max",
       bool_setter_for(&DebugOptions::set_xla_gpu_enable_fast_min_max),

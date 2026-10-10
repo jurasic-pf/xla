@@ -312,6 +312,11 @@ message DebugOptions {
   // reduction over its slices (ReductionKeptDimSplitter).
   optional bool xla_cpu_experimental_split_kept_dim_reductions = 556;
 
+  // Rewrites reductions over at most 8 elements into elementwise ops
+  // (ReductionKeptDimSplitter). Needs
+  // xla_cpu_experimental_split_kept_dim_reductions.
+  optional bool xla_cpu_experimental_unroll_small_reductions = 557;
+
   // When xla_cpu_enable_fast_math is true then this controls whether we forbid
   // to use the reciprocal of an argument instead of division. Ignored when
   // xla_cpu_enable_fast_math is false.
@@ -1935,7 +1940,7 @@ message DebugOptions {
   // Enables Raft for stable TopK.
   optional bool xla_gpu_experimental_enable_raft_for_stable_topk = 546;
 
-  // Next id: 557
+  // Next id: 558
 
   // Extra options to pass to the compilation backend (e.g. LLVM); specific
   // interpretation of these values is left to the backend.
