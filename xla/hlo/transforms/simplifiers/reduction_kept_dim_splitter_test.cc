@@ -121,5 +121,45 @@ ENTRY main {
   EXPECT_FALSE(changed);
 }
 
+TEST_F(ReductionKeptDimSplitterTest, UnrollsReductionOverXyz) {
+  std::string hlo = absl::StrCat("HloModule m\n", kAdd, R"(
+ENTRY main {
+  x = f32[64,128,3] parameter(0)
+  xx = f32[64,128,3] multiply(x, x)
+  c = f32[] constant(0)
+  ROOT r = f32[64,128] reduce(xx, c), dimensions={2}, to_apply=add
+}
+)");
+  ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(hlo));
+  ReductionKeptDimSplitter pass(/*max_kept_dim_size=*/8,
+                                /*min_reduced_elements=*/1024,
+                                /*unroll_small_reductions=*/true);
+  ASSERT_OK_AND_ASSIGN(bool changed, RunHloPass(&pass, module.get()));
+  EXPECT_TRUE(changed);
+  EXPECT_EQ(CountReduces(*module, /*operand_rank=*/3), 0);
+  EXPECT_EQ(module->entry_computation()->root_instruction()->opcode(),
+            HloOpcode::kAdd);
+}
+
+TEST_F(ReductionKeptDimSplitterTest, SliceOfUnhoistableOpConverges) {
+  // A slice of a dot cannot be hoisted; the pass must not keep re-creating it.
+  std::string hlo = R"(
+HloModule m
+
+ENTRY main {
+  x = f32[64,32] parameter(0)
+  y = f32[32,2] parameter(1)
+  d = f32[64,2] dot(x, y), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  ROOT s = f32[64,1] slice(d), slice={[0:64], [1:2]}
+}
+)";
+  ASSERT_OK_AND_ASSIGN(auto module, ParseAndReturnVerifiedModule(hlo));
+  ReductionKeptDimSplitter pass(/*max_kept_dim_size=*/8,
+                                /*min_reduced_elements=*/1024,
+                                /*unroll_small_reductions=*/true);
+  ASSERT_OK_AND_ASSIGN(bool changed, RunHloPass(&pass, module.get()));
+  EXPECT_FALSE(changed);
+}
+
 }  // namespace
 }  // namespace xla

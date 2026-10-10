@@ -274,6 +274,100 @@ absl::StatusOr<bool> ReductionKeptDimSplitter::RunImpl(
     HloModule* module,
     const absl::flat_hash_set<absl::string_view>& execution_threads) {
   bool changed = false;
+  // Width-1 slices of a small dimension (e.g. the x, y or z component of a
+  // [M, N, 3] array) are pushed up the same way, so that the 3-component array
+  // is not needed by them.
+  if (unroll_small_reductions_) {
+    for (HloComputation* computation :
+         module->MakeNonfusionComputations(execution_threads)) {
+      ComponentHoister hoister(computation);
+      for (HloInstruction* slice : computation->MakeInstructionPostOrder()) {
+        if (slice->opcode() != HloOpcode::kSlice) {
+          continue;
+        }
+        const Shape& in = slice->operand(0)->shape();
+        int64_t dim = -1;
+        bool simple = true;
+        for (int64_t i = 0; i < in.dimensions().size(); ++i) {
+          const bool full = slice->slice_starts(i) == 0 &&
+                            slice->slice_strides(i) == 1 &&
+                            slice->slice_limits(i) == in.dimensions(i);
+          if (full) {
+            continue;
+          }
+          if (dim != -1 || slice->shape().dimensions(i) != 1 ||
+              in.dimensions(i) > max_kept_dim_size_) {
+            simple = false;
+          }
+          dim = i;
+        }
+        const HloInstruction* operand = slice->operand(0);
+        const bool hoistable =
+            (operand->IsElementwise() &&
+             operand->opcode() != HloOpcode::kConstant &&
+             operand->operand_count() > 0) ||
+            operand->opcode() == HloOpcode::kBroadcast ||
+            operand->opcode() == HloOpcode::kConcatenate ||
+            operand->opcode() == HloOpcode::kTranspose ||
+            operand->opcode() == HloOpcode::kPad;
+        // Hoisting through an op that is used elsewhere would duplicate it;
+        // hoisting through an op the hoister cannot handle would only re-create
+        // the slice.
+        if (!simple || dim == -1 || !hoistable ||
+            !absl::c_all_of(operand->users(), [](const HloInstruction* user) {
+              return user->opcode() == HloOpcode::kSlice;
+            })) {
+          continue;
+        }
+        HloInstruction* component = hoister.Component(
+            slice->mutable_operand(0), dim, slice->slice_starts(dim));
+        HloInstruction* reshaped = computation->AddInstruction(
+            HloInstruction::CreateReshape(slice->shape(), component));
+        ABSL_RETURN_IF_ERROR(computation->ReplaceInstruction(slice, reshaped));
+        changed = true;
+      }
+    }
+  }
+  // Reductions over one dimension of at most `max_kept_dim_size_` elements
+  // become elementwise ops on the components, e.g. sum(d * d, axis=-1) over
+  // xyz becomes d0 * d0 + d1 * d1 + d2 * d2.
+  if (unroll_small_reductions_) {
+    for (HloComputation* computation :
+         module->MakeNonfusionComputations(execution_threads)) {
+      for (HloInstruction* reduce : computation->MakeInstructionPostOrder()) {
+        if (reduce->opcode() != HloOpcode::kReduce ||
+            reduce->operand_count() != 2 || !reduce->shape().IsArray() ||
+            reduce->dimensions().size() != 1) {
+          continue;
+        }
+        const int64_t dim = reduce->dimensions(0);
+        const int64_t size = reduce->operand(0)->shape().dimensions(dim);
+        std::optional<HloOpcode> opcode =
+            SimpleReducerOpcode(reduce->to_apply());
+        if (size < 1 || size > max_kept_dim_size_ || !opcode.has_value()) {
+          continue;
+        }
+        ComponentHoister hoister(computation);
+        HloInstruction* acc = nullptr;
+        for (int64_t i = 0; i < size; ++i) {
+          HloInstruction* component =
+              hoister.Component(reduce->mutable_operand(0), dim, i);
+          acc = acc == nullptr
+                    ? component
+                    : computation->AddInstruction(HloInstruction::CreateBinary(
+                          reduce->shape(), *opcode, acc, component));
+        }
+        // Include the init value, as the reduction does.
+        HloInstruction* init = computation->AddInstruction(
+            HloInstruction::CreateBroadcast(reduce->shape(),
+                                            reduce->mutable_operand(1), {}));
+        acc = computation->AddInstruction(HloInstruction::CreateBinary(
+            reduce->shape(), *opcode, init, acc));
+        ABSL_RETURN_IF_ERROR(computation->ReplaceInstruction(reduce, acc));
+        changed = true;
+      }
+    }
+  }
   for (HloComputation* computation :
        module->MakeNonfusionComputations(execution_threads)) {
     for (HloInstruction* reduce : computation->MakeInstructionPostOrder()) {
