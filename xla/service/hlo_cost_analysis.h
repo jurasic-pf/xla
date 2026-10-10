@@ -388,6 +388,10 @@ class HloCostAnalysis : public ConstDfsHloVisitor {
   static constexpr int64_t kDefaultPointerSize = 8;
   static int64_t DefaultShapeSize(const Shape& shape);
 
+  // Returns true for elementwise ops counted as transcendentals rather than
+  // flops.
+  static bool IsTranscendental(HloOpcode opcode);
+
   // A struct to encapsulate hardware-related options. This includes the shape
   // size function, which is used to encode hardware-specific padding and per
   // second rates of FLOPs, bytes per second (available bandwidth), and

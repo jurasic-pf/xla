@@ -1,0 +1,93 @@
+/* Copyright 2026 The OpenXLA Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================*/
+
+#ifndef XLA_SERVICE_CPU_CPU_HLO_COST_ANALYSIS_H_
+#define XLA_SERVICE_CPU_CPU_HLO_COST_ANALYSIS_H_
+
+#include <cstdint>
+#include <memory>
+
+#include "absl/container/btree_set.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "xla/hlo/ir/hlo_instruction.h"
+#include "xla/hlo/ir/hlo_opcode.h"
+#include "xla/service/hlo_cost_analysis.h"
+#include "xla/shape.h"
+#include "xla/xla_data.pb.h"
+
+namespace xla::cpu {
+
+// Cost analysis for CPUs.
+//
+// Follows the structure of GpuHloCostAnalysis:
+// elementwise ops cost a per-opcode number of flops, and operand utilization
+// inside a fusion accounts for elements that are read more than once (broadcast).
+class CpuHloCostAnalysis : public HloCostAnalysis {
+ public:
+  // Flops of transcendental ops, which XLA's parallel task assignment counts
+  // as transcendentals rather than flops.
+  static inline constexpr absl::string_view kTranscendentalFlopsKey =
+      "transcendental_flops";
+
+  explicit CpuHloCostAnalysis(const Options& options)
+      : HloCostAnalysis(options) {}
+
+  absl::Status HandleElementwiseOp(const HloInstruction* hlo) override;
+  absl::Status HandleBroadcast(const HloInstruction* broadcast) override;
+  absl::Status HandleDot(const HloInstruction* dot) override;
+  absl::Status HandleSlice(const HloInstruction* slice) override;
+
+  // Time to compute one element of `slice` in a loop fusion, in units of an
+  // add: de-interleaving part of the minor dimension of a 32-bit or narrower
+  // array, e.g. a component of an [N,4] array.
+  static int64_t SliceFlopsPerElement(const HloInstruction& slice);
+
+  // Time to compute one element of an elementwise op in a loop fusion, in
+  // units of an add of the same type.
+  static int64_t GetFlopsPerElementwiseOpElement(PrimitiveType type,
+                                                 HloOpcode opcode);
+
+  int64_t GetFlopsForElementwiseOp(HloOpcode op_code, const Shape& shape) const;
+  int64_t GetFlopsForElementwiseOp(const HloInstruction* instr) const;
+
+  // Returns the number of iterations of the unrolled loops over minor
+  // dimensions that `broadcast` adds, which share one computation of its
+  // operand, or 1.
+  static int64_t UnrolledBroadcastElements(const HloInstruction& broadcast);
+
+  // Flops of `hlo` spent in transcendental ops.
+  int64_t transcendental_flop_count(const HloInstruction& hlo) const;
+
+  float CommonElementwiseUtilization(const HloInstruction* a,
+                                     const HloInstruction* b) const;
+
+ protected:
+  std::unique_ptr<HloCostAnalysis> CreateNestedCostAnalysis() override;
+  int64_t FusionParameterReadBytes(const HloInstruction* hlo) const override;
+  absl::Status FusionCalculateUtilizations(
+      const HloInstruction* fusion) override;
+
+  absl::flat_hash_map<const HloInstruction*,
+                      absl::btree_set<const HloInstruction*, HloPtrComparator>>
+      elementwise_use_roots_;
+
+  absl::flat_hash_map<const HloInstruction*, float> root_utilizations_;
+};
+
+}  // namespace xla::cpu
+
+#endif  // XLA_SERVICE_CPU_CPU_HLO_COST_ANALYSIS_H_

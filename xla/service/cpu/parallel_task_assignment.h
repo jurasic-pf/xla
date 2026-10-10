@@ -35,6 +35,12 @@ namespace xla {
 namespace cpu {
 
 // Simple interface for different parallel cost model implementations.
+// Returns the number of parallel tasks that the default cost model assigns to
+// an instruction with the given flops, transcendentals and bytes accessed.
+int64_t DefaultParallelTaskCount(int64_t flops, int64_t transcendentals,
+                                 int64_t bytes_accessed,
+                                 int64_t max_parallelism);
+
 class ParallelCostModel {
  public:
   virtual ~ParallelCostModel() = default;

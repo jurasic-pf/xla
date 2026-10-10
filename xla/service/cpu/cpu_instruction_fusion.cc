@@ -15,29 +15,59 @@ limitations under the License.
 
 #include "xla/service/cpu/cpu_instruction_fusion.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
+#include <limits>
+#include <memory>
+#include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "absl/types/span.h"
 #include "xla/codegen/emitters/elemental_hlo_to_mlir.h"
 #include "xla/hlo/analysis/hlo_reachability.h"
 #include "xla/hlo/ir/hlo_casting_utils.h"
+#include "xla/hlo/ir/hlo_computation.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_instructions.h"
 #include "xla/hlo/ir/hlo_module.h"
 #include "xla/hlo/ir/hlo_opcode.h"
 #include "xla/layout_util.h"
+#include "xla/service/cpu/cpu_hlo_cost_analysis.h"
+#include "xla/service/cpu/cpu_performance_model.h"
 #include "xla/service/fusion_node_indexing_evaluation.h"
+#include "xla/service/hlo_cost_analysis.h"
 #include "xla/service/instruction_fusion.h"
 #include "xla/service/pattern_matcher.h"
 #include "xla/shape_util.h"
+#include "xla/stream_executor/device_description.h"
 #include "xla/xla_data.pb.h"
 
 namespace xla {
 namespace cpu {
 
 namespace {
+
+bool ReducesAtMost8(const HloInstruction& reduce) {
+  int64_t reduced = 1;
+  for (int64_t dim : reduce.dimensions()) {
+    reduced *= reduce.operand(0)->shape().dimensions(dim);
+  }
+  return reduced <= 8;
+}
+
+// A producer whose recomputed chain reaches this size is not recomputed.
+constexpr size_t kMaxRecomputedChain = 512;
+
+// Limits the copies of a producer in one fusion, which grow code size and
+// compile time.
+constexpr int64_t kMaxEmittedCopies = 64;
 
 bool CanBeLoopFused(const HloInstruction& hlo) {
   // These are the only ones we fuse since we rely on effective elemental IR
@@ -50,6 +80,7 @@ bool CanBeLoopFused(const HloInstruction& hlo) {
          hlo.opcode() == HloOpcode::kGather ||
          hlo.opcode() == HloOpcode::kIota || hlo.opcode() == HloOpcode::kPad ||
          hlo.opcode() == HloOpcode::kReduce ||
+         hlo.opcode() == HloOpcode::kReduceWindow ||
          hlo.opcode() == HloOpcode::kReshape ||
          hlo.opcode() == HloOpcode::kReverse ||
          hlo.opcode() == HloOpcode::kSlice ||
@@ -338,12 +369,70 @@ bool CpuInstructionFusion::IsExpensive(const HloInstruction& instruction) {
   return false;
 }
 
+namespace {
+
+// Returns true if `producer` is computed by elementwise ops and broadcasts from
+// inputs whose total size is at most 1/8 of its own, e.g. a pairwise term
+// x_i - y_j built from two vectors. Duplicating such a producer re-reads only
+// the small inputs.
+bool RecomputableFromSmallInputs(const HloInstruction* producer) {
+  if (!producer->shape().IsArray()) {
+    return false;
+  }
+  const int64_t bytes = ShapeUtil::ByteSizeOfElements(producer->shape());
+  int64_t input_bytes = 0;
+  absl::flat_hash_set<const HloInstruction*> visited;
+  std::vector<const HloInstruction*> worklist = {producer};
+  while (!worklist.empty()) {
+    const HloInstruction* instr = worklist.back();
+    worklist.pop_back();
+    if (!visited.insert(instr).second) {
+      continue;
+    }
+    if (visited.size() > 256) {
+      return false;
+    }
+    const bool walk = instr == producer ||
+                      (instr->IsElementwise() &&
+                       instr->opcode() != HloOpcode::kConstant) ||
+                      instr->opcode() == HloOpcode::kBitcast ||
+                      instr->opcode() == HloOpcode::kReshape;
+    if (instr->opcode() == HloOpcode::kBroadcast ||
+        instr->opcode() == HloOpcode::kIota ||
+        (instr->opcode() == HloOpcode::kConstant &&
+         ShapeUtil::IsEffectiveScalar(instr->shape()))) {
+      // A broadcast reads only its operand.
+      if (instr->opcode() == HloOpcode::kBroadcast &&
+          !visited.contains(instr->operand(0))) {
+        input_bytes += ShapeUtil::ByteSizeOfElements(instr->operand(0)->shape());
+        visited.insert(instr->operand(0));
+      }
+      continue;
+    }
+    if (!walk) {
+      if (instr->shape().IsArray()) {
+        input_bytes += ShapeUtil::ByteSizeOfElements(instr->shape());
+      }
+      continue;
+    }
+    for (const HloInstruction* operand : instr->operands()) {
+      worklist.push_back(operand);
+    }
+  }
+  return input_bytes * 8 <= bytes;
+}
+
+}  // namespace
+
 InstructionFusion::HloInstructionSet
 CpuInstructionFusion::ComputeGloballyUnfusible(
     absl::Span<HloInstruction* const> post_order,
     const HloReachabilityMap& reachability) {
   HloInstructionSet do_not_duplicate =
       InstructionFusion::ComputeGloballyUnfusible(post_order, reachability);
+  absl::erase_if(do_not_duplicate, [](HloInstruction* instr) {
+    return RecomputableFromSmallInputs(instr);
+  });
   for (HloInstruction* producer : post_order) {
     if (IsCoupledReductionShiftExpProducer(producer)) {
       // The base implementation treats effectively-unary elementwise ops as
@@ -455,23 +544,48 @@ FusionDecision CpuInstructionFusion::ShouldFuse(HloInstruction* consumer,
            concat_dim_bytes >= 64 && total_bytes >= 2048;
   };
 
-  if ((producer->opcode() == HloOpcode::kConcatenate &&
-       (producer->operand_count() > kMaxConcatenateArguments ||
-        is_minor_dim_concatenate(producer))) ||
-      (consumer->opcode() == HloOpcode::kConcatenate &&
-       (consumer->operand_count() > kMaxConcatenateArguments ||
-        is_minor_dim_concatenate(consumer)))) {
+  auto is_inefficient_concatenate = [&](const HloInstruction* hlo) {
+    return hlo->opcode() == HloOpcode::kConcatenate &&
+           (hlo->operand_count() > kMaxConcatenateArguments ||
+            is_minor_dim_concatenate(hlo));
+  };
+  // A fusion whose root is such a concatenate, e.g. a roll, has the same
+  // branches when fused into its consumer.
+  const HloInstruction* producer_root =
+      producer->opcode() == HloOpcode::kFusion
+          ? producer->fused_expression_root()
+          : producer;
+  if (is_inefficient_concatenate(producer_root) ||
+      is_inefficient_concatenate(consumer)) {
     return FusionDecision::Forbid("Concatenate fusion is inefficient.");
   }
 
   // Cost condition: not fuse (simple, expensive producers) and (consumers who
   // reuse operand elements).
-  if (producer->opcode() != HloOpcode::kFusion && is_expensive(*producer) &&
-      ReusesOperandElements(consumer, operand_index)) {
+  if (producer->opcode() != HloOpcode::kFusion &&
+      ReusesOperandElements(consumer, operand_index) &&
+      is_expensive(*producer)) {
     return FusionDecision::Forbid("Fusion is not profitable.");
   }
 
   RETURN_IF_NOT_FUSIBLE(InstructionFusion::ShouldFuse(consumer, operand_index));
+
+  // The loop emitter only partitions the output of a kernel. Fusing a producer
+  // into a consumer with fewer outputs than threads, e.g. the reduce-window
+  // of a tree reduction into the final reduction, can serialize its work.
+  if (cost_analysis_ != nullptr && producer->user_count() == 1 &&
+      producer->shape().IsArray() && consumer->shape().IsArray() &&
+      ShapeUtil::ElementsIn(consumer->shape()) <
+          performance_model_.Threads() &&
+      ShapeUtil::ElementsIn(producer->shape()) >
+          ShapeUtil::ElementsIn(consumer->shape())) {
+    CpuPerformanceModel::RunTimes run_times =
+        performance_model_.EstimateRunTimes(producer, cost_analysis_.get(),
+                                            {consumer});
+    if (run_times.time_fused > run_times.time_unfused) {
+      return FusionDecision::Forbid("Fusion would serialize the producer.");
+    }
+  }
 
   // Fusing too many reductions together can lead to a giant LLVM modules after
   // loop unrolling. We prefer to split such fusions into multiple kernels to
@@ -520,9 +634,27 @@ FusionDecision CpuInstructionFusion::ShouldFuse(HloInstruction* consumer,
       fusion_node_evaluations_.emplace(consumer,
                                        FusionNodeIndexingEvaluation(consumer));
     }
-    if (fusion_node_evaluations_.at(consumer).CodeDuplicationTooHigh(
-            producer)) {
-      return FusionDecision::Forbid("Code duplication too high");
+    const FusionNodeIndexingEvaluation& evaluation =
+        fusion_node_evaluations_.at(consumer);
+    // Below the limit, CodeDuplicationTooHigh only rejects emitting an op that
+    // invalidates the elemental IR emitter's cache, e.g. a reduce, more than
+    // once. Each copy recomputes the op, which the performance model accounts
+    // for. Above the limit, every copy is charged. That is an upper bound:
+    // LLVM merges copies that compute the same element.
+    if (evaluation.CodeDuplicationTooHigh(producer)) {
+      int64_t copies = evaluation.EvaluateEmittedInstructions(producer);
+      // Recomputing pure data movement, e.g. slices and concatenates, saves no
+      // arithmetic and adds index computations the model does not count.
+      bool fuse =
+          RecomputedChainHasCompute(*producer) &&
+          (copies <= FusionNodeIndexingEvaluation::kAllowedCodeDuplication
+               ? FusionIntoAllUsersIsFaster(*producer)
+               : copies <= kMaxEmittedCopies &&
+                     cost_analysis_ != nullptr &&
+                     RecomputeInEachUserIsFaster(*producer, consumer, copies));
+      if (!fuse) {
+        return FusionDecision::Forbid("Code duplication too high");
+      }
     }
   }
 
@@ -577,7 +709,364 @@ HloInstruction::FusionKind CpuInstructionFusion::ChooseKind(
              : HloInstruction::FusionKind::kLoop;
 }
 
+/*static*/
+bool CpuInstructionFusion::MaterializedAnyway(const HloInstruction& instr) {
+  // Results of instructions that a loop fusion cannot absorb, and values read
+  // by them, are in memory whatever fusion decides; values whose users can
+  // all fuse them are what fusion decides about. Results of the computation
+  // are outputs, not temp.
+  if (!instr.shape().IsArray() || instr.opcode() == HloOpcode::kParameter ||
+      instr.opcode() == HloOpcode::kConstant ||
+      instr.opcode() == HloOpcode::kBitcast ||
+      instr.opcode() == HloOpcode::kGetTupleElement ||
+      instr.IsRoot()) {
+    return false;
+  }
+  auto is_output = [](const HloInstruction* user) {
+    return user->IsRoot() && user->opcode() == HloOpcode::kTuple;
+  };
+  if (!CanBeLoopFused(instr)) {
+    return !absl::c_all_of(instr.users(), is_output);
+  }
+  return absl::c_any_of(instr.users(), [&](const HloInstruction* user) {
+    return !CanBeLoopFused(*user) && !is_output(user);
+  });
+}
+
+absl::StatusOr<bool> CpuInstructionFusion::RunImpl(
+    HloModule* module,
+    const absl::flat_hash_set<absl::string_view>& execution_threads) {
+  fusion_node_evaluations_.clear();
+  fusion_is_faster_.clear();
+  ComputeInstructionsToSkip(module, execution_threads);
+
+  HloCostAnalysis::Options options;
+  options.count_multiple_input_accesses = true;
+  cost_analysis_ = std::make_unique<CpuHloCostAnalysis>(options);
+  for (HloComputation* computation :
+       module->MakeNonfusionComputations(execution_threads)) {
+    if (absl::Status status = computation->Accept(cost_analysis_.get());
+        !status.ok()) {
+      VLOG(1) << "Cost analysis failed, falling back to IsExpensive: "
+              << status;
+      cost_analysis_.reset();
+      break;
+    }
+  }
+  entry_temp_ = std::make_unique<CpuPerformanceModel::EntryTemp>(
+      *module->entry_computation(), &MaterializedAnyway, &CanBeLoopFused);
+  performance_model_.set_entry_temp(entry_temp_.get());
+  set_is_expensive([this](const HloInstruction& instruction) {
+    if (cost_analysis_ == nullptr) {
+      return IsExpensive(instruction);
+    }
+    return !FusionIntoAllUsersIsFaster(instruction);
+  });
+
+  absl::StatusOr<bool> changed =
+      InstructionFusion::RunImpl(module, execution_threads);
+  cost_analysis_.reset();
+  fusion_is_faster_.clear();
+  performance_model_.set_entry_temp(nullptr);
+  entry_temp_.reset();
+  return changed;
+}
+
+bool CpuInstructionFusion::FusionIntoAllUsersIsFaster(
+    const HloInstruction& producer) {
+  if (cost_analysis_ == nullptr || producer.user_count() == 0) {
+    return false;
+  }
+  if (producer.opcode() == HloOpcode::kBroadcast ||
+      producer.opcode() == HloOpcode::kIota ||
+      ShapeUtil::IsEffectiveScalar(producer.shape())) {
+    return true;
+  }
+  if (!producer.shape().IsArray()) {
+    return !IsExpensive(producer);
+  }
+  auto [it, inserted] =
+      fusion_is_faster_.try_emplace(producer.unique_id(), false);
+  if (!inserted) {
+    return it->second;
+  }
+  // The estimate can recurse into this function and insert into the map, so
+  // `it` may be invalidated.
+  bool faster = EstimateFusionIntoAllUsersIsFaster(producer);
+  fusion_is_faster_[producer.unique_id()] = faster;
+  // A materialized producer occupies temp memory that later decisions cannot
+  // count on.
+  if (!faster && entry_temp_ != nullptr) {
+    entry_temp_->Materialize(producer);
+  }
+  return faster;
+}
+
+bool CpuInstructionFusion::EstimateFusionIntoAllUsersIsFaster(
+    const HloInstruction& producer) {
+  // If any user is not fused, the producer is materialized anyway.
+  for (const HloInstruction* user : producer.users()) {
+    if (!user->IsLoopFusion() && !CanBeLoopFused(*user)) {
+      return false;
+    }
+  }
+  // Users that are only consumed, directly or through other single-user
+  // fusible instructions, by the same instruction end up in the same fusion,
+  // which computes the producer once per element.
+  absl::flat_hash_set<const HloInstruction*> destinations;
+  for (const HloInstruction* user : producer.users()) {
+    while (user->opcode() != HloOpcode::kFusion && user->user_count() == 1 &&
+           CanBeLoopFused(*user)) {
+      user = user->users().front();
+    }
+    destinations.insert(user);
+  }
+  std::vector<const HloInstruction*> users(producer.users().begin(),
+                                           producer.users().end());
+  if (destinations.size() == 1) {
+    CpuPerformanceModel::RunTimes run_times =
+        performance_model_.EstimateRunTimes(&producer, cost_analysis_.get(),
+                                            users);
+    return run_times.time_fused <= run_times.time_unfused;
+  }
+  return RecomputeInEachUserIsFaster(producer, /*consumer=*/nullptr,
+                                     /*copies=*/1);
+}
+
+CpuInstructionFusion::Destinations CpuInstructionFusion::FindDestinations(
+    const HloInstruction& producer, const HloInstruction& user) {
+  // Follows fusible elementwise users to the reductions and fusions they end
+  // up in.
+  static constexpr int64_t kMaxVisited = 64;
+  Destinations destinations{/*read_factor=*/1,
+                            /*outputs=*/std::numeric_limits<int64_t>::max()};
+  absl::flat_hash_set<const HloInstruction*> visited = {&user};
+  std::vector<const HloInstruction*> worklist = {&user};
+  while (!worklist.empty() && visited.size() < kMaxVisited) {
+    const HloInstruction* instr = worklist.back();
+    worklist.pop_back();
+    if (instr->opcode() == HloOpcode::kFusion ||
+        instr->opcode() == HloOpcode::kReduce || !instr->IsElementwise() ||
+        instr->user_count() == 0) {
+      destinations.kernels.insert(instr);
+      destinations.read_factor =
+          std::max(destinations.read_factor,
+                   CpuPerformanceModel::ReadFactor(instr, &producer));
+      const Shape& shape = instr->shape().IsTuple() &&
+                                   instr->shape().tuple_shapes_size() > 0
+                               ? instr->shape().tuple_shapes(0)
+                               : instr->shape();
+      if (shape.IsArray()) {
+        destinations.outputs = std::min(
+            destinations.outputs,
+            std::max<int64_t>(1, ShapeUtil::ElementsIn(shape)));
+      }
+      continue;
+    }
+    for (const HloInstruction* next : instr->users()) {
+      if (visited.insert(next).second) {
+        worklist.push_back(next);
+      }
+    }
+  }
+  VLOG(3) << "Producer: " << producer.name() << ", user: " << user.name()
+          << ", read factor: " << destinations.read_factor
+          << ", outputs: " << destinations.outputs;
+  return destinations;
+}
+
+bool CpuInstructionFusion::RecomputedChainHasCompute(
+    const HloInstruction& producer) {
+  if (cost_analysis_ == nullptr) {
+    return true;
+  }
+  return absl::c_any_of(RecomputedChain(producer),
+                        [&](const HloInstruction* instr) {
+                          // Slices cost time but move data.
+                          return instr->opcode() != HloOpcode::kSlice &&
+                                 cost_analysis_->flop_count(*instr) > 0;
+                        });
+}
+
+bool CpuInstructionFusion::RecomputeInEachUserIsFaster(
+    const HloInstruction& producer, const HloInstruction* consumer,
+    int64_t copies) {
+  // The operands of `producer` that do not fit into the cache are recomputed
+  // in each user as well. Compares materializing `producer` with recomputing
+  // it and these operands in each user, `copies` times in `consumer`. The work
+  // of the users themselves is the same in both cases.
+  absl::flat_hash_set<const HloInstruction*> chain = RecomputedChain(producer);
+  if (chain.size() >= kMaxRecomputedChain) {
+    return false;
+  }
+  int64_t flops = 0;
+  int64_t transcendental_flops = 0;
+  int64_t input_bytes = 0;
+  absl::flat_hash_set<const HloInstruction*> inputs;
+  for (const HloInstruction* instr : chain) {
+    flops += std::max<int64_t>(0, cost_analysis_->flop_count(*instr));
+    transcendental_flops += cost_analysis_->transcendental_flop_count(*instr);
+    for (const HloInstruction* operand : instr->operands()) {
+      if (!chain.contains(operand) && operand->shape().IsArray() &&
+          inputs.insert(operand).second) {
+        input_bytes += ShapeUtil::ByteSizeOfElements(operand->shape());
+      }
+    }
+  }
+  const se::DeviceDescription& device_info = performance_model_.device_info();
+  int64_t bytes = ShapeUtil::ByteSizeOfElements(producer.shape());
+  absl::Duration read_inputs = CpuPerformanceModel::ReadTimeWithDRAMHeuristic(
+      device_info, input_bytes, input_bytes);
+
+  // Materializing the producer takes a kernel of its own.
+  absl::Duration time_unfused =
+      CpuPerformanceModel::CombineComputeAndMemoryAccessTime(
+          CpuPerformanceModel::ComputeTime(device_info, flops),
+          read_inputs + CpuPerformanceModel::WriteTime(device_info, bytes)) +
+      CpuPerformanceModel::KernelOverhead(performance_model_.LoopFusionTasks(
+          flops, transcendental_flops, input_bytes + bytes)) +
+      performance_model_.MaterializeFaultTime(producer, bytes);
+  absl::Duration time_fused;
+  for (const HloInstruction* user : producer.users()) {
+    float utilization = CpuPerformanceModel::GetOperandUtilization(
+        cost_analysis_.get(), user, &producer);
+    // The kernels that `user` is fused into, e.g. reductions, may read the
+    // materialized producer strided, and partition only their outputs.
+    const Destinations destinations = FindDestinations(producer, *user);
+    const int64_t read_factor = destinations.read_factor;
+    time_unfused += CpuPerformanceModel::ReadTimeWithDRAMHeuristic(
+        device_info, bytes * read_factor,
+        std::llround(bytes * utilization * read_factor));
+    int64_t user_copies = user == consumer ? copies : 1;
+    const int64_t user_flops = std::llround(flops * utilization * user_copies);
+    absl::Duration read_time = read_inputs;
+    absl::Duration unused_write_time;
+    const absl::Duration compute_time = performance_model_.ScaleToCores(
+        CpuPerformanceModel::ComputeTime(device_info, user_flops),
+        performance_model_.Cores(std::min(
+            destinations.outputs,
+            performance_model_.LoopFusionTasks(
+                user_flops,
+                std::llround(transcendental_flops * utilization * user_copies),
+                input_bytes))),
+        &read_time, &unused_write_time);
+    time_fused += CpuPerformanceModel::CombineComputeAndMemoryAccessTime(
+        compute_time, read_time);
+  }
+  VLOG(3) << "Producer: " << producer.name() << ", chain size: " << chain.size()
+          << ", unfused time: " << time_unfused
+          << ", fused time: " << time_fused;
+  return time_fused <= time_unfused;
+}
+
+bool CpuInstructionFusion::ComputedByUsersAnyway(
+    const HloInstruction& operand, const HloInstruction& producer,
+    const absl::flat_hash_set<const HloInstruction*>& chain) {
+  // A fused kernel computes each fused instruction once per element. If
+  // `operand` is fused into all of its users, and its users outside the
+  // chain end up, through elementwise ops, only in kernels that also compute
+  // `producer`, those kernels compute `operand` anyway. Users inside the chain
+  // do not count: computing `operand` for them is the recomputation. Only
+  // values read at the same index are shared, so `producer` must be
+  // elementwise in `operand`, which has its shape.
+  if (cost_analysis_ == nullptr || !producer.IsElementwise() ||
+      !ShapeUtil::SameDimensions(operand.shape(), producer.shape())) {
+    return false;
+  }
+  absl::flat_hash_set<const HloInstruction*> kernels;
+  for (const HloInstruction* user : producer.users()) {
+    const Destinations destinations = FindDestinations(producer, *user);
+    kernels.insert(destinations.kernels.begin(), destinations.kernels.end());
+  }
+  bool any_outside = false;
+  for (const HloInstruction* user : operand.users()) {
+    if (chain.contains(user)) {
+      continue;
+    }
+    any_outside = true;
+    if (!user->IsElementwise() && !kernels.contains(user)) {
+      return false;
+    }
+    const Destinations destinations = FindDestinations(operand, *user);
+    if (!absl::c_all_of(destinations.kernels,
+                        [&](const HloInstruction* kernel) {
+                          return kernels.contains(kernel);
+                        })) {
+      return false;
+    }
+  }
+  return any_outside && FusionIntoAllUsersIsFaster(operand);
+}
+
+absl::flat_hash_set<const HloInstruction*>
+CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) {
+  // Operands that do not fit into the cache are fused into each user together
+  // with the producer. Smaller operands are materialized and read instead, and
+  // so are reductions: each user would emit its own copy of the reduction loop,
+  // which CodeDuplicationTooHigh rejects unless it is cheap. A reduction over a
+  // few elements, e.g. a norm over xyz, is cheap and is recomputed like any
+  // other op.
+  absl::flat_hash_set<const HloInstruction*> chain = {&producer};
+  std::vector<const HloInstruction*> worklist = {&producer};
+  while (!worklist.empty()) {
+    const HloInstruction* instr = worklist.back();
+    worklist.pop_back();
+    for (const HloInstruction* operand : instr->operands()) {
+      if (chain.contains(operand) || !CanBeLoopFused(*operand) ||
+          ((operand->opcode() == HloOpcode::kReduce &&
+            !ReducesAtMost8(*operand)) ||
+           operand->opcode() == HloOpcode::kReduceWindow) ||
+          !operand->shape().IsArray() ||
+          // An operand with several users that is materialized anyway is
+          // read, not recomputed.
+          (operand->user_count() > 1 &&
+           !FusionIntoAllUsersIsFaster(*operand)) ||
+          // Cheap operands that fit into the cache are fused into the users
+          // as well, so they are recomputed with the producer; expensive
+          // ones are materialized and read.
+          (ShapeUtil::ByteSizeOfElements(operand->shape()) <
+               performance_model_.device_info().l2_cache_size() &&
+           IsExpensive(*operand)) ||
+          ComputedByUsersAnyway(*operand, producer, chain)) {
+        continue;
+      }
+      chain.insert(operand);
+      if (chain.size() >= kMaxRecomputedChain) {
+        return chain;
+      }
+      worklist.push_back(operand);
+    }
+  }
+  return chain;
+}
+
 HloInstruction* CpuInstructionFusion::FuseInstruction(
+    HloInstruction* fusion_instruction, HloInstruction* producer) {
+  fusion_is_faster_.erase(producer->unique_id());
+  HloInstruction* new_producer = FuseInstructionImpl(fusion_instruction,
+                                                     producer);
+  // The estimates for these instructions depend on the fused instructions or
+  // on the users of the fused instructions.
+  fusion_is_faster_.erase(fusion_instruction->unique_id());
+  for (const HloInstruction* operand : fusion_instruction->operands()) {
+    fusion_is_faster_.erase(operand->unique_id());
+    for (const HloInstruction* operand_operand : operand->operands()) {
+      fusion_is_faster_.erase(operand_operand->unique_id());
+    }
+  }
+  if (cost_analysis_ != nullptr) {
+    if (absl::Status status =
+            cost_analysis_->RevisitInstruction(fusion_instruction);
+        !status.ok()) {
+      VLOG(1) << "Cost analysis failed, falling back to IsExpensive: "
+              << status;
+      cost_analysis_.reset();
+    }
+  }
+  return new_producer;
+}
+
+HloInstruction* CpuInstructionFusion::FuseInstructionImpl(
     HloInstruction* fusion_instruction, HloInstruction* producer) {
   if (!may_duplicate()) {
     return InstructionFusion::FuseInstruction(fusion_instruction, producer);
