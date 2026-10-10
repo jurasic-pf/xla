@@ -913,6 +913,25 @@ bool CpuInstructionFusion::RecomputeInEachUserIsFaster(
       }
     }
   }
+  // A user, and the loop kernels it ends up in, read some of the inputs
+  // anyway. Other kernels, e.g. library calls, read them in a separate pass.
+  auto new_input_bytes = [&](const HloInstruction& user,
+                             const Destinations& destinations) {
+    int64_t bytes = 0;
+    for (const HloInstruction* input : inputs) {
+      const bool read_anyway =
+          absl::c_linear_search(user.operands(), input) ||
+          absl::c_any_of(destinations.kernels, [&](const HloInstruction* k) {
+            return (k->IsLoopFusion() ||
+                    (k->opcode() != HloOpcode::kFusion && CanBeLoopFused(*k))) &&
+                   absl::c_linear_search(k->operands(), input);
+          });
+      if (!read_anyway) {
+        bytes += ShapeUtil::ByteSizeOfElements(input->shape());
+      }
+    }
+    return bytes;
+  };
   const se::DeviceDescription& device_info = performance_model_.device_info();
   int64_t bytes = ShapeUtil::ByteSizeOfElements(producer.shape());
   absl::Duration read_inputs = CpuPerformanceModel::ReadTimeWithDRAMHeuristic(
@@ -939,7 +958,9 @@ bool CpuInstructionFusion::RecomputeInEachUserIsFaster(
         std::llround(bytes * utilization * read_factor));
     int64_t user_copies = user == consumer ? copies : 1;
     const int64_t user_flops = std::llround(flops * utilization * user_copies);
-    absl::Duration read_time = read_inputs;
+    const int64_t user_input_bytes = new_input_bytes(*user, destinations);
+    absl::Duration read_time = CpuPerformanceModel::ReadTimeWithDRAMHeuristic(
+        device_info, user_input_bytes, user_input_bytes);
     absl::Duration unused_write_time;
     const absl::Duration compute_time = performance_model_.ScaleToCores(
         CpuPerformanceModel::ComputeTime(device_info, user_flops),

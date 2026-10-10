@@ -1010,6 +1010,45 @@ ENTRY main {
               op::Fusion(op::Exp(op::Parameter(0))));
 }
 
+TEST_F(InstructionFusionTest, RecomputeDoesNotRereadInputsOfTheUsers) {
+  // Both reductions read `idx` anyway, so recomputing the mask in each costs
+  // one compare per element and no memory traffic.
+  absl::string_view module_string = R"(
+HloModule module
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  idx = s32[65536,32]{1,0} parameter(0)
+  zero = s32[] constant(0)
+  zeros = s32[65536,32]{1,0} broadcast(zero), dimensions={}
+  m = pred[65536,32]{1,0} compare(idx, zeros), direction=LT
+  v = f32[65536,32]{1,0} convert(idx)
+  n = f32[65536,32]{1,0} negate(v)
+  c = f32[] constant(0)
+  cs = f32[65536,32]{1,0} broadcast(c), dimensions={}
+  sel1 = f32[65536,32]{1,0} select(m, v, cs)
+  sel2 = f32[65536,32]{1,0} select(m, n, cs)
+  r1 = f32[65536]{0} reduce(sel1, c), dimensions={1}, to_apply=add
+  r2 = f32[32]{0} reduce(sel2, c), dimensions={0}, to_apply=add
+  ROOT t = (f32[65536]{0}, f32[32]{0}) tuple(r1, r2)
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  EXPECT_THAT(module->entry_computation()->root_instruction(),
+              op::Tuple(op::Fusion(op::Parameter(0)),
+                        op::Fusion(op::Parameter(0))));
+}
+
 TEST_F(InstructionFusionTest, FuseExpensiveProducerIntoReductionsOverDifferentDims) {
   // The pattern of a pairwise gradient: two reductions over different
   // dimensions of a large intermediate that is computed from small inputs.
