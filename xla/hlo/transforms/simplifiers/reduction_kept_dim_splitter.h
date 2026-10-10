@@ -47,6 +47,10 @@ namespace xla {
 // With `unroll_small_reductions`, a reduction over one dimension of at most
 // `max_kept_dim_size` elements becomes elementwise ops on its components, and
 // width-1 slices of such a dimension become chains of rank-reduced ops.
+//
+// With `merge_sibling_reductions`, independent reductions with the same input
+// shape, dimensions, reducer and init that share computed inputs become one
+// variadic reduction, so that a loop emitter computes them in one pass.
 class ReductionKeptDimSplitter : public HloModulePass {
  public:
   // Returns true if computing `reduce` in a loop with `outputs` outputs, as
@@ -58,10 +62,12 @@ class ReductionKeptDimSplitter : public HloModulePass {
   explicit ReductionKeptDimSplitter(
       int64_t max_kept_dim_size = 8, int64_t min_reduced_elements = 1024,
       bool unroll_small_reductions = false,
+      bool merge_sibling_reductions = false,
       VariadicIsFaster variadic_is_faster = nullptr)
       : max_kept_dim_size_(max_kept_dim_size),
         min_reduced_elements_(min_reduced_elements),
         unroll_small_reductions_(unroll_small_reductions),
+        merge_sibling_reductions_(merge_sibling_reductions),
         variadic_is_faster_(std::move(variadic_is_faster)) {}
   absl::string_view name() const override {
     return "reduction-kept-dim-splitter";
@@ -76,6 +82,7 @@ class ReductionKeptDimSplitter : public HloModulePass {
   int64_t max_kept_dim_size_;
   int64_t min_reduced_elements_;
   bool unroll_small_reductions_;
+  bool merge_sibling_reductions_;
   VariadicIsFaster variadic_is_faster_;
 };
 
