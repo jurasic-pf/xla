@@ -29,10 +29,12 @@ limitations under the License.
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+#include "xla/hlo/analysis/hlo_reachability.h"
 #include "xla/hlo/ir/hlo_computation.h"
 #include "xla/hlo/ir/hlo_instruction.h"
 #include "xla/hlo/ir/hlo_module.h"
 #include "xla/hlo/ir/hlo_opcode.h"
+#include "xla/literal.h"
 #include "xla/shape.h"
 #include "xla/shape_util.h"
 #include "xla/xla_data.pb.h"
@@ -56,6 +58,35 @@ std::optional<HloOpcode> SimpleReducerOpcode(const HloComputation* reducer) {
     return std::nullopt;
   }
   return root->opcode();
+}
+
+// Returns the opcode of a variadic reducer with `n` accumulators whose result i
+// is op(param i, param n + i) for one elementwise binary op, e.g. the reducer
+// of k independent sums.
+std::optional<HloOpcode> IndependentReducerOpcode(const HloComputation* reducer,
+                                                  int64_t n) {
+  const HloInstruction* root = reducer->root_instruction();
+  if (root->opcode() != HloOpcode::kTuple || root->operand_count() != n ||
+      reducer->num_parameters() != 2 * n) {
+    return std::nullopt;
+  }
+  std::optional<HloOpcode> opcode;
+  for (int64_t i = 0; i < n; ++i) {
+    const HloInstruction* op = root->operand(i);
+    if (!op->IsElementwiseBinary() || op->opcode() == HloOpcode::kCompare ||
+        (opcode.has_value() && op->opcode() != *opcode)) {
+      return std::nullopt;
+    }
+    const HloInstruction* lhs = op->operand(0);
+    const HloInstruction* rhs = op->operand(1);
+    if (lhs->opcode() != HloOpcode::kParameter ||
+        rhs->opcode() != HloOpcode::kParameter ||
+        lhs->parameter_number() != i || rhs->parameter_number() != n + i) {
+      return std::nullopt;
+    }
+    opcode = op->opcode();
+  }
+  return opcode;
 }
 
 // Builds a reducer with `k` accumulators that applies `opcode` to each pair.
@@ -268,6 +299,224 @@ class ComponentHoister {
       memo_;
 };
 
+// Returns the computed (non-parameter, non-constant) instructions that the
+// inputs of `reduce` are produced from through cheap layout or elementwise
+// ops, up to a limit. Only arrays of at least 1/8 of the size of the inputs
+// count: sharing a small value, e.g. a broadcast scalar, shares no work.
+absl::flat_hash_set<const HloInstruction*> ComputedAncestors(
+    const HloInstruction* reduce) {
+  const int64_t min_elements =
+      ShapeUtil::ElementsIn(reduce->operand(0)->shape()) / 8;
+  absl::flat_hash_set<const HloInstruction*> large;
+  absl::flat_hash_set<const HloInstruction*> seen;
+  std::vector<const HloInstruction*> worklist;
+  const int64_t n = reduce->operand_count() / 2;
+  for (int64_t i = 0; i < n; ++i) {
+    worklist.push_back(reduce->operand(i));
+  }
+  while (!worklist.empty() && seen.size() < 256) {
+    const HloInstruction* instr = worklist.back();
+    worklist.pop_back();
+    if (instr->opcode() == HloOpcode::kParameter ||
+        instr->opcode() == HloOpcode::kConstant || !seen.insert(instr).second) {
+      continue;
+    }
+    if (instr->shape().IsArray() &&
+        ShapeUtil::ElementsIn(instr->shape()) >= min_elements &&
+        instr->opcode() != HloOpcode::kBroadcast) {
+      large.insert(instr);
+    }
+    if (instr->IsElementwise() || instr->opcode() == HloOpcode::kBroadcast ||
+        instr->opcode() == HloOpcode::kReshape ||
+        instr->opcode() == HloOpcode::kBitcast ||
+        instr->opcode() == HloOpcode::kSlice ||
+        instr->opcode() == HloOpcode::kTranspose) {
+      for (const HloInstruction* operand : instr->operands()) {
+        worklist.push_back(operand);
+      }
+    }
+  }
+  return large;
+}
+
+// Merges reductions that have the same input shape, dimensions, reducer
+// opcode and init value, and do not depend on each other, into one variadic
+// reduction, so that a loop emitter computes them in one pass over the input.
+absl::StatusOr<bool> MergeSiblingReductions(
+    HloComputation* computation, int64_t max_operands,
+    const ReductionKeptDimSplitter::VariadicIsFaster& variadic_is_faster) {
+  struct Key {
+    Shape shape;
+    std::vector<int64_t> dims;
+    HloOpcode opcode;
+    const HloInstruction* init;
+    bool operator==(const Key& o) const {
+      return ShapeUtil::Equal(shape, o.shape) && dims == o.dims &&
+             opcode == o.opcode &&
+             (init == o.init ||
+              (init->IsConstant() && o.init->IsConstant() &&
+               init->literal() == o.init->literal()));
+    }
+  };
+  std::vector<std::pair<Key, std::vector<HloInstruction*>>> groups;
+  for (HloInstruction* instr : computation->MakeInstructionPostOrder()) {
+    if (instr->opcode() != HloOpcode::kReduce) {
+      continue;
+    }
+    const int64_t n = instr->operand_count() / 2;
+    std::optional<HloOpcode> opcode =
+        n == 1 ? SimpleReducerOpcode(instr->to_apply())
+               : IndependentReducerOpcode(instr->to_apply(), n);
+    if (!opcode.has_value() || n < 1) {
+      continue;
+    }
+    const Shape& first_output = instr->shape().IsTuple()
+                                    ? instr->shape().tuple_shapes(0)
+                                    : instr->shape();
+    if (variadic_is_faster &&
+        !variadic_is_faster(*instr, ShapeUtil::ElementsIn(first_output))) {
+      continue;
+    }
+    // All accumulators must have the element type of the first one.
+    bool same_type = true;
+    for (int64_t i = 1; i < n; ++i) {
+      same_type &= instr->operand(i)->shape().element_type() ==
+                   instr->operand(0)->shape().element_type();
+    }
+    if (!same_type) {
+      continue;
+    }
+    // All inits must be the same instruction.
+    bool same_init = true;
+    for (int64_t i = 1; i < n; ++i) {
+      const HloInstruction* a = instr->operand(n + i);
+      const HloInstruction* b = instr->operand(n);
+      same_init &= a == b || (a->IsConstant() && b->IsConstant() &&
+                              a->literal() == b->literal());
+    }
+    if (!same_init) {
+      continue;
+    }
+    Key key{instr->operand(0)->shape(),
+            std::vector<int64_t>(instr->dimensions().begin(),
+                                 instr->dimensions().end()),
+            *opcode, instr->operand(n)};
+    auto it = absl::c_find_if(groups, [&](const auto& g) { return g.first == key; });
+    if (it == groups.end()) {
+      groups.push_back({key, {instr}});
+    } else {
+      it->second.push_back(instr);
+    }
+  }
+  bool changed = false;
+  std::unique_ptr<HloReachabilityMap> reachability;
+  absl::flat_hash_map<const HloInstruction*,
+                      absl::flat_hash_set<const HloInstruction*>>
+      ancestors_cache;
+  auto ancestors_of = [&](const HloInstruction* r)
+      -> const absl::flat_hash_set<const HloInstruction*>& {
+    auto it = ancestors_cache.find(r);
+    if (it == ancestors_cache.end()) {
+      it = ancestors_cache.emplace(r, ComputedAncestors(r)).first;
+    }
+    return it->second;
+  };
+  // Dependent reductions, e.g. the stages of an ODE step, cannot share one
+  // loop, so the members a merge leaves out are tried again as a new group.
+  for (size_t g = 0; g < groups.size(); ++g) {
+    const Key key = groups[g].first;
+    const std::vector<HloInstruction*> members = groups[g].second;
+    if (members.size() < 2) {
+      continue;
+    }
+    // Built once, and again only after a merge changed the graph.
+    if (reachability == nullptr) {
+      reachability = HloReachabilityMap::Build(computation);
+    }
+    std::vector<HloInstruction*> chosen;
+    int64_t operands = 0;
+    for (HloInstruction* r : members) {
+      const int64_t n = r->operand_count() / 2;
+      if (operands + n > max_operands) {
+        break;
+      }
+      bool independent = absl::c_none_of(chosen, [&](HloInstruction* c) {
+        return reachability->IsReachable(c, r) || reachability->IsReachable(r, c);
+      });
+      // Only merge reductions that recompute shared work; others gain nothing
+      // from one loop.
+      const absl::flat_hash_set<const HloInstruction*>& ancestors =
+          ancestors_of(r);
+      bool shares_work =
+          chosen.empty() || absl::c_any_of(chosen, [&](HloInstruction* c) {
+            return absl::c_any_of(ancestors_of(c),
+                                  [&](const HloInstruction* a) {
+                                    return ancestors.contains(a);
+                                  });
+          });
+      if (independent && shares_work) {
+        chosen.push_back(r);
+        operands += n;
+      }
+    }
+    std::vector<HloInstruction*> rest;
+    for (HloInstruction* r : members) {
+      if (r != members.front() && !absl::c_linear_search(chosen, r)) {
+        rest.push_back(r);
+      }
+    }
+    if (rest.size() >= 2) {
+      groups.push_back({key, std::move(rest)});
+    }
+    if (chosen.size() < 2) {
+      continue;
+    }
+    std::vector<HloInstruction*> inputs;
+    std::vector<Shape> shapes;
+    for (HloInstruction* r : chosen) {
+      const int64_t n = r->operand_count() / 2;
+      for (int64_t i = 0; i < n; ++i) {
+        inputs.push_back(r->mutable_operand(i));
+        shapes.push_back(r->shape().IsTuple() ? r->shape().tuple_shapes(i)
+                                              : r->shape());
+      }
+    }
+    const int64_t k = inputs.size();
+    std::vector<HloInstruction*> inits;
+    for (HloInstruction* r : chosen) {
+      const int64_t n = r->operand_count() / 2;
+      for (int64_t i = 0; i < n; ++i) {
+        inits.push_back(r->mutable_operand(n + i));
+      }
+    }
+    HloComputation* reducer = MakeVariadicReducer(
+        computation->parent(), key.opcode,
+        ShapeUtil::MakeScalarShape(shapes[0].element_type()), k);
+    HloInstruction* merged = computation->AddInstruction(
+        HloInstruction::CreateReduce(ShapeUtil::MakeTupleShape(shapes), inputs,
+                                     inits, key.dims, reducer));
+    int64_t index = 0;
+    for (HloInstruction* r : chosen) {
+      const int64_t n = r->operand_count() / 2;
+      std::vector<HloInstruction*> parts;
+      for (int64_t i = 0; i < n; ++i) {
+        parts.push_back(computation->AddInstruction(
+            HloInstruction::CreateGetTupleElement(shapes[index], merged, index)));
+        ++index;
+      }
+      HloInstruction* replacement =
+          r->shape().IsTuple()
+              ? computation->AddInstruction(HloInstruction::CreateTuple(parts))
+              : parts[0];
+      ancestors_cache.erase(r);
+      ABSL_RETURN_IF_ERROR(computation->ReplaceInstruction(r, replacement));
+    }
+    changed = true;
+    reachability = nullptr;
+  }
+  return changed;
+}
+
 }  // namespace
 
 absl::StatusOr<bool> ReductionKeptDimSplitter::RunImpl(
@@ -437,6 +686,15 @@ absl::StatusOr<bool> ReductionKeptDimSplitter::RunImpl(
           HloInstruction::CreateConcatenate(out_shape, parts, out_last));
       ABSL_RETURN_IF_ERROR(computation->ReplaceInstruction(reduce, concat));
       changed = true;
+    }
+  }
+  if (merge_sibling_reductions_) {
+    for (HloComputation* computation :
+         module->MakeNonfusionComputations(execution_threads)) {
+      ABSL_ASSIGN_OR_RETURN(
+          bool merged,
+          MergeSiblingReductions(computation, 16, variadic_is_faster_));
+      changed |= merged;
     }
   }
   return changed;

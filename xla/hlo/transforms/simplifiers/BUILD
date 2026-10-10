@@ -2010,7 +2010,9 @@ cc_library(
     srcs = ["reduction_kept_dim_splitter.cc"],
     hdrs = ["reduction_kept_dim_splitter.h"],
     deps = [
+        "//xla:literal",
         "//xla:shape_util",
+        "//xla/hlo/analysis:hlo_reachability",
         "//xla/hlo/ir:hlo",
         "//xla:xla_data_proto_cc",
         "//xla/hlo/pass:hlo_pass",

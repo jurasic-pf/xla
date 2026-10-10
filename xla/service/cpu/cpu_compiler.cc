@@ -540,6 +540,7 @@ std::unique_ptr<HloPassFix<HloPassPipeline>> CreateSimplificationPipeline(
     pipeline->AddPass<ReductionKeptDimSplitter>(
         /*max_kept_dim_size=*/8, /*min_reduced_elements=*/1024,
         debug_options.xla_cpu_experimental_unroll_small_reductions(),
+        debug_options.xla_cpu_experimental_merge_sibling_reductions(),
         std::move(variadic_is_faster));
   }
   if (!IsHostOffload(module) &&
