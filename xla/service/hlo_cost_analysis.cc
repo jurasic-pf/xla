@@ -145,18 +145,10 @@ absl::Status HloCostAnalysis::RevisitInstruction(
   return absl::OkStatus();
 }
 
-absl::Status HloCostAnalysis::HandleElementwiseOp(
-    const HloInstruction* hlo_instruction) {
-  const auto& shape = hlo_instruction->shape();
-  // For element-wise operations, the number of computations is the same as the
-  // number of elements in the output shape.
-  auto computation_count = ShapeUtil::ElementsIn(shape);
-  auto opcode = hlo_instruction->opcode();
-  // We treat transcendental operations separately since one transcendental
-  // operation can correspond to several floating point ops.
+/*static*/ bool HloCostAnalysis::IsTranscendental(HloOpcode opcode) {
   // kLogistic is included in "trascendental" as it is implemented using
   // trascendental ops (tanh or exp).
-  if (
+  return (
       // clang-format off
       // go/keep-sorted start
       opcode == HloOpcode::kAcos ||
@@ -185,7 +177,19 @@ absl::Status HloCostAnalysis::HandleElementwiseOp(
       opcode == HloOpcode::kTanh
       // go/keep-sorted end
       // clang-format on
-  ) {
+  );
+}
+
+absl::Status HloCostAnalysis::HandleElementwiseOp(
+    const HloInstruction* hlo_instruction) {
+  const auto& shape = hlo_instruction->shape();
+  // For element-wise operations, the number of computations is the same as the
+  // number of elements in the output shape.
+  auto computation_count = ShapeUtil::ElementsIn(shape);
+  auto opcode = hlo_instruction->opcode();
+  // We treat transcendental operations separately since one transcendental
+  // operation can correspond to several floating point ops.
+  if (IsTranscendental(opcode)) {
     current_properties_[kTranscendentalsKey] = computation_count;
   } else {
     // Note: transcendental operations are considered a separate category from

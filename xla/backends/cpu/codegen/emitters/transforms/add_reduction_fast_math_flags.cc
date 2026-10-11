@@ -57,8 +57,8 @@ struct RewriteCallPattern
 
     // Adding reassoc flags to reductions with more than one fast math op
     // can result in unexpected behaviour as they can reassociate between
-    // themselves.
-    if (FastMathOpCount(callee) > 1) {
+    // themselves, unless each op accumulates its own pair of arguments.
+    if (FastMathOpCount(callee) > 1 && !HasIndependentAccumulators(callee)) {
       return rewriter.notifyMatchFailure(call_op, "Too many fast math ops.");
     }
 
@@ -83,6 +83,29 @@ struct RewriteCallPattern
   }
 
  private:
+  // Returns true if every fast math op is an add or a multiply of two
+  // arguments of `callee` and every argument has at most one use, e.g. the
+  // reducer of a variadic sum. Each such op updates its own accumulator, so
+  // reassociating one cannot change the operands of another.
+  static bool HasIndependentAccumulators(mlir::func::FuncOp callee) {
+    mlir::Block& body = callee.getBody().front();
+    bool independent = true;
+    callee.walk([&](mlir::arith::ArithFastMathInterface op) {
+      mlir::Operation* operation = op.getOperation();
+      if (!mlir::isa<ma::AddFOp, ma::MulFOp>(operation)) {
+        independent = false;
+        return;
+      }
+      for (mlir::Value operand : operation->getOperands()) {
+        auto arg = mlir::dyn_cast<mlir::BlockArgument>(operand);
+        if (!arg || arg.getOwner() != &body || !arg.hasOneUse()) {
+          independent = false;
+        }
+      }
+    });
+    return independent;
+  }
+
   static int FastMathOpCount(mlir::func::FuncOp callee) {
     int count = 0;
     callee.walk([&](mlir::arith::ArithFastMathInterface op) { count++; });

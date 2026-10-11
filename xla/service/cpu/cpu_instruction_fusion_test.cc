@@ -25,10 +25,13 @@ limitations under the License.
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/log/check.h"
 #include "absl/status/status_matchers.h"  // IWYU pragma: keep
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/strings/substitute.h"
 #include "absl/types/span.h"
 #include "xla/hlo/analysis/alias_info.h"
 #include "xla/hlo/ir/hlo_instruction.h"
@@ -949,6 +952,460 @@ ENTRY main {
   EXPECT_THAT(module->entry_computation()->root_instruction(), op::Fusion());
 }
 
+TEST_F(InstructionFusionTest, FuseExpensiveProducerWhenRecomputeIsFaster) {
+  // Recomputing the sqrt three times per element is cheaper than writing and
+  // reading back its 4 MiB output.
+  absl::string_view module_string = R"(
+HloModule module
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  x = f32[1024,1024]{1,0} parameter(0)
+  y = f32[1024,1024,3]{2,1,0} parameter(1)
+  s = f32[1024,1024]{1,0} sqrt(x)
+  b = f32[1024,1024,3]{2,1,0} broadcast(s), dimensions={0,1}
+  d = f32[1024,1024,3]{2,1,0} divide(y, b)
+  c = f32[] constant(0)
+  ROOT r = f32[1024,3]{1,0} reduce(d, c), dimensions={1}, to_apply=add
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  EXPECT_THAT(module->entry_computation()->root_instruction(),
+              op::Fusion(op::Parameter(), op::Parameter()));
+}
+
+TEST_F(InstructionFusionTest, DoNotFuseExpensiveProducerWhenRecomputeIsSlower) {
+  // Fusing would compute the exponential 64 times per element.
+  absl::string_view module_string = R"(
+HloModule module
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  x = f32[131072]{0} parameter(0)
+  e = f32[131072]{0} exponential(x)
+  b = f32[131072,64]{1,0} broadcast(e), dimensions={0}
+  c = f32[] constant(0)
+  ROOT r = f32[64]{0} reduce(b, c), dimensions={0}, to_apply=add
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  EXPECT_THAT(module->entry_computation()->root_instruction(),
+              op::Fusion(op::Exp(op::Parameter(0))));
+}
+
+TEST_F(InstructionFusionTest, RecomputeDoesNotRereadInputsOfTheUsers) {
+  // Both reductions read `idx` anyway, so recomputing the mask in each costs
+  // one compare per element and no memory traffic.
+  absl::string_view module_string = R"(
+HloModule module
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  idx = s32[65536,32]{1,0} parameter(0)
+  zero = s32[] constant(0)
+  zeros = s32[65536,32]{1,0} broadcast(zero), dimensions={}
+  m = pred[65536,32]{1,0} compare(idx, zeros), direction=LT
+  v = f32[65536,32]{1,0} convert(idx)
+  n = f32[65536,32]{1,0} negate(v)
+  c = f32[] constant(0)
+  cs = f32[65536,32]{1,0} broadcast(c), dimensions={}
+  sel1 = f32[65536,32]{1,0} select(m, v, cs)
+  sel2 = f32[65536,32]{1,0} select(m, n, cs)
+  r1 = f32[65536]{0} reduce(sel1, c), dimensions={1}, to_apply=add
+  r2 = f32[32]{0} reduce(sel2, c), dimensions={0}, to_apply=add
+  ROOT t = (f32[65536]{0}, f32[32]{0}) tuple(r1, r2)
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  EXPECT_THAT(module->entry_computation()->root_instruction(),
+              op::Tuple(op::Fusion(op::Parameter(0)),
+                        op::Fusion(op::Parameter(0))));
+}
+
+TEST_F(InstructionFusionTest, RefusedProducerIsNotDuplicatedIntoOtherUsers) {
+  // The mask has two users. Once one of them refuses to fuse it, the mask
+  // stays materialized, and fusing it into the other user only recomputes it
+  // (and, here, makes the loop copy `z` before updating it in place).
+  absl::string_view module_string = R"(
+HloModule module
+
+cond {
+  pc = (s32[], c64[400,400]{1,0}, s32[400,400]{1,0}, c64[400,400]{1,0}) parameter(0)
+  i = s32[] get-tuple-element(pc), index=0
+  limit = s32[] constant(256)
+  ROOT lt = pred[] compare(i, limit), direction=LT
+}
+
+body {
+  pb = (s32[], c64[400,400]{1,0}, s32[400,400]{1,0}, c64[400,400]{1,0}) parameter(0)
+  i = s32[] get-tuple-element(pb), index=0
+  z = c64[400,400]{1,0} get-tuple-element(pb), index=1
+  count = s32[400,400]{1,0} get-tuple-element(pb), index=2
+  c = c64[400,400]{1,0} get-tuple-element(pb), index=3
+  one = s32[] constant(1)
+  inext = s32[] add(i, one)
+  a = f32[400,400]{1,0} abs(z)
+  two = f32[] constant(2)
+  twos = f32[400,400]{1,0} broadcast(two), dimensions={}
+  m = pred[400,400]{1,0} compare(a, twos), direction=LE
+  zz = c64[400,400]{1,0} multiply(z, z)
+  next = c64[400,400]{1,0} add(zz, c)
+  sel = c64[400,400]{1,0} select(m, next, z)
+  mi = s32[400,400]{1,0} convert(m)
+  newcount = s32[400,400]{1,0} add(count, mi)
+  ROOT t = (s32[], c64[400,400]{1,0}, s32[400,400]{1,0}, c64[400,400]{1,0}) tuple(inext, sel, newcount, c)
+}
+
+ENTRY main {
+  init = (s32[], c64[400,400]{1,0}, s32[400,400]{1,0}, c64[400,400]{1,0}) parameter(0)
+  ROOT w = (s32[], c64[400,400]{1,0}, s32[400,400]{1,0}, c64[400,400]{1,0}) while(init), condition=cond, body=body
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  int64_t abs_count = 0;
+  for (const HloComputation* computation : module->computations()) {
+    for (const HloInstruction* instruction : computation->instructions()) {
+      abs_count += instruction->opcode() == HloOpcode::kAbs;
+    }
+  }
+  EXPECT_EQ(abs_count, 1) << module->ToString();
+}
+
+TEST_F(InstructionFusionTest, FuseExpensiveProducerIntoReductionsOverDifferentDims) {
+  // The pattern of a pairwise gradient: two reductions over different
+  // dimensions of a large intermediate that is computed from small inputs.
+  // Both reductions recompute the intermediate.
+  absl::string_view module_string = R"(
+HloModule module
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  x = f32[1024,3]{1,0} parameter(0)
+  y = f32[1024,3]{1,0} parameter(1)
+  bx = f32[1024,1024,3]{2,1,0} broadcast(x), dimensions={0,2}
+  by = f32[1024,1024,3]{2,1,0} broadcast(y), dimensions={1,2}
+  r = f32[1024,1024,3]{2,1,0} subtract(bx, by)
+  rr = f32[1024,1024,3]{2,1,0} multiply(r, r)
+  c = f32[] constant(0)
+  d2 = f32[1024,1024]{1,0} reduce(rr, c), dimensions={2}, to_apply=add
+  s = f32[1024,1024]{1,0} rsqrt(d2)
+  a = f32[1024]{0} reduce(s, c), dimensions={1}, to_apply=add
+  b = f32[1024]{0} reduce(s, c), dimensions={0}, to_apply=add
+  ROOT t = (f32[1024]{0}, f32[1024]{0}) tuple(a, b)
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  EXPECT_THAT(module->entry_computation()->root_instruction(),
+              op::Tuple(op::Fusion(op::Parameter(), op::Parameter()),
+                        op::Fusion(op::Parameter(), op::Parameter())));
+}
+
+TEST_F(InstructionFusionTest, FuseExpensiveProducerWhoseUsersMeetAgain) {
+  // Both users of the exponential end up in the fusion of the add, which
+  // computes the exponential once per element.
+  absl::string_view module_string = R"(
+HloModule module
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  x = f32[1024,1024]{1,0} parameter(0)
+  e = f32[1024,1024]{1,0} exponential(x)
+  s = f32[1024,1024]{1,0} sine(e)
+  l = f32[1024,1024]{1,0} log(e)
+  a = f32[1024,1024]{1,0} add(s, l)
+  c = f32[] constant(0)
+  ROOT r = f32[1024]{0} reduce(a, c), dimensions={1}, to_apply=add
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  EXPECT_THAT(module->entry_computation()->root_instruction(),
+              op::Fusion(op::Parameter(0)));
+}
+
+TEST_F(InstructionFusionTest, RecomputedChainEndsAtReduction) {
+  // `p` is read by reductions over different dimensions. Fusing it into both
+  // recomputes the pad, but not the reduction `r`, whose output is read.
+  absl::string_view module_string = R"(
+HloModule module
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  x = f32[1024,1024,64]{2,1,0} parameter(0)
+  s = f32[1024,1024,64]{2,1,0} sine(x)
+  e = f32[1024,1024,64]{2,1,0} exponential(s)
+  l = f32[1024,1024,64]{2,1,0} log(e)
+  c = f32[] constant(0)
+  r = f32[1024,1024]{1,0} reduce(l, c), dimensions={2}, to_apply=add
+  rb = f32[1024,1024,1]{2,1,0} bitcast(r)
+  p = f32[1024,1024,3]{2,1,0} pad(rb, c), padding=0_0x0_0x1_1
+  a = f32[1024,3]{1,0} reduce(p, c), dimensions={1}, to_apply=add
+  b = f32[1024,3]{1,0} reduce(p, c), dimensions={0}, to_apply=add
+  n = f32[1024,3]{1,0} negate(a)
+  ROOT t = (f32[1024,3]{1,0}, f32[1024,3]{1,0}, f32[1024,3]{1,0}) tuple(a, n, b)
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  int64_t fusions_with_pad = 0;
+  for (const HloInstruction* instr :
+       module->entry_computation()->instructions()) {
+    EXPECT_NE(instr->opcode(), HloOpcode::kPad);
+    if (instr->opcode() == HloOpcode::kFusion &&
+        absl::c_any_of(instr->fused_instructions(),
+                       [](const HloInstruction* fused) {
+                         return fused->opcode() == HloOpcode::kPad;
+                       })) {
+      ++fusions_with_pad;
+    }
+  }
+  EXPECT_EQ(fusions_with_pad, 2);
+}
+
+TEST_F(InstructionFusionTest, FuseCheapProducerEmittedManyTimes) {
+  // `p` is emitted once per slice, 20 times, more than
+  // kAllowedCodeDuplication. Recomputing an add is cheaper than writing and
+  // reading `p`.
+  absl::string_view module_string = R"(
+HloModule cheap
+
+ENTRY main {
+  x = f32[512,512,20]{2,1,0} parameter(0)
+  y = f32[512,512,20]{2,1,0} parameter(1)
+  p = f32[512,512,20]{2,1,0} add(x, y)
+  sl0 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [0:1]}
+  sl1 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [1:2]}
+  sl2 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [2:3]}
+  sl3 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [3:4]}
+  sl4 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [4:5]}
+  sl5 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [5:6]}
+  sl6 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [6:7]}
+  sl7 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [7:8]}
+  sl8 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [8:9]}
+  sl9 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [9:10]}
+  sl10 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [10:11]}
+  sl11 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [11:12]}
+  sl12 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [12:13]}
+  sl13 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [13:14]}
+  sl14 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [14:15]}
+  sl15 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [15:16]}
+  sl16 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [16:17]}
+  sl17 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [17:18]}
+  sl18 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [18:19]}
+  sl19 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [19:20]}
+  a1 = f32[512,512,1]{2,1,0} add(sl0, sl1)
+  a2 = f32[512,512,1]{2,1,0} add(a1, sl2)
+  a3 = f32[512,512,1]{2,1,0} add(a2, sl3)
+  a4 = f32[512,512,1]{2,1,0} add(a3, sl4)
+  a5 = f32[512,512,1]{2,1,0} add(a4, sl5)
+  a6 = f32[512,512,1]{2,1,0} add(a5, sl6)
+  a7 = f32[512,512,1]{2,1,0} add(a6, sl7)
+  a8 = f32[512,512,1]{2,1,0} add(a7, sl8)
+  a9 = f32[512,512,1]{2,1,0} add(a8, sl9)
+  a10 = f32[512,512,1]{2,1,0} add(a9, sl10)
+  a11 = f32[512,512,1]{2,1,0} add(a10, sl11)
+  a12 = f32[512,512,1]{2,1,0} add(a11, sl12)
+  a13 = f32[512,512,1]{2,1,0} add(a12, sl13)
+  a14 = f32[512,512,1]{2,1,0} add(a13, sl14)
+  a15 = f32[512,512,1]{2,1,0} add(a14, sl15)
+  a16 = f32[512,512,1]{2,1,0} add(a15, sl16)
+  a17 = f32[512,512,1]{2,1,0} add(a16, sl17)
+  a18 = f32[512,512,1]{2,1,0} add(a17, sl18)
+  ROOT a19 = f32[512,512,1]{2,1,0} add(a18, sl19)
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  EXPECT_THAT(module->entry_computation()->root_instruction(),
+              op::Fusion(op::Parameter(), op::Parameter()));
+}
+
+TEST_F(InstructionFusionTest, DoNotFuseExpensiveProducerEmittedManyTimes) {
+  absl::string_view module_string = R"(
+HloModule expensive
+
+ENTRY main {
+  x = f32[512,512,20]{2,1,0} parameter(0)
+  e0 = f32[512,512,20]{2,1,0} sine(x)
+  e1 = f32[512,512,20]{2,1,0} exponential(e0)
+  e2 = f32[512,512,20]{2,1,0} log(e1)
+  e3 = f32[512,512,20]{2,1,0} tanh(e2)
+  p = f32[512,512,20]{2,1,0} exponential(e3)
+  sl0 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [0:1]}
+  sl1 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [1:2]}
+  sl2 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [2:3]}
+  sl3 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [3:4]}
+  sl4 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [4:5]}
+  sl5 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [5:6]}
+  sl6 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [6:7]}
+  sl7 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [7:8]}
+  sl8 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [8:9]}
+  sl9 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [9:10]}
+  sl10 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [10:11]}
+  sl11 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [11:12]}
+  sl12 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [12:13]}
+  sl13 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [13:14]}
+  sl14 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [14:15]}
+  sl15 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [15:16]}
+  sl16 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [16:17]}
+  sl17 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [17:18]}
+  sl18 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [18:19]}
+  sl19 = f32[512,512,1]{2,1,0} slice(p), slice={[0:512], [0:512], [19:20]}
+  a1 = f32[512,512,1]{2,1,0} add(sl0, sl1)
+  a2 = f32[512,512,1]{2,1,0} add(a1, sl2)
+  a3 = f32[512,512,1]{2,1,0} add(a2, sl3)
+  a4 = f32[512,512,1]{2,1,0} add(a3, sl4)
+  a5 = f32[512,512,1]{2,1,0} add(a4, sl5)
+  a6 = f32[512,512,1]{2,1,0} add(a5, sl6)
+  a7 = f32[512,512,1]{2,1,0} add(a6, sl7)
+  a8 = f32[512,512,1]{2,1,0} add(a7, sl8)
+  a9 = f32[512,512,1]{2,1,0} add(a8, sl9)
+  a10 = f32[512,512,1]{2,1,0} add(a9, sl10)
+  a11 = f32[512,512,1]{2,1,0} add(a10, sl11)
+  a12 = f32[512,512,1]{2,1,0} add(a11, sl12)
+  a13 = f32[512,512,1]{2,1,0} add(a12, sl13)
+  a14 = f32[512,512,1]{2,1,0} add(a13, sl14)
+  a15 = f32[512,512,1]{2,1,0} add(a14, sl15)
+  a16 = f32[512,512,1]{2,1,0} add(a15, sl16)
+  a17 = f32[512,512,1]{2,1,0} add(a16, sl17)
+  a18 = f32[512,512,1]{2,1,0} add(a17, sl18)
+  ROOT a19 = f32[512,512,1]{2,1,0} add(a18, sl19)
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  EXPECT_THAT(module->entry_computation()->root_instruction(),
+              op::Fusion(op::Fusion(op::Parameter())));
+}
+
+TEST_F(InstructionFusionTest, FuseIntoNonOverlappingReduceWindow) {
+  // The reduce-window / reduce pair that TreeReductionRewriter produces.
+  absl::string_view module_string = R"(
+HloModule module
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  a = f32[50,64]{1,0} parameter(0)
+  b = f32[50,64]{1,0} parameter(1)
+  c = f32[50,64]{1,0} add(a, b)
+  init = f32[] constant(0)
+  w = f32[50,2]{1,0} reduce-window(c, init), window={size=1x32 stride=1x32},
+    to_apply=add
+  ROOT r = f32[50]{0} reduce(w, init), dimensions={1}, to_apply=add
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_TRUE(fused_something);
+  EXPECT_THAT(module->entry_computation()->root_instruction(),
+              op::Fusion(op::Parameter(), op::Parameter()));
+}
+
+TEST_F(InstructionFusionTest, DoNotFuseExpensiveOpIntoOverlappingReduceWindow) {
+  absl::string_view module_string = R"(
+HloModule module
+
+add {
+  lhs = f32[] parameter(0)
+  rhs = f32[] parameter(1)
+  ROOT add = f32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  a = f32[64,1024]{1,0} parameter(0)
+  e = f32[64,1024]{1,0} exponential(a)
+  init = f32[] constant(0)
+  ROOT w = f32[64,961]{1,0} reduce-window(e, init),
+    window={size=1x64 stride=1x1}, to_apply=add
+}
+)";
+
+  ASSERT_OK_AND_ASSIGN(auto module,
+                       ParseAndReturnVerifiedModule(module_string));
+  ASSERT_OK_AND_ASSIGN(bool fused_something,
+                       CpuInstructionFusion(&alias_info_).Run(module.get()));
+  EXPECT_FALSE(fused_something);
+}
+
 TEST_F(OpcodeFusionTest, BigConstantNotInFusion) {
   absl::string_view module_string = R"(
 HloModule module
@@ -1431,5 +1888,108 @@ ENTRY main {
   EXPECT_FALSE(EntryHasStandaloneOp(*module, HloOpcode::kNegate));
 }
 
+TEST_F(InstructionFusionTest, UsersShareProducerReadAtTheSameIndex) {
+  // `e1` and `e2` read `p` at the same index. A kernel that reads them at the
+  // same index, too, computes `p` once; one that reads other rows of them
+  // computes `p` for each.
+  constexpr absl::string_view kModule = R"(
+HloModule module
+
+add_rows {
+  a = f32[4,1024]{1,0} parameter(0)
+  b = f32[4,1024]{1,0} parameter(1)
+  ROOT add = f32[4,1024]{1,0} add(a, b)
+}
+
+add_other_rows {
+  a = f32[4,1024]{1,0} parameter(0)
+  b = f32[4,1024]{1,0} parameter(1)
+  row_a = f32[1,1024]{1,0} slice(a), slice={[0:1], [0:1024]}
+  row_b = f32[1,1024]{1,0} slice(b), slice={[1:2], [0:1024]}
+  ROOT add = f32[1,1024]{1,0} add(row_a, row_b)
+}
+
+ENTRY main {
+  x = f32[4,1024]{1,0} parameter(0)
+  p = f32[4,1024]{1,0} exponential(x)
+  e1 = f32[4,1024]{1,0} negate(p)
+  e2 = f32[4,1024]{1,0} abs(p)
+  ROOT $0
+}
+)";
+  auto e2_shares_with_e1 = [&](absl::string_view kernel) -> bool {
+    auto module =
+        ParseAndReturnVerifiedModule(absl::Substitute(kModule, kernel));
+    CHECK_OK(module.status());
+    const HloInstruction* p = FindInstruction(module->get(), "p");
+    absl::flat_hash_set<const HloInstruction*> charged;
+    CpuInstructionFusion::ReadsChargedElements(
+        *p, *FindInstruction(module->get(), "e1"), {}, charged);
+    absl::flat_hash_set<const HloInstruction*> reach;
+    return CpuInstructionFusion::ReadsChargedElements(
+        *p, *FindInstruction(module->get(), "e2"), charged, reach);
+  };
+  EXPECT_TRUE(e2_shares_with_e1("m = f32[4,1024]{1,0} multiply(e1, e2)"));
+  EXPECT_TRUE(e2_shares_with_e1(
+      "f = f32[4,1024]{1,0} fusion(e1, e2), kind=kLoop, calls=add_rows"));
+  EXPECT_FALSE(e2_shares_with_e1(
+      "g = f32[1,1024]{1,0} fusion(e1, e2), kind=kLoop, calls=add_other_rows"));
+}
+
+TEST_F(InstructionFusionTest, BroadcastEvaluatesOperandPerEnclosingLoop) {
+  // The kernel hoists the operand out of the loops over inner broadcast
+  // dimensions, and evaluates it once per iteration of outer ones. A reduction
+  // runs the reduced dimensions innermost.
+  constexpr absl::string_view kModule = R"(
+HloModule module
+
+add {
+  a = f32[] parameter(0)
+  b = f32[] parameter(1)
+  ROOT add = f32[] add(a, b)
+}
+
+ENTRY main {
+  x = f32[64,32]{1,0} parameter(0)
+  y = f32[$0]{$1} parameter(1)
+  zero = f32[] constant(0)
+  bcast = f32[$0]{$1} broadcast(x), dimensions={$2}
+  m = f32[$0]{$1} multiply(bcast, y)
+  ROOT $3
+}
+)";
+  auto evaluations = [&](absl::string_view shape, absl::string_view layout,
+                         absl::string_view dimensions,
+                         absl::string_view root) -> int64_t {
+    auto module = ParseAndReturnVerifiedModule(
+        absl::Substitute(kModule, shape, layout, dimensions, root));
+    CHECK_OK(module.status());
+    return CpuInstructionFusion::BroadcastEvaluations(
+        *FindInstruction(module->get(), "bcast"));
+  };
+  EXPECT_EQ(evaluations("64,32,3", "2,1,0", "0,1",
+                        "n = f32[64,32,3]{2,1,0} negate(m)"),
+            1);
+  EXPECT_EQ(evaluations("3,64,32", "2,1,0", "1,2",
+                        "n = f32[3,64,32]{2,1,0} negate(m)"),
+            3);
+  EXPECT_EQ(evaluations("64,3,32", "2,1,0", "0,2",
+                        "n = f32[64,3,32]{2,1,0} negate(m)"),
+            3);
+  // Layout {1,2,0} iterates dimension 1 innermost.
+  EXPECT_EQ(evaluations("64,3,32", "1,2,0", "0,2",
+                        "n = f32[64,3,32]{1,2,0} negate(m)"),
+            1);
+  EXPECT_EQ(evaluations("64,32,3", "2,1,0", "0,1",
+                        "r = f32[64,3]{1,0} reduce(m, zero), dimensions={1}, "
+                        "to_apply=add"),
+            3);
+  EXPECT_EQ(evaluations("64,32,3", "2,1,0", "0,1",
+                        "r = f32[64,32]{1,0} reduce(m, zero), dimensions={2}, "
+                        "to_apply=add"),
+            1);
+}
+
 }  // namespace
 }  // namespace xla::cpu
+

@@ -58,13 +58,13 @@ class FusionNodeIndexingEvaluation {
   absl::flat_hash_set<const HloInstruction*> RemoveFusionOperand(
       HloInstruction* fusion_operand);
 
- private:
   // We don't want to have too much code duplication, because it slows down the
   // compilation time. There is a tradeoff between compilation time and runtime.
   // This constant defines the maximum amount of times that we allow to emit the
   // same op (indexed with different index values).
   static const int64_t kAllowedCodeDuplication;
 
+ private:
   // Computes the 'indexing_users_' and 'index_usage_count_' maps based on the
   // current instructions inside the fusion node. Also updates
   // 'total_emitted_instructions_' accordingly.
