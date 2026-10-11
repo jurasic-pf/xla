@@ -858,6 +858,74 @@ bool CpuInstructionFusion::EstimateFusionIntoAllUsersIsFaster(
                                      /*copies=*/1);
 }
 
+// An unfused broadcast is fused into its users, which evaluate its operand
+// once per iteration of the loops over the broadcast dimensions that enclose
+// the innermost loop over an operand dimension. Code motion hoists the operand
+// out of the loops inside it. The kernel loops over the output in layout
+// order, and a reduction runs the reduced dimensions innermost.
+int64_t CpuInstructionFusion::BroadcastEvaluations(
+    const HloInstruction& broadcast) {
+  static constexpr int64_t kMaxVisited = 64;
+  const Shape& shape = broadcast.shape();
+  absl::Span<const int64_t> reduced;
+  absl::flat_hash_set<const HloInstruction*> visited = {&broadcast};
+  std::vector<std::pair<const HloInstruction*, const HloInstruction*>>
+      worklist = {{&broadcast, nullptr}};
+  while (!worklist.empty() && reduced.empty() &&
+         visited.size() < kMaxVisited) {
+    auto [instr, from] = worklist.back();
+    worklist.pop_back();
+    if (instr->opcode() == HloOpcode::kReduce) {
+      reduced = instr->dimensions();
+      continue;
+    }
+    if (instr->opcode() == HloOpcode::kFusion) {
+      for (int64_t i = 0; i < instr->operand_count(); ++i) {
+        const HloInstruction* parameter = instr->fused_parameter(i);
+        if (instr->operand(i) == from && visited.insert(parameter).second) {
+          worklist.push_back({parameter, instr});
+        }
+      }
+      continue;
+    }
+    if (instr != &broadcast && instr->opcode() != HloOpcode::kParameter &&
+        !(instr->IsElementwise() &&
+          ShapeUtil::SameDimensions(instr->shape(), shape))) {
+      continue;
+    }
+    for (const HloInstruction* next : instr->users()) {
+      if (visited.insert(next).second) {
+        worklist.push_back({next, instr});
+      }
+    }
+  }
+  // Loop order from the outermost loop to the innermost.
+  std::vector<int64_t> order;
+  for (int pass = 0; pass < 2; ++pass) {
+    for (int64_t i = 0; i < shape.dimensions().size(); ++i) {
+      const int64_t dim = LayoutUtil::HasLayout(shape)
+                              ? LayoutUtil::Major(shape.layout(), i)
+                              : i;
+      if (absl::c_linear_search(reduced, dim) == (pass == 1)) {
+        order.push_back(dim);
+      }
+    }
+  }
+  int64_t evaluations = 1;
+  int64_t enclosing = 1;
+  for (int64_t dim : order) {
+    if (shape.dimensions(dim) == 1) {
+      continue;
+    }
+    if (absl::c_linear_search(broadcast.dimensions(), dim)) {
+      evaluations = enclosing;
+    } else {
+      enclosing *= shape.dimensions(dim);
+    }
+  }
+  return evaluations;
+}
+
 CpuInstructionFusion::Destinations CpuInstructionFusion::FindDestinations(
     const HloInstruction& producer, const HloInstruction& user) {
   // Follows fusible elementwise users to the reductions and fusions they end
@@ -882,6 +950,10 @@ CpuInstructionFusion::Destinations CpuInstructionFusion::FindDestinations(
                instr->opcode() == HloOpcode::kReduce ||
                !instr->IsElementwise() || instr->user_count() == 0) {
       destinations.kernels.insert(instr);
+      if (instr->opcode() == HloOpcode::kBroadcast && instr->user_count() > 0) {
+        destinations.evaluations =
+            std::max(destinations.evaluations, BroadcastEvaluations(*instr));
+      }
       destinations.read_factor = std::max(
           {destinations.read_factor, path_factor,
            permutes ? CpuPerformanceModel::PermutedReadFactor(*instr)
@@ -1047,7 +1119,8 @@ bool CpuInstructionFusion::RecomputeInEachUserIsFaster(
     time_unfused += CpuPerformanceModel::ReadTimeWithDRAMHeuristic(
         device_info, bytes * read_factor,
         std::llround(bytes * utilization * read_factor));
-    int64_t user_copies = user == consumer ? copies : 1;
+    int64_t user_copies =
+        (user == consumer ? copies : 1) * destinations.evaluations;
     const int64_t user_flops = std::llround(flops * utilization * user_copies);
     const int64_t user_input_bytes = new_input_bytes(*user, destinations);
     absl::Duration read_time = CpuPerformanceModel::ReadTimeWithDRAMHeuristic(

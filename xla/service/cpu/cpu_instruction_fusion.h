@@ -46,6 +46,10 @@ class CpuInstructionFusion : public InstructionFusion {
         performance_model_(device_info) {}
   ~CpuInstructionFusion() override = default;
 
+  // Returns how often the kernels that an unfused `broadcast` is fused into
+  // evaluate each element of its operand.
+  static int64_t BroadcastEvaluations(const HloInstruction& broadcast);
+
   // Returns whether every path from `user` reaches an instruction in
   // `charged` at the index it reads `producer` at, i.e. through elementwise
   // instructions of the producer's dimensions, also within fusions. The
@@ -100,6 +104,9 @@ class CpuInstructionFusion : public InstructionFusion {
   struct Destinations {
     int64_t read_factor;
     int64_t outputs;
+    // How often the kernels evaluate each element of the producer, e.g. once
+    // per element of a broadcast of it along an outer dimension.
+    int64_t evaluations = 1;
     absl::flat_hash_set<const HloInstruction*> kernels;
   };
   Destinations FindDestinations(const HloInstruction& producer,

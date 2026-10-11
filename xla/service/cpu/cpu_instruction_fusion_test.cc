@@ -1936,6 +1936,60 @@ ENTRY main {
       "g = f32[1,1024]{1,0} fusion(e1, e2), kind=kLoop, calls=add_other_rows"));
 }
 
+TEST_F(InstructionFusionTest, BroadcastEvaluatesOperandPerEnclosingLoop) {
+  // The kernel hoists the operand out of the loops over inner broadcast
+  // dimensions, and evaluates it once per iteration of outer ones. A reduction
+  // runs the reduced dimensions innermost.
+  constexpr absl::string_view kModule = R"(
+HloModule module
+
+add {
+  a = f32[] parameter(0)
+  b = f32[] parameter(1)
+  ROOT add = f32[] add(a, b)
+}
+
+ENTRY main {
+  x = f32[64,32]{1,0} parameter(0)
+  y = f32[$0]{$1} parameter(1)
+  zero = f32[] constant(0)
+  bcast = f32[$0]{$1} broadcast(x), dimensions={$2}
+  m = f32[$0]{$1} multiply(bcast, y)
+  ROOT $3
+}
+)";
+  auto evaluations = [&](absl::string_view shape, absl::string_view layout,
+                         absl::string_view dimensions,
+                         absl::string_view root) -> int64_t {
+    auto module = ParseAndReturnVerifiedModule(
+        absl::Substitute(kModule, shape, layout, dimensions, root));
+    CHECK_OK(module.status());
+    return CpuInstructionFusion::BroadcastEvaluations(
+        *FindInstruction(module->get(), "bcast"));
+  };
+  EXPECT_EQ(evaluations("64,32,3", "2,1,0", "0,1",
+                        "n = f32[64,32,3]{2,1,0} negate(m)"),
+            1);
+  EXPECT_EQ(evaluations("3,64,32", "2,1,0", "1,2",
+                        "n = f32[3,64,32]{2,1,0} negate(m)"),
+            3);
+  EXPECT_EQ(evaluations("64,3,32", "2,1,0", "0,2",
+                        "n = f32[64,3,32]{2,1,0} negate(m)"),
+            3);
+  // Layout {1,2,0} iterates dimension 1 innermost.
+  EXPECT_EQ(evaluations("64,3,32", "1,2,0", "0,2",
+                        "n = f32[64,3,32]{1,2,0} negate(m)"),
+            1);
+  EXPECT_EQ(evaluations("64,32,3", "2,1,0", "0,1",
+                        "r = f32[64,3]{1,0} reduce(m, zero), dimensions={1}, "
+                        "to_apply=add"),
+            3);
+  EXPECT_EQ(evaluations("64,32,3", "2,1,0", "0,1",
+                        "r = f32[64,32]{1,0} reduce(m, zero), dimensions={2}, "
+                        "to_apply=add"),
+            1);
+}
+
 }  // namespace
 }  // namespace xla::cpu
 
