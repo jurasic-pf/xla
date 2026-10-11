@@ -25,10 +25,13 @@ limitations under the License.
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/log/check.h"
 #include "absl/status/status_matchers.h"  // IWYU pragma: keep
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/strings/substitute.h"
 #include "absl/types/span.h"
 #include "xla/hlo/analysis/alias_info.h"
 #include "xla/hlo/ir/hlo_instruction.h"
@@ -1885,5 +1888,54 @@ ENTRY main {
   EXPECT_FALSE(EntryHasStandaloneOp(*module, HloOpcode::kNegate));
 }
 
+TEST_F(InstructionFusionTest, UsersShareProducerReadAtTheSameIndex) {
+  // `e1` and `e2` read `p` at the same index. A kernel that reads them at the
+  // same index, too, computes `p` once; one that reads other rows of them
+  // computes `p` for each.
+  constexpr absl::string_view kModule = R"(
+HloModule module
+
+add_rows {
+  a = f32[4,1024]{1,0} parameter(0)
+  b = f32[4,1024]{1,0} parameter(1)
+  ROOT add = f32[4,1024]{1,0} add(a, b)
+}
+
+add_other_rows {
+  a = f32[4,1024]{1,0} parameter(0)
+  b = f32[4,1024]{1,0} parameter(1)
+  row_a = f32[1,1024]{1,0} slice(a), slice={[0:1], [0:1024]}
+  row_b = f32[1,1024]{1,0} slice(b), slice={[1:2], [0:1024]}
+  ROOT add = f32[1,1024]{1,0} add(row_a, row_b)
+}
+
+ENTRY main {
+  x = f32[4,1024]{1,0} parameter(0)
+  p = f32[4,1024]{1,0} exponential(x)
+  e1 = f32[4,1024]{1,0} negate(p)
+  e2 = f32[4,1024]{1,0} abs(p)
+  ROOT $0
+}
+)";
+  auto e2_shares_with_e1 = [&](absl::string_view kernel) -> bool {
+    auto module =
+        ParseAndReturnVerifiedModule(absl::Substitute(kModule, kernel));
+    CHECK_OK(module.status());
+    const HloInstruction* p = FindInstruction(module->get(), "p");
+    absl::flat_hash_set<const HloInstruction*> charged;
+    CpuInstructionFusion::ReadsChargedElements(
+        *p, *FindInstruction(module->get(), "e1"), {}, charged);
+    absl::flat_hash_set<const HloInstruction*> reach;
+    return CpuInstructionFusion::ReadsChargedElements(
+        *p, *FindInstruction(module->get(), "e2"), charged, reach);
+  };
+  EXPECT_TRUE(e2_shares_with_e1("m = f32[4,1024]{1,0} multiply(e1, e2)"));
+  EXPECT_TRUE(e2_shares_with_e1(
+      "f = f32[4,1024]{1,0} fusion(e1, e2), kind=kLoop, calls=add_rows"));
+  EXPECT_FALSE(e2_shares_with_e1(
+      "g = f32[1,1024]{1,0} fusion(e1, e2), kind=kLoop, calls=add_other_rows"));
+}
+
 }  // namespace
 }  // namespace xla::cpu
+

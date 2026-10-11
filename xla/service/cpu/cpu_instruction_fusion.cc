@@ -909,6 +909,54 @@ CpuInstructionFusion::Destinations CpuInstructionFusion::FindDestinations(
   return destinations;
 }
 
+bool CpuInstructionFusion::ReadsChargedElements(
+    const HloInstruction& producer, const HloInstruction& user,
+    const absl::flat_hash_set<const HloInstruction*>& charged,
+    absl::flat_hash_set<const HloInstruction*>& reach) {
+  bool covered = true;
+  absl::flat_hash_set<const HloInstruction*> visited = {&user};
+  std::vector<std::pair<const HloInstruction*, const HloInstruction*>>
+      worklist = {{&user, &producer}};
+  while (!worklist.empty()) {
+    auto [instr, from] = worklist.back();
+    worklist.pop_back();
+    if (visited.size() >= kMaxRecomputedChain) {
+      covered = false;
+      continue;
+    }
+    if (instr->opcode() == HloOpcode::kFusion) {
+      for (int64_t i = 0; i < instr->operand_count(); ++i) {
+        const HloInstruction* parameter = instr->fused_parameter(i);
+        if (instr->operand(i) == from && visited.insert(parameter).second) {
+          worklist.push_back({parameter, instr});
+        }
+      }
+      continue;
+    }
+    if (instr->opcode() != HloOpcode::kParameter &&
+        !(instr->IsElementwise() &&
+          ShapeUtil::SameDimensions(instr->shape(), producer.shape()))) {
+      covered = false;
+      continue;
+    }
+    if (charged.contains(instr)) {
+      continue;
+    }
+    reach.insert(instr);
+    // The value leaves the kernel.
+    if (instr->user_count() == 0) {
+      covered = false;
+      continue;
+    }
+    for (const HloInstruction* next : instr->users()) {
+      if (visited.insert(next).second) {
+        worklist.push_back({next, instr});
+      }
+    }
+  }
+  return covered;
+}
+
 bool CpuInstructionFusion::RecomputedChainHasCompute(
     const HloInstruction& producer) {
   if (cost_analysis_ == nullptr) {
@@ -980,7 +1028,16 @@ bool CpuInstructionFusion::RecomputeInEachUserIsFaster(
           flops, transcendental_flops, input_bytes + bytes)) +
       performance_model_.MaterializeFaultTime(producer, bytes);
   absl::Duration time_fused;
+  absl::flat_hash_set<const HloInstruction*> charged;
   for (const HloInstruction* user : producer.users()) {
+    // Fused instructions that read the producer at the same index share its
+    // value; slices or broadcasts in between read other elements.
+    absl::flat_hash_set<const HloInstruction*> reach;
+    const bool shared = ReadsChargedElements(producer, *user, charged, reach);
+    charged.insert(reach.begin(), reach.end());
+    if (user != consumer && shared) {
+      continue;
+    }
     float utilization = CpuPerformanceModel::GetOperandUtilization(
         cost_analysis_.get(), user, &producer);
     // The kernels that `user` is fused into, e.g. reductions, may read the

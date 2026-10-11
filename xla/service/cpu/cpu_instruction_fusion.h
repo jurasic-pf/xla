@@ -46,6 +46,16 @@ class CpuInstructionFusion : public InstructionFusion {
         performance_model_(device_info) {}
   ~CpuInstructionFusion() override = default;
 
+  // Returns whether every path from `user` reaches an instruction in
+  // `charged` at the index it reads `producer` at, i.e. through elementwise
+  // instructions of the producer's dimensions, also within fusions. The
+  // emitter reuses the producer's value there. Adds the instructions reached at
+  // that index to `reach`.
+  static bool ReadsChargedElements(
+      const HloInstruction& producer, const HloInstruction& user,
+      const absl::flat_hash_set<const HloInstruction*>& charged,
+      absl::flat_hash_set<const HloInstruction*>& reach);
+
   // Returns the threshold for a constant to be considered a large constant.
   static constexpr int64_t GetLargeConstantThresholdBytes() {
     constexpr int64_t kLargeConstantThresholdBytes = 10000;
