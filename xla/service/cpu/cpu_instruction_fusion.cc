@@ -55,6 +55,21 @@ namespace cpu {
 
 namespace {
 
+// Reductions over at most this many elements are unrolled by LLVM.
+constexpr int64_t kMaxUnrolledReduction = 8;
+
+int64_t ReducedElements(const HloInstruction& reduce) {
+  int64_t elements = 1;
+  for (int64_t dim : reduce.dimensions()) {
+    elements *= reduce.operand(0)->shape().dimensions(dim);
+  }
+  return elements;
+}
+
+// Limits the copies of a producer in one fusion, which grow code size and
+// compile time.
+constexpr int64_t kMaxEmittedCopies = 64;
+
 // A reduce-window whose windows tile its input exactly -- no overlap, no
 // padding, no dilation -- reads every input element exactly once. Fusing a
 // producer into such a window therefore duplicates no work, so it is as safe
@@ -574,12 +589,18 @@ FusionDecision CpuInstructionFusion::ShouldFuse(HloInstruction* consumer,
     // Below the limit, CodeDuplicationTooHigh only rejects emitting an op that
     // invalidates the elemental IR emitter's cache, e.g. a reduce, more than
     // once. Each copy recomputes the op, which the performance model accounts
-    // for.
-    if (evaluation.CodeDuplicationTooHigh(producer) &&
-        (evaluation.EvaluateEmittedInstructions(producer) >
-             FusionNodeIndexingEvaluation::kAllowedCodeDuplication ||
-         !FusionIntoAllUsersIsFaster(*producer))) {
-      return FusionDecision::Forbid("Code duplication too high");
+    // for. Above the limit, every copy is charged. That is an upper bound:
+    // LLVM merges copies that compute the same element.
+    if (evaluation.CodeDuplicationTooHigh(producer)) {
+      int64_t copies = evaluation.EvaluateEmittedInstructions(producer);
+      bool fuse =
+          copies <= FusionNodeIndexingEvaluation::kAllowedCodeDuplication
+              ? FusionIntoAllUsersIsFaster(*producer)
+              : copies <= kMaxEmittedCopies && cost_analysis_ != nullptr &&
+                    RecomputeInEachUserIsFaster(*producer, consumer, copies);
+      if (!fuse) {
+        return FusionDecision::Forbid("Code duplication too high");
+      }
     }
   }
 
@@ -722,9 +743,16 @@ bool CpuInstructionFusion::EstimateFusionIntoAllUsersIsFaster(
                                             users);
     return run_times.time_fused <= run_times.time_unfused;
   }
-  // With several users, the operands of `producer` that do not fit into the
-  // cache are recomputed in each user as well. Compares materializing
-  // `producer` with recomputing it and these operands in each user. The work
+  return RecomputeInEachUserIsFaster(producer, /*consumer=*/nullptr,
+                                     /*copies=*/1);
+}
+
+bool CpuInstructionFusion::RecomputeInEachUserIsFaster(
+    const HloInstruction& producer, const HloInstruction* consumer,
+    int64_t copies) {
+  // The operands of `producer` that do not fit into the cache are recomputed
+  // in each user as well. Compares materializing `producer` with recomputing
+  // it and these operands in each user, `copies` times in `consumer`. The work
   // of the users themselves is the same in both cases.
   absl::flat_hash_set<const HloInstruction*> chain = RecomputedChain(producer);
   int64_t flops = 0;
@@ -754,9 +782,10 @@ bool CpuInstructionFusion::EstimateFusionIntoAllUsersIsFaster(
         cost_analysis_.get(), user, &producer);
     time_unfused += CpuPerformanceModel::ReadTimeWithDRAMHeuristic(
         device_info, bytes, std::llround(bytes * utilization));
+    int64_t user_copies = user == consumer ? copies : 1;
     time_fused += CpuPerformanceModel::CombineComputeAndMemoryAccessTime(
-        CpuPerformanceModel::ComputeTime(device_info,
-                                         std::llround(flops * utilization)),
+        CpuPerformanceModel::ComputeTime(
+            device_info, std::llround(flops * utilization * user_copies)),
         read_inputs);
   }
   VLOG(3) << "Producer: " << producer.name() << ", chain size: " << chain.size()
@@ -768,7 +797,11 @@ bool CpuInstructionFusion::EstimateFusionIntoAllUsersIsFaster(
 absl::flat_hash_set<const HloInstruction*>
 CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) const {
   // Operands that do not fit into the cache are fused into each user together
-  // with the producer. Smaller operands are materialized and read instead.
+  // with the producer. Smaller operands are materialized and read instead, and
+  // so are reductions: each user would emit its own copy of the reduction loop,
+  // which CodeDuplicationTooHigh rejects unless it is cheap. A reduction over a
+  // few elements, e.g. a norm over xyz, is cheap and is recomputed like any
+  // other op.
   absl::flat_hash_set<const HloInstruction*> chain = {&producer};
   std::vector<const HloInstruction*> worklist = {&producer};
   while (!worklist.empty()) {
@@ -776,6 +809,9 @@ CpuInstructionFusion::RecomputedChain(const HloInstruction& producer) const {
     worklist.pop_back();
     for (const HloInstruction* operand : instr->operands()) {
       if (chain.contains(operand) || !CanBeLoopFused(*operand) ||
+          (operand->opcode() == HloOpcode::kReduce &&
+           ReducedElements(*operand) > kMaxUnrolledReduction) ||
+          operand->opcode() == HloOpcode::kReduceWindow ||
           !operand->shape().IsArray() ||
           ShapeUtil::ByteSizeOfElements(operand->shape()) <
               performance_model_.device_info().l2_cache_size()) {
