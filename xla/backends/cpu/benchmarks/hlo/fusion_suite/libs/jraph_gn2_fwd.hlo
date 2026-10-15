@@ -1,0 +1,282 @@
+HloModule jit_fwd, entry_computation_layout={(f32[192,64]{1,0}, f32[64]{0}, f32[64,64]{1,0}, f32[64]{0}, f32[128,64]{1,0}, /*index=5*/f32[64]{0}, f32[64,64]{1,0}, f32[64]{0}, f32[192,64]{1,0}, f32[64]{0}, /*index=10*/f32[64,64]{1,0}, f32[64]{0}, f32[128,64]{1,0}, f32[64]{0}, f32[64,64]{1,0}, /*index=15*/f32[64]{0}, f32[50000,64]{1,0}, f32[500000,64]{1,0}, s32[500000]{0}, s32[500000]{0})->f32[50000,64]{1,0}}
+
+relu.1 {
+  Arg_0.1 = f32[500000,64]{1,0} parameter(0)
+  constant.9 = f32[] constant(0)
+  max.2 = f32[500000,64]{1,0} broadcast(constant.9), dimensions={}
+  ROOT max.3 = f32[500000,64]{1,0} maximum(Arg_0.1, max.2)
+}
+
+region_0.2 {
+  reduce_sum.3 = f32[] parameter(0)
+  reduce_sum.4 = f32[] parameter(1)
+  ROOT reduce_sum.5 = f32[] add(reduce_sum.3, reduce_sum.4)
+}
+
+region_1.3 {
+  reduce_sum.10 = f32[] parameter(0)
+  reduce_sum.11 = f32[] parameter(1)
+  ROOT reduce_sum.12 = f32[] add(reduce_sum.10, reduce_sum.11)
+}
+
+region_2.4 {
+  scatter-add.2 = f32[] parameter(0)
+  scatter-add.3 = f32[] parameter(1)
+  ROOT add.13 = f32[] add(scatter-add.2, scatter-add.3)
+}
+
+relu_0.5 {
+  Arg_0.3 = f32[50000,64]{1,0} parameter(0)
+  constant.11 = f32[] constant(0)
+  max.6 = f32[50000,64]{1,0} broadcast(constant.11), dimensions={}
+  ROOT max.7 = f32[50000,64]{1,0} maximum(Arg_0.3, max.6)
+}
+
+region_3.6 {
+  reduce_sum.17 = f32[] parameter(0)
+  reduce_sum.18 = f32[] parameter(1)
+  ROOT reduce_sum.19 = f32[] add(reduce_sum.17, reduce_sum.18)
+}
+
+region_4.7 {
+  reduce_sum.24 = f32[] parameter(0)
+  reduce_sum.25 = f32[] parameter(1)
+  ROOT reduce_sum.26 = f32[] add(reduce_sum.24, reduce_sum.25)
+}
+
+region_5.8 {
+  reduce_sum.31 = f32[] parameter(0)
+  reduce_sum.32 = f32[] parameter(1)
+  ROOT reduce_sum.33 = f32[] add(reduce_sum.31, reduce_sum.32)
+}
+
+region_6.9 {
+  reduce_sum.38 = f32[] parameter(0)
+  reduce_sum.39 = f32[] parameter(1)
+  ROOT reduce_sum.40 = f32[] add(reduce_sum.38, reduce_sum.39)
+}
+
+region_7.10 {
+  scatter-add.7 = f32[] parameter(0)
+  scatter-add.8 = f32[] parameter(1)
+  ROOT add.37 = f32[] add(scatter-add.7, scatter-add.8)
+}
+
+region_8.11 {
+  reduce_sum.45 = f32[] parameter(0)
+  reduce_sum.46 = f32[] parameter(1)
+  ROOT reduce_sum.47 = f32[] add(reduce_sum.45, reduce_sum.46)
+}
+
+region_9.12 {
+  reduce_sum.52 = f32[] parameter(0)
+  reduce_sum.53 = f32[] parameter(1)
+  ROOT reduce_sum.54 = f32[] add(reduce_sum.52, reduce_sum.53)
+}
+
+ENTRY main.13 {
+  graph_nodes.1 = f32[50000,64]{1,0} parameter(16)
+  constant.14 = f32[] constant(0)
+  broadcast.9 = f32[50000,64]{1,0} broadcast(constant.14), dimensions={}
+  graph_receivers.1 = s32[500000]{0} parameter(18)
+  broadcast_in_dim.28 = s32[500000,1]{1,0} reshape(graph_receivers.1)
+  graph_edges.1 = f32[500000,64]{1,0} parameter(17)
+  graph_senders.1 = s32[500000]{0} parameter(19)
+  constant.19 = s32[] constant(0)
+  broadcast.13 = s32[500000]{0} broadcast(constant.19), dimensions={}
+  lt.4 = pred[500000]{0} compare(graph_senders.1, broadcast.13), direction=LT
+  constant.17 = s32[] constant(50000)
+  broadcast.12 = s32[500000]{0} broadcast(constant.17), dimensions={}
+  add.48 = s32[500000]{0} add(graph_senders.1, broadcast.12)
+  select_n.4 = s32[500000]{0} select(lt.4, add.48, graph_senders.1)
+  broadcast_in_dim.22 = s32[500000,1]{1,0} reshape(select_n.4)
+  gather.4 = f32[500000,64]{1,0} gather(graph_nodes.1, broadcast_in_dim.22), offset_dims={1}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1,64}
+  lt.5 = pred[500000]{0} compare(graph_receivers.1, broadcast.13), direction=LT
+  add.49 = s32[500000]{0} add(graph_receivers.1, broadcast.12)
+  select_n.5 = s32[500000]{0} select(lt.5, add.49, graph_receivers.1)
+  broadcast_in_dim.23 = s32[500000,1]{1,0} reshape(select_n.5)
+  gather.5 = f32[500000,64]{1,0} gather(graph_nodes.1, broadcast_in_dim.23), offset_dims={1}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1,64}
+  concatenate.4 = f32[500000,192]{1,0} concatenate(graph_edges.1, gather.4, gather.5), dimensions={1}
+  params_0___edge___0__0_.1 = f32[192,64]{1,0} parameter(0)
+  dot_general.8 = f32[500000,64]{1,0} dot(concatenate.4, params_0___edge___0__0_.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  params_0___edge___0__1_.1 = f32[64]{0} parameter(1)
+  broadcast_in_dim.24 = f32[1,64]{1,0} reshape(params_0___edge___0__1_.1)
+  add.50 = f32[1,64]{1,0} broadcast(broadcast_in_dim.24), dimensions={0,1}
+  add.51 = f32[64]{0} reshape(add.50)
+  add.52 = f32[500000,64]{1,0} broadcast(add.51), dimensions={1}
+  add.53 = f32[500000,64]{1,0} add(dot_general.8, add.52)
+  jit_relu_.4 = f32[500000,64]{1,0} call(add.53), to_apply=relu.1
+  params_0___edge___1__0_.1 = f32[64,64]{1,0} parameter(2)
+  dot_general.9 = f32[500000,64]{1,0} dot(jit_relu_.4, params_0___edge___1__0_.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  params_0___edge___1__1_.1 = f32[64]{0} parameter(3)
+  broadcast_in_dim.25 = f32[1,64]{1,0} reshape(params_0___edge___1__1_.1)
+  add.54 = f32[1,64]{1,0} broadcast(broadcast_in_dim.25), dimensions={0,1}
+  add.55 = f32[64]{0} reshape(add.54)
+  add.56 = f32[500000,64]{1,0} broadcast(add.55), dimensions={1}
+  add.57 = f32[500000,64]{1,0} add(dot_general.9, add.56)
+  constant.18 = f32[] constant(0)
+  reduce_sum.56 = f32[500000]{0} reduce(add.57, constant.18), dimensions={1}, to_apply=region_0.2
+  broadcast_in_dim.26 = f32[500000,1]{1,0} reshape(reduce_sum.56)
+  constant.16 = f32[] constant(64)
+  broadcast.11 = f32[500000,1]{1,0} broadcast(constant.16), dimensions={}
+  div.8 = f32[500000,1]{1,0} divide(broadcast_in_dim.26, broadcast.11)
+  sub.36 = f32[500000,1]{1,0} broadcast(div.8), dimensions={0,1}
+  sub.37 = f32[500000]{0} reshape(sub.36)
+  sub.38 = f32[500000,64]{1,0} broadcast(sub.37), dimensions={0}
+  sub.39 = f32[500000,64]{1,0} subtract(add.57, sub.38)
+  sub.32 = f32[500000,1]{1,0} broadcast(div.8), dimensions={0,1}
+  sub.33 = f32[500000]{0} reshape(sub.32)
+  sub.34 = f32[500000,64]{1,0} broadcast(sub.33), dimensions={0}
+  sub.35 = f32[500000,64]{1,0} subtract(add.57, sub.34)
+  integer_pow.4 = f32[500000,64]{1,0} multiply(sub.35, sub.35)
+  reduce_sum.57 = f32[500000]{0} reduce(integer_pow.4, constant.18), dimensions={1}, to_apply=region_1.3
+  broadcast_in_dim.27 = f32[500000,1]{1,0} reshape(reduce_sum.57)
+  div.9 = f32[500000,1]{1,0} divide(broadcast_in_dim.27, broadcast.11)
+  constant.15 = f32[] constant(1e-05)
+  broadcast.10 = f32[500000,1]{1,0} broadcast(constant.15), dimensions={}
+  add.58 = f32[500000,1]{1,0} add(div.9, broadcast.10)
+  rsqrt.4 = f32[500000,1]{1,0} rsqrt(add.58)
+  mul.16 = f32[500000,1]{1,0} broadcast(rsqrt.4), dimensions={0,1}
+  mul.17 = f32[500000]{0} reshape(mul.16)
+  mul.18 = f32[500000,64]{1,0} broadcast(mul.17), dimensions={0}
+  mul.19 = f32[500000,64]{1,0} multiply(sub.39, mul.18)
+  add.59 = f32[500000,64]{1,0} add(graph_edges.1, mul.19)
+  scatter-add.10 = f32[50000,64]{1,0} scatter(broadcast.9, broadcast_in_dim.28, add.59), update_window_dims={1}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=region_2.4
+  concatenate.5 = f32[50000,128]{1,0} concatenate(graph_nodes.1, scatter-add.10), dimensions={1}
+  params_0___node___0__0_.1 = f32[128,64]{1,0} parameter(4)
+  dot_general.10 = f32[50000,64]{1,0} dot(concatenate.5, params_0___node___0__0_.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  params_0___node___0__1_.1 = f32[64]{0} parameter(5)
+  broadcast_in_dim.29 = f32[1,64]{1,0} reshape(params_0___node___0__1_.1)
+  add.60 = f32[1,64]{1,0} broadcast(broadcast_in_dim.29), dimensions={0,1}
+  add.61 = f32[64]{0} reshape(add.60)
+  add.62 = f32[50000,64]{1,0} broadcast(add.61), dimensions={1}
+  add.63 = f32[50000,64]{1,0} add(dot_general.10, add.62)
+  jit_relu_.5 = f32[50000,64]{1,0} call(add.63), to_apply=relu_0.5
+  params_0___node___1__0_.1 = f32[64,64]{1,0} parameter(6)
+  dot_general.11 = f32[50000,64]{1,0} dot(jit_relu_.5, params_0___node___1__0_.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  params_0___node___1__1_.1 = f32[64]{0} parameter(7)
+  broadcast_in_dim.30 = f32[1,64]{1,0} reshape(params_0___node___1__1_.1)
+  add.64 = f32[1,64]{1,0} broadcast(broadcast_in_dim.30), dimensions={0,1}
+  add.65 = f32[64]{0} reshape(add.64)
+  add.66 = f32[50000,64]{1,0} broadcast(add.65), dimensions={1}
+  add.67 = f32[50000,64]{1,0} add(dot_general.11, add.66)
+  reduce_sum.58 = f32[50000]{0} reduce(add.67, constant.18), dimensions={1}, to_apply=region_3.6
+  broadcast_in_dim.31 = f32[50000,1]{1,0} reshape(reduce_sum.58)
+  constant.13 = f32[] constant(64)
+  broadcast.8 = f32[50000,1]{1,0} broadcast(constant.13), dimensions={}
+  div.10 = f32[50000,1]{1,0} divide(broadcast_in_dim.31, broadcast.8)
+  sub.44 = f32[50000,1]{1,0} broadcast(div.10), dimensions={0,1}
+  sub.45 = f32[50000]{0} reshape(sub.44)
+  sub.46 = f32[50000,64]{1,0} broadcast(sub.45), dimensions={0}
+  sub.47 = f32[50000,64]{1,0} subtract(add.67, sub.46)
+  sub.40 = f32[50000,1]{1,0} broadcast(div.10), dimensions={0,1}
+  sub.41 = f32[50000]{0} reshape(sub.40)
+  sub.42 = f32[50000,64]{1,0} broadcast(sub.41), dimensions={0}
+  sub.43 = f32[50000,64]{1,0} subtract(add.67, sub.42)
+  integer_pow.5 = f32[50000,64]{1,0} multiply(sub.43, sub.43)
+  reduce_sum.59 = f32[50000]{0} reduce(integer_pow.5, constant.18), dimensions={1}, to_apply=region_4.7
+  broadcast_in_dim.32 = f32[50000,1]{1,0} reshape(reduce_sum.59)
+  div.11 = f32[50000,1]{1,0} divide(broadcast_in_dim.32, broadcast.8)
+  constant.12 = f32[] constant(1e-05)
+  broadcast.7 = f32[50000,1]{1,0} broadcast(constant.12), dimensions={}
+  add.68 = f32[50000,1]{1,0} add(div.11, broadcast.7)
+  rsqrt.5 = f32[50000,1]{1,0} rsqrt(add.68)
+  mul.20 = f32[50000,1]{1,0} broadcast(rsqrt.5), dimensions={0,1}
+  mul.21 = f32[50000]{0} reshape(mul.20)
+  mul.22 = f32[50000,64]{1,0} broadcast(mul.21), dimensions={0}
+  mul.23 = f32[50000,64]{1,0} multiply(sub.47, mul.22)
+  add.69 = f32[50000,64]{1,0} add(graph_nodes.1, mul.23)
+  broadcast_in_dim.39 = s32[500000,1]{1,0} reshape(graph_receivers.1)
+  lt.6 = pred[500000]{0} compare(graph_senders.1, broadcast.13), direction=LT
+  add.70 = s32[500000]{0} add(graph_senders.1, broadcast.12)
+  select_n.6 = s32[500000]{0} select(lt.6, add.70, graph_senders.1)
+  broadcast_in_dim.33 = s32[500000,1]{1,0} reshape(select_n.6)
+  gather.6 = f32[500000,64]{1,0} gather(add.69, broadcast_in_dim.33), offset_dims={1}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1,64}
+  lt.7 = pred[500000]{0} compare(graph_receivers.1, broadcast.13), direction=LT
+  add.71 = s32[500000]{0} add(graph_receivers.1, broadcast.12)
+  select_n.7 = s32[500000]{0} select(lt.7, add.71, graph_receivers.1)
+  broadcast_in_dim.34 = s32[500000,1]{1,0} reshape(select_n.7)
+  gather.7 = f32[500000,64]{1,0} gather(add.69, broadcast_in_dim.34), offset_dims={1}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1,64}
+  concatenate.6 = f32[500000,192]{1,0} concatenate(add.59, gather.6, gather.7), dimensions={1}
+  params_1___edge___0__0_.1 = f32[192,64]{1,0} parameter(8)
+  dot_general.12 = f32[500000,64]{1,0} dot(concatenate.6, params_1___edge___0__0_.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  params_1___edge___0__1_.1 = f32[64]{0} parameter(9)
+  broadcast_in_dim.35 = f32[1,64]{1,0} reshape(params_1___edge___0__1_.1)
+  add.72 = f32[1,64]{1,0} broadcast(broadcast_in_dim.35), dimensions={0,1}
+  add.73 = f32[64]{0} reshape(add.72)
+  add.74 = f32[500000,64]{1,0} broadcast(add.73), dimensions={1}
+  add.75 = f32[500000,64]{1,0} add(dot_general.12, add.74)
+  jit_relu_.6 = f32[500000,64]{1,0} call(add.75), to_apply=relu.1
+  params_1___edge___1__0_.1 = f32[64,64]{1,0} parameter(10)
+  dot_general.13 = f32[500000,64]{1,0} dot(jit_relu_.6, params_1___edge___1__0_.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  params_1___edge___1__1_.1 = f32[64]{0} parameter(11)
+  broadcast_in_dim.36 = f32[1,64]{1,0} reshape(params_1___edge___1__1_.1)
+  add.76 = f32[1,64]{1,0} broadcast(broadcast_in_dim.36), dimensions={0,1}
+  add.77 = f32[64]{0} reshape(add.76)
+  add.78 = f32[500000,64]{1,0} broadcast(add.77), dimensions={1}
+  add.79 = f32[500000,64]{1,0} add(dot_general.13, add.78)
+  reduce_sum.60 = f32[500000]{0} reduce(add.79, constant.18), dimensions={1}, to_apply=region_5.8
+  broadcast_in_dim.37 = f32[500000,1]{1,0} reshape(reduce_sum.60)
+  div.12 = f32[500000,1]{1,0} divide(broadcast_in_dim.37, broadcast.11)
+  sub.52 = f32[500000,1]{1,0} broadcast(div.12), dimensions={0,1}
+  sub.53 = f32[500000]{0} reshape(sub.52)
+  sub.54 = f32[500000,64]{1,0} broadcast(sub.53), dimensions={0}
+  sub.55 = f32[500000,64]{1,0} subtract(add.79, sub.54)
+  sub.48 = f32[500000,1]{1,0} broadcast(div.12), dimensions={0,1}
+  sub.49 = f32[500000]{0} reshape(sub.48)
+  sub.50 = f32[500000,64]{1,0} broadcast(sub.49), dimensions={0}
+  sub.51 = f32[500000,64]{1,0} subtract(add.79, sub.50)
+  integer_pow.6 = f32[500000,64]{1,0} multiply(sub.51, sub.51)
+  reduce_sum.61 = f32[500000]{0} reduce(integer_pow.6, constant.18), dimensions={1}, to_apply=region_6.9
+  broadcast_in_dim.38 = f32[500000,1]{1,0} reshape(reduce_sum.61)
+  div.13 = f32[500000,1]{1,0} divide(broadcast_in_dim.38, broadcast.11)
+  add.80 = f32[500000,1]{1,0} add(div.13, broadcast.10)
+  rsqrt.6 = f32[500000,1]{1,0} rsqrt(add.80)
+  mul.24 = f32[500000,1]{1,0} broadcast(rsqrt.6), dimensions={0,1}
+  mul.25 = f32[500000]{0} reshape(mul.24)
+  mul.26 = f32[500000,64]{1,0} broadcast(mul.25), dimensions={0}
+  mul.27 = f32[500000,64]{1,0} multiply(sub.55, mul.26)
+  add.81 = f32[500000,64]{1,0} add(add.59, mul.27)
+  scatter-add.11 = f32[50000,64]{1,0} scatter(broadcast.9, broadcast_in_dim.39, add.81), update_window_dims={1}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=region_7.10
+  concatenate.7 = f32[50000,128]{1,0} concatenate(add.69, scatter-add.11), dimensions={1}
+  params_1___node___0__0_.1 = f32[128,64]{1,0} parameter(12)
+  dot_general.14 = f32[50000,64]{1,0} dot(concatenate.7, params_1___node___0__0_.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  params_1___node___0__1_.1 = f32[64]{0} parameter(13)
+  broadcast_in_dim.40 = f32[1,64]{1,0} reshape(params_1___node___0__1_.1)
+  add.82 = f32[1,64]{1,0} broadcast(broadcast_in_dim.40), dimensions={0,1}
+  add.83 = f32[64]{0} reshape(add.82)
+  add.84 = f32[50000,64]{1,0} broadcast(add.83), dimensions={1}
+  add.85 = f32[50000,64]{1,0} add(dot_general.14, add.84)
+  jit_relu_.7 = f32[50000,64]{1,0} call(add.85), to_apply=relu_0.5
+  params_1___node___1__0_.1 = f32[64,64]{1,0} parameter(14)
+  dot_general.15 = f32[50000,64]{1,0} dot(jit_relu_.7, params_1___node___1__0_.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  params_1___node___1__1_.1 = f32[64]{0} parameter(15)
+  broadcast_in_dim.41 = f32[1,64]{1,0} reshape(params_1___node___1__1_.1)
+  add.86 = f32[1,64]{1,0} broadcast(broadcast_in_dim.41), dimensions={0,1}
+  add.87 = f32[64]{0} reshape(add.86)
+  add.88 = f32[50000,64]{1,0} broadcast(add.87), dimensions={1}
+  add.89 = f32[50000,64]{1,0} add(dot_general.15, add.88)
+  reduce_sum.62 = f32[50000]{0} reduce(add.89, constant.18), dimensions={1}, to_apply=region_8.11
+  broadcast_in_dim.42 = f32[50000,1]{1,0} reshape(reduce_sum.62)
+  div.14 = f32[50000,1]{1,0} divide(broadcast_in_dim.42, broadcast.8)
+  sub.60 = f32[50000,1]{1,0} broadcast(div.14), dimensions={0,1}
+  sub.61 = f32[50000]{0} reshape(sub.60)
+  sub.62 = f32[50000,64]{1,0} broadcast(sub.61), dimensions={0}
+  sub.63 = f32[50000,64]{1,0} subtract(add.89, sub.62)
+  sub.56 = f32[50000,1]{1,0} broadcast(div.14), dimensions={0,1}
+  sub.57 = f32[50000]{0} reshape(sub.56)
+  sub.58 = f32[50000,64]{1,0} broadcast(sub.57), dimensions={0}
+  sub.59 = f32[50000,64]{1,0} subtract(add.89, sub.58)
+  integer_pow.7 = f32[50000,64]{1,0} multiply(sub.59, sub.59)
+  reduce_sum.63 = f32[50000]{0} reduce(integer_pow.7, constant.18), dimensions={1}, to_apply=region_9.12
+  broadcast_in_dim.43 = f32[50000,1]{1,0} reshape(reduce_sum.63)
+  div.15 = f32[50000,1]{1,0} divide(broadcast_in_dim.43, broadcast.8)
+  add.90 = f32[50000,1]{1,0} add(div.15, broadcast.7)
+  rsqrt.7 = f32[50000,1]{1,0} rsqrt(add.90)
+  mul.28 = f32[50000,1]{1,0} broadcast(rsqrt.7), dimensions={0,1}
+  mul.29 = f32[50000]{0} reshape(mul.28)
+  mul.30 = f32[50000,64]{1,0} broadcast(mul.29), dimensions={0}
+  mul.31 = f32[50000,64]{1,0} multiply(sub.63, mul.30)
+  ROOT add.91 = f32[50000,64]{1,0} add(add.69, mul.31)
+}
+

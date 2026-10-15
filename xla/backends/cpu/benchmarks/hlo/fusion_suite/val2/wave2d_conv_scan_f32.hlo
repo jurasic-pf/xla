@@ -1,0 +1,46 @@
+HloModule jit_wave, entry_computation_layout={(f32[512,512]{1,0})->f32[512,512]{1,0}}
+
+region_0.1 {
+  arg_tuple.1 = (s32[], f32[512,512]{1,0}, f32[512,512]{1,0}) parameter(0)
+  get-tuple-element.3 = s32[] get-tuple-element(arg_tuple.1), index=0
+  constant.6 = s32[] constant(1)
+  add.3 = s32[] add(get-tuple-element.3, constant.6)
+  get-tuple-element.4 = f32[512,512]{1,0} get-tuple-element(arg_tuple.1), index=1
+  constant.9 = f32[] constant(2)
+  broadcast.5 = f32[512,512]{1,0} broadcast(constant.9), dimensions={}
+  mul.3 = f32[512,512]{1,0} multiply(get-tuple-element.4, broadcast.5)
+  get-tuple-element.5 = f32[512,512]{1,0} get-tuple-element(arg_tuple.1), index=2
+  sub.1 = f32[512,512]{1,0} subtract(mul.3, get-tuple-element.5)
+  broadcast_in_dim.1 = f32[1,1,512,512]{3,2,1,0} reshape(get-tuple-element.4)
+  constant.10 = f32[1,1,3,3]{3,2,1,0} constant({ { /*i0=0*/ { /*i1=0*/ { 0, 1, 0 }, { 1, -4, 1 }, { 0, 1, 0 } } } })
+  conv_general_dilated.1 = f32[1,1,512,512]{3,2,1,0} convolution(broadcast_in_dim.1, constant.10), window={size=3x3 pad=1_1x1_1}, dim_labels=bf01_oi01->bf01
+  squeeze.1 = f32[512,512]{1,0} reshape(conv_general_dilated.1)
+  constant.8 = f32[] constant(0.2)
+  broadcast.4 = f32[512,512]{1,0} broadcast(constant.8), dimensions={}
+  mul.4 = f32[512,512]{1,0} multiply(squeeze.1, broadcast.4)
+  add.2 = f32[512,512]{1,0} add(sub.1, mul.4)
+  constant.7 = f32[] constant(0.999)
+  broadcast.3 = f32[512,512]{1,0} broadcast(constant.7), dimensions={}
+  mul.5 = f32[512,512]{1,0} multiply(add.2, broadcast.3)
+  ROOT tuple.1 = (s32[], f32[512,512]{1,0}, f32[512,512]{1,0}) tuple(add.3, mul.5, get-tuple-element.4)
+}
+
+region_1.2 {
+  arg_tuple.3 = (s32[], f32[512,512]{1,0}, f32[512,512]{1,0}) parameter(0)
+  get-tuple-element.10 = f32[512,512]{1,0} get-tuple-element(arg_tuple.3), index=1
+  get-tuple-element.11 = f32[512,512]{1,0} get-tuple-element(arg_tuple.3), index=2
+  get-tuple-element.9 = s32[] get-tuple-element(arg_tuple.3), index=0
+  constant.12 = s32[] constant(300)
+  ROOT lt.1 = pred[] compare(get-tuple-element.9, constant.12), direction=LT
+}
+
+ENTRY main.3 {
+  constant.13 = s32[] constant(0)
+  u0.1 = f32[512,512]{1,0} parameter(0)
+  while.5 = (s32[], f32[512,512]{1,0}, f32[512,512]{1,0}) tuple(constant.13, u0.1, u0.1)
+  while.6 = (s32[], f32[512,512]{1,0}, f32[512,512]{1,0}) while(while.5), condition=region_1.2, body=region_0.1
+  while.7 = s32[] get-tuple-element(while.6), index=0
+  ROOT while.8 = f32[512,512]{1,0} get-tuple-element(while.6), index=1
+  while.9 = f32[512,512]{1,0} get-tuple-element(while.6), index=2
+}
+

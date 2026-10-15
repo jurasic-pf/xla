@@ -1,0 +1,103 @@
+HloModule tiny_kernels_loop_k16
+
+%body {
+  %p = (s32[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[]) parameter(0)
+  %i = s32[] get-tuple-element(%p), index=0
+  %one = s32[] constant(1)
+  %i1 = s32[] add(%i, %one)
+  %c = f64[] constant(0.999)
+  %x0 = f64[] get-tuple-element(%p), index=1
+  %sn0 = f64[] sine(%x0)
+  %m0 = f64[] multiply(%sn0, %c)
+  %y0 = f64[] add(%m0, %x0)
+  %x1 = f64[] get-tuple-element(%p), index=2
+  %sn1 = f64[] sine(%x1)
+  %m1 = f64[] multiply(%sn1, %c)
+  %y1 = f64[] add(%m1, %x1)
+  %x2 = f64[] get-tuple-element(%p), index=3
+  %sn2 = f64[] sine(%x2)
+  %m2 = f64[] multiply(%sn2, %c)
+  %y2 = f64[] add(%m2, %x2)
+  %x3 = f64[] get-tuple-element(%p), index=4
+  %sn3 = f64[] sine(%x3)
+  %m3 = f64[] multiply(%sn3, %c)
+  %y3 = f64[] add(%m3, %x3)
+  %x4 = f64[] get-tuple-element(%p), index=5
+  %sn4 = f64[] sine(%x4)
+  %m4 = f64[] multiply(%sn4, %c)
+  %y4 = f64[] add(%m4, %x4)
+  %x5 = f64[] get-tuple-element(%p), index=6
+  %sn5 = f64[] sine(%x5)
+  %m5 = f64[] multiply(%sn5, %c)
+  %y5 = f64[] add(%m5, %x5)
+  %x6 = f64[] get-tuple-element(%p), index=7
+  %sn6 = f64[] sine(%x6)
+  %m6 = f64[] multiply(%sn6, %c)
+  %y6 = f64[] add(%m6, %x6)
+  %x7 = f64[] get-tuple-element(%p), index=8
+  %sn7 = f64[] sine(%x7)
+  %m7 = f64[] multiply(%sn7, %c)
+  %y7 = f64[] add(%m7, %x7)
+  %x8 = f64[] get-tuple-element(%p), index=9
+  %sn8 = f64[] sine(%x8)
+  %m8 = f64[] multiply(%sn8, %c)
+  %y8 = f64[] add(%m8, %x8)
+  %x9 = f64[] get-tuple-element(%p), index=10
+  %sn9 = f64[] sine(%x9)
+  %m9 = f64[] multiply(%sn9, %c)
+  %y9 = f64[] add(%m9, %x9)
+  %x10 = f64[] get-tuple-element(%p), index=11
+  %sn10 = f64[] sine(%x10)
+  %m10 = f64[] multiply(%sn10, %c)
+  %y10 = f64[] add(%m10, %x10)
+  %x11 = f64[] get-tuple-element(%p), index=12
+  %sn11 = f64[] sine(%x11)
+  %m11 = f64[] multiply(%sn11, %c)
+  %y11 = f64[] add(%m11, %x11)
+  %x12 = f64[] get-tuple-element(%p), index=13
+  %sn12 = f64[] sine(%x12)
+  %m12 = f64[] multiply(%sn12, %c)
+  %y12 = f64[] add(%m12, %x12)
+  %x13 = f64[] get-tuple-element(%p), index=14
+  %sn13 = f64[] sine(%x13)
+  %m13 = f64[] multiply(%sn13, %c)
+  %y13 = f64[] add(%m13, %x13)
+  %x14 = f64[] get-tuple-element(%p), index=15
+  %sn14 = f64[] sine(%x14)
+  %m14 = f64[] multiply(%sn14, %c)
+  %y14 = f64[] add(%m14, %x14)
+  %x15 = f64[] get-tuple-element(%p), index=16
+  %sn15 = f64[] sine(%x15)
+  %m15 = f64[] multiply(%sn15, %c)
+  %y15 = f64[] add(%m15, %x15)
+  ROOT %t = (s32[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[]) tuple(%i1, %y0, %y1, %y2, %y3, %y4, %y5, %y6, %y7, %y8, %y9, %y10, %y11, %y12, %y13, %y14, %y15)
+}
+
+%cond {
+  %p = (s32[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[]) parameter(0)
+  %i = s32[] get-tuple-element(%p), index=0
+  %n = s32[] constant(10000)
+  ROOT %lt = pred[] compare(%i, %n), direction=LT
+}
+
+ENTRY main {
+  %a0 = f64[] parameter(0)
+  %a1 = f64[] parameter(1)
+  %a2 = f64[] parameter(2)
+  %a3 = f64[] parameter(3)
+  %a4 = f64[] parameter(4)
+  %a5 = f64[] parameter(5)
+  %a6 = f64[] parameter(6)
+  %a7 = f64[] parameter(7)
+  %a8 = f64[] parameter(8)
+  %a9 = f64[] parameter(9)
+  %a10 = f64[] parameter(10)
+  %a11 = f64[] parameter(11)
+  %a12 = f64[] parameter(12)
+  %a13 = f64[] parameter(13)
+  %a14 = f64[] parameter(14)
+  %a15 = f64[] parameter(15)
+  %z = s32[] constant(0)
+  %init = (s32[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[]) tuple(%z, %a0, %a1, %a2, %a3, %a4, %a5, %a6, %a7, %a8, %a9, %a10, %a11, %a12, %a13, %a14, %a15)
+  ROOT %w = (s32[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[], f64[]) while(%init), condition=%cond, body=%body
+}

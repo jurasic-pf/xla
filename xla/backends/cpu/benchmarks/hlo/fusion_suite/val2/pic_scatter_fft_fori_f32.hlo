@@ -1,0 +1,221 @@
+HloModule jit_pic, entry_computation_layout={(f32[200000]{0}, f32[200000]{0})->(f32[200000]{0}, f32[200000]{0})}
+
+_where.1 {
+  Arg_0.2 = pred[] parameter(0)
+  Arg_1.2 = s32[] parameter(1)
+  Arg_2.1 = s32[] parameter(2)
+  ROOT select_n.1 = s32[] select(Arg_0.2, Arg_1.2, Arg_2.1)
+}
+
+remainder.2 {
+  Arg_0.3 = s32[200000]{0} parameter(0)
+  Arg_1.3 = s32[] parameter(1)
+  constant.27 = s32[] constant(0)
+  eq.1 = pred[] compare(Arg_1.3, constant.27), direction=EQ
+  constant.26 = s32[] constant(1)
+  jit__where_.1 = s32[] call(eq.1, constant.26, Arg_1.3), to_apply=_where.1
+  rem.2 = s32[200000]{0} broadcast(jit__where_.1), dimensions={}
+  rem.3 = s32[200000]{0} remainder(Arg_0.3, rem.2)
+  constant.25 = s32[] constant(0)
+  broadcast.18 = s32[200000]{0} broadcast(constant.25), dimensions={}
+  lt.2 = pred[200000]{0} compare(rem.3, broadcast.18), direction=LT
+  lt.3 = pred[] compare(jit__where_.1, constant.27), direction=LT
+  ne.4 = pred[200000]{0} broadcast(lt.3), dimensions={}
+  ne.5 = pred[200000]{0} compare(lt.2, ne.4), direction=NE
+  ne.3 = pred[200000]{0} compare(rem.3, broadcast.18), direction=NE
+  and.1 = pred[200000]{0} and(ne.5, ne.3)
+  add.3 = s32[200000]{0} broadcast(jit__where_.1), dimensions={}
+  add.4 = s32[200000]{0} add(rem.3, add.3)
+  ROOT select_n.3 = s32[200000]{0} select(and.1, add.4, rem.3)
+}
+
+region_1.3 {
+  scatter-add.2 = f32[] parameter(0)
+  scatter-add.3 = f32[] parameter(1)
+  ROOT add.8 = f32[] add(scatter-add.2, scatter-add.3)
+}
+
+region_2.4 {
+  scatter-add.7 = f32[] parameter(0)
+  scatter-add.8 = f32[] parameter(1)
+  ROOT add.11 = f32[] add(scatter-add.7, scatter-add.8)
+}
+
+fft.5 {
+  Arg_0.5 = f32[256]{0} parameter(0)
+  ROOT fft.1 = c64[129]{0} fft(Arg_0.5), fft_type=RFFT, fft_length={256}
+}
+
+_where_0.6 {
+  Arg_0.7 = pred[129]{0} parameter(0)
+  Arg_1.5 = f32[129]{0} parameter(1)
+  Arg_2.3 = s32[] parameter(2)
+  convert_element_type.3 = f32[] convert(Arg_2.3)
+  broadcast_in_dim.3 = f32[129]{0} broadcast(convert_element_type.3), dimensions={}
+  ROOT select_n.7 = f32[129]{0} select(Arg_0.7, Arg_1.5, broadcast_in_dim.3)
+}
+
+_where_1.7 {
+  Arg_0.9 = pred[129]{0} parameter(0)
+  Arg_1.7 = c64[129]{0} parameter(1)
+  Arg_2.5 = s32[] parameter(2)
+  convert_element_type.6 = c64[] convert(Arg_2.5)
+  broadcast_in_dim.5 = c64[129]{0} broadcast(convert_element_type.6), dimensions={}
+  ROOT select_n.9 = c64[129]{0} select(Arg_0.9, Arg_1.7, broadcast_in_dim.5)
+}
+
+_pad.8 {
+  ROOT Arg_0.11 = c64[129]{0} parameter(0)
+  Arg_1.9 = s32[] parameter(1)
+}
+
+fft_2.9 {
+  Arg_0.13 = c64[129]{0} parameter(0)
+  ROOT fft.3 = f32[256]{0} fft(Arg_0.13), fft_type=IRFFT, fft_length={256}
+}
+
+remainder_3.10 {
+  Arg_0.15 = f32[200000]{0} parameter(0)
+  Arg_1.11 = f32[] parameter(1)
+  rem.6 = f32[200000]{0} broadcast(Arg_1.11), dimensions={}
+  rem.7 = f32[200000]{0} remainder(Arg_0.15, rem.6)
+  constant.30 = f32[] constant(0)
+  broadcast.20 = f32[200000]{0} broadcast(constant.30), dimensions={}
+  lt.10 = pred[200000]{0} compare(rem.7, broadcast.20), direction=LT
+  constant.31 = f32[] constant(0)
+  lt.11 = pred[] compare(Arg_1.11, constant.31), direction=LT
+  ne.10 = pred[200000]{0} broadcast(lt.11), dimensions={}
+  ne.11 = pred[200000]{0} compare(lt.10, ne.10), direction=NE
+  ne.9 = pred[200000]{0} compare(rem.7, broadcast.20), direction=NE
+  and.3 = pred[200000]{0} and(ne.11, ne.9)
+  add.19 = f32[200000]{0} broadcast(Arg_1.11), dimensions={}
+  add.20 = f32[200000]{0} add(rem.7, add.19)
+  ROOT select_n.13 = f32[200000]{0} select(and.3, add.20, rem.7)
+}
+
+region_0.11 {
+  arg_tuple.1 = (s32[], f32[200000]{0}, f32[200000]{0}) parameter(0)
+  get-tuple-element.3 = s32[] get-tuple-element(arg_tuple.1), index=0
+  constant.36 = s32[] constant(1)
+  add.30 = s32[] add(get-tuple-element.3, constant.36)
+  get-tuple-element.4 = f32[200000]{0} get-tuple-element(arg_tuple.1), index=1
+  get-tuple-element.5 = f32[200000]{0} get-tuple-element(arg_tuple.1), index=2
+  iota.1 = f32[129]{0} iota(), iota_dimension=0
+  constant.41 = f32[] constant(1)
+  broadcast.27 = f32[129]{0} broadcast(constant.41), dimensions={}
+  div.4 = f32[129]{0} divide(iota.1, broadcast.27)
+  constant.40 = f32[] constant(2)
+  broadcast.26 = f32[129]{0} broadcast(constant.40), dimensions={}
+  mul.10 = f32[129]{0} multiply(div.4, broadcast.26)
+  constant.39 = f32[] constant(3.14159274)
+  broadcast.25 = f32[129]{0} broadcast(constant.39), dimensions={}
+  mul.11 = f32[129]{0} multiply(mul.10, broadcast.25)
+  constant.38 = f32[] constant(0)
+  broadcast.24 = f32[129]{0} broadcast(constant.38), dimensions={}
+  gt.2 = pred[129]{0} compare(mul.11, broadcast.24), direction=GT
+  constant.44 = f32[] constant(0)
+  broadcast.30 = f32[256]{0} broadcast(constant.44), dimensions={}
+  constant.50 = f32[] constant(256)
+  broadcast.35 = f32[200000]{0} broadcast(constant.50), dimensions={}
+  mul.9 = f32[200000]{0} multiply(get-tuple-element.4, broadcast.35)
+  floor.1 = f32[200000]{0} floor(mul.9)
+  convert_element_type.7 = s32[200000]{0} convert(floor.1)
+  constant.49 = s32[] constant(256)
+  jit_remainder_.3 = s32[200000]{0} call(convert_element_type.7, constant.49), to_apply=remainder.2
+  constant.46 = s32[] constant(0)
+  broadcast.32 = s32[200000]{0} broadcast(constant.46), dimensions={}
+  lt.12 = pred[200000]{0} compare(jit_remainder_.3, broadcast.32), direction=LT
+  constant.45 = s32[] constant(256)
+  broadcast.31 = s32[200000]{0} broadcast(constant.45), dimensions={}
+  add.23 = s32[200000]{0} add(jit_remainder_.3, broadcast.31)
+  select_n.14 = s32[200000]{0} select(lt.12, add.23, jit_remainder_.3)
+  broadcast_in_dim.8 = s32[200000,1]{1,0} reshape(select_n.14)
+  constant.47 = f32[] constant(1)
+  broadcast.33 = f32[200000]{0} broadcast(constant.47), dimensions={}
+  convert_element_type.8 = f32[200000]{0} convert(convert_element_type.7)
+  sub.6 = f32[200000]{0} subtract(mul.9, convert_element_type.8)
+  sub.7 = f32[200000]{0} subtract(broadcast.33, sub.6)
+  scatter-add.10 = f32[256]{0} scatter(broadcast.30, broadcast_in_dim.8, sub.7), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=region_1.3
+  constant.48 = s32[] constant(1)
+  broadcast.34 = s32[200000]{0} broadcast(constant.48), dimensions={}
+  add.22 = s32[200000]{0} add(jit_remainder_.3, broadcast.34)
+  jit_remainder_.4 = s32[200000]{0} call(add.22, constant.49), to_apply=remainder.2
+  lt.13 = pred[200000]{0} compare(jit_remainder_.4, broadcast.32), direction=LT
+  add.24 = s32[200000]{0} add(jit_remainder_.4, broadcast.31)
+  select_n.15 = s32[200000]{0} select(lt.13, add.24, jit_remainder_.4)
+  broadcast_in_dim.9 = s32[200000,1]{1,0} reshape(select_n.15)
+  scatter-add.11 = f32[256]{0} scatter(scatter-add.10, broadcast_in_dim.9, sub.6), update_window_dims={}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=1, to_apply=region_2.4
+  constant.43 = f32[] constant(781.25)
+  broadcast.29 = f32[256]{0} broadcast(constant.43), dimensions={}
+  div.3 = f32[256]{0} divide(scatter-add.11, broadcast.29)
+  constant.42 = f32[] constant(1)
+  broadcast.28 = f32[256]{0} broadcast(constant.42), dimensions={}
+  sub.8 = f32[256]{0} subtract(div.3, broadcast.28)
+  jit_fft_.2 = c64[129]{0} call(sub.8), to_apply=fft.5
+  constant.37 = c64[] constant((-0, -1))
+  broadcast.23 = c64[129]{0} broadcast(constant.37), dimensions={}
+  mul.12 = c64[129]{0} multiply(jit_fft_.2, broadcast.23)
+  gt.3 = pred[129]{0} compare(mul.11, broadcast.24), direction=GT
+  jit__where_.4 = f32[129]{0} call(gt.3, mul.11, constant.36), to_apply=_where_0.6
+  convert_element_type.9 = c64[129]{0} convert(jit__where_.4)
+  div.5 = c64[129]{0} divide(mul.12, convert_element_type.9)
+  constant.35 = s32[] constant(0)
+  jit__where_.5 = c64[129]{0} call(gt.2, div.5, constant.35), to_apply=_where_1.7
+  jit__pad_.1 = c64[129]{0} call(jit__where_.5, constant.35), to_apply=_pad.8
+  jit_fft_.3 = f32[256]{0} call(jit__pad_.1), to_apply=fft_2.9
+  lt.14 = pred[200000]{0} compare(jit_remainder_.3, broadcast.32), direction=LT
+  add.25 = s32[200000]{0} add(jit_remainder_.3, broadcast.31)
+  select_n.16 = s32[200000]{0} select(lt.14, add.25, jit_remainder_.3)
+  broadcast_in_dim.10 = s32[200000,1]{1,0} reshape(select_n.16)
+  gather.2 = f32[200000]{0} gather(jit_fft_.3, broadcast_in_dim.10), offset_dims={}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1}
+  sub.9 = f32[200000]{0} subtract(broadcast.33, sub.6)
+  mul.13 = f32[200000]{0} multiply(gather.2, sub.9)
+  lt.15 = pred[200000]{0} compare(jit_remainder_.4, broadcast.32), direction=LT
+  add.26 = s32[200000]{0} add(jit_remainder_.4, broadcast.31)
+  select_n.17 = s32[200000]{0} select(lt.15, add.26, jit_remainder_.4)
+  broadcast_in_dim.11 = s32[200000,1]{1,0} reshape(select_n.17)
+  gather.3 = f32[200000]{0} gather(jit_fft_.3, broadcast_in_dim.11), offset_dims={}, collapsed_slice_dims={0}, start_index_map={0}, index_vector_dim=1, slice_sizes={1}
+  mul.14 = f32[200000]{0} multiply(gather.3, sub.6)
+  add.27 = f32[200000]{0} add(mul.13, mul.14)
+  constant.34 = f32[] constant(-1)
+  broadcast.22 = f32[200000]{0} broadcast(constant.34), dimensions={}
+  mul.15 = f32[200000]{0} multiply(add.27, broadcast.22)
+  constant.33 = f32[] constant(0.01)
+  broadcast.21 = f32[200000]{0} broadcast(constant.33), dimensions={}
+  mul.16 = f32[200000]{0} multiply(mul.15, broadcast.21)
+  add.28 = f32[200000]{0} add(get-tuple-element.5, mul.16)
+  mul.17 = f32[200000]{0} multiply(add.28, broadcast.21)
+  add.29 = f32[200000]{0} add(get-tuple-element.4, mul.17)
+  constant.32 = f32[] constant(1)
+  jit_remainder_.5 = f32[200000]{0} call(add.29, constant.32), to_apply=remainder_3.10
+  ROOT tuple.1 = (s32[], f32[200000]{0}, f32[200000]{0}) tuple(add.30, jit_remainder_.5, add.28)
+}
+
+region_3.12 {
+  arg_tuple.3 = (s32[], f32[200000]{0}, f32[200000]{0}) parameter(0)
+  get-tuple-element.10 = f32[200000]{0} get-tuple-element(arg_tuple.3), index=1
+  get-tuple-element.11 = f32[200000]{0} get-tuple-element(arg_tuple.3), index=2
+  get-tuple-element.9 = s32[] get-tuple-element(arg_tuple.3), index=0
+  constant.52 = s32[] constant(50)
+  ROOT lt.17 = pred[] compare(get-tuple-element.9, constant.52), direction=LT
+}
+
+ENTRY main.13 {
+  constant.54 = s32[] constant(0)
+  x0.1 = f32[200000]{0} parameter(0)
+  constant.55 = f32[] constant(0.5)
+  broadcast.37 = f32[200000]{0} broadcast(constant.55), dimensions={}
+  sub.10 = f32[200000]{0} subtract(x0.1, broadcast.37)
+  add.31 = f32[200000]{0} add(sub.10, broadcast.37)
+  v0.1 = f32[200000]{0} parameter(1)
+  constant.53 = f32[] constant(1)
+  broadcast.36 = f32[200000]{0} broadcast(constant.53), dimensions={}
+  sub.11 = f32[200000]{0} subtract(v0.1, broadcast.36)
+  while.5 = (s32[], f32[200000]{0}, f32[200000]{0}) tuple(constant.54, add.31, sub.11)
+  while.6 = (s32[], f32[200000]{0}, f32[200000]{0}) while(while.5), condition=region_3.12, body=region_0.11
+  while.7 = s32[] get-tuple-element(while.6), index=0
+  while.8 = f32[200000]{0} get-tuple-element(while.6), index=1
+  while.9 = f32[200000]{0} get-tuple-element(while.6), index=2
+  ROOT tuple.3 = (f32[200000]{0}, f32[200000]{0}) tuple(while.8, while.9)
+}
+

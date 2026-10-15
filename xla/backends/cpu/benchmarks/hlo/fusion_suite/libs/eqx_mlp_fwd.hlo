@@ -1,0 +1,95 @@
+HloModule jit__lambda, entry_computation_layout={(f32[1024,256]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, f32[1024,1024]{1,0}, /*index=5*/f32[1024]{0}, f32[1024,1024]{1,0}, f32[1024]{0}, f32[10,1024]{1,0}, f32[10]{0}, /*index=10*/f32[4096,256]{1,0})->f32[4096,10]{0,1}}
+
+ENTRY main.1 {
+  a_0__layers_4__weight.1 = f32[10,1024]{1,0} parameter(8)
+  a_0__layers_3__weight.1 = f32[1024,1024]{1,0} parameter(6)
+  a_0__layers_2__weight.1 = f32[1024,1024]{1,0} parameter(4)
+  a_0__layers_1__weight.1 = f32[1024,1024]{1,0} parameter(2)
+  a_0__layers_0__weight.1 = f32[1024,256]{1,0} parameter(0)
+  a_1_.1 = f32[4096,256]{1,0} parameter(10)
+  dot_general.5 = f32[1024,4096]{1,0} dot(a_0__layers_0__weight.1, a_1_.1), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  transpose.5 = f32[4096,1024]{0,1} transpose(dot_general.5), dimensions={1,0}
+  a_0__layers_0__bias.1 = f32[1024]{0} parameter(1)
+  broadcast_in_dim.5 = f32[1,1024]{1,0} reshape(a_0__layers_0__bias.1)
+  add.28 = f32[1,1024]{1,0} broadcast(broadcast_in_dim.5), dimensions={0,1}
+  add.29 = f32[1024]{0} reshape(add.28)
+  add.30 = f32[4096,1024]{1,0} broadcast(add.29), dimensions={1}
+  add.31 = f32[4096,1024]{0,1} add(transpose.5, add.30)
+  integer_pow.8 = f32[4096,1024]{0,1} multiply(add.31, add.31)
+  integer_pow.9 = f32[4096,1024]{0,1} multiply(integer_pow.8, add.31)
+  constant.7 = f32[] constant(0.044715)
+  broadcast.7 = f32[4096,1024]{1,0} broadcast(constant.7), dimensions={}
+  mul.16 = f32[4096,1024]{0,1} multiply(integer_pow.9, broadcast.7)
+  add.32 = f32[4096,1024]{0,1} add(add.31, mul.16)
+  constant.6 = f32[] constant(0.797884583)
+  broadcast.6 = f32[4096,1024]{1,0} broadcast(constant.6), dimensions={}
+  mul.17 = f32[4096,1024]{0,1} multiply(add.32, broadcast.6)
+  tanh.4 = f32[4096,1024]{0,1} tanh(mul.17)
+  constant.5 = f32[] constant(1)
+  broadcast.5 = f32[4096,1024]{1,0} broadcast(constant.5), dimensions={}
+  add.33 = f32[4096,1024]{0,1} add(tanh.4, broadcast.5)
+  constant.4 = f32[] constant(0.5)
+  broadcast.4 = f32[4096,1024]{1,0} broadcast(constant.4), dimensions={}
+  mul.18 = f32[4096,1024]{0,1} multiply(add.33, broadcast.4)
+  mul.19 = f32[4096,1024]{0,1} multiply(add.31, mul.18)
+  dot_general.6 = f32[1024,4096]{1,0} dot(a_0__layers_1__weight.1, mul.19), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  transpose.6 = f32[4096,1024]{0,1} transpose(dot_general.6), dimensions={1,0}
+  a_0__layers_1__bias.1 = f32[1024]{0} parameter(3)
+  broadcast_in_dim.6 = f32[1,1024]{1,0} reshape(a_0__layers_1__bias.1)
+  add.34 = f32[1,1024]{1,0} broadcast(broadcast_in_dim.6), dimensions={0,1}
+  add.35 = f32[1024]{0} reshape(add.34)
+  add.36 = f32[4096,1024]{1,0} broadcast(add.35), dimensions={1}
+  add.37 = f32[4096,1024]{0,1} add(transpose.6, add.36)
+  integer_pow.10 = f32[4096,1024]{0,1} multiply(add.37, add.37)
+  integer_pow.11 = f32[4096,1024]{0,1} multiply(integer_pow.10, add.37)
+  mul.20 = f32[4096,1024]{0,1} multiply(integer_pow.11, broadcast.7)
+  add.38 = f32[4096,1024]{0,1} add(add.37, mul.20)
+  mul.21 = f32[4096,1024]{0,1} multiply(add.38, broadcast.6)
+  tanh.5 = f32[4096,1024]{0,1} tanh(mul.21)
+  add.39 = f32[4096,1024]{0,1} add(tanh.5, broadcast.5)
+  mul.22 = f32[4096,1024]{0,1} multiply(add.39, broadcast.4)
+  mul.23 = f32[4096,1024]{0,1} multiply(add.37, mul.22)
+  dot_general.7 = f32[1024,4096]{1,0} dot(a_0__layers_2__weight.1, mul.23), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  transpose.7 = f32[4096,1024]{0,1} transpose(dot_general.7), dimensions={1,0}
+  a_0__layers_2__bias.1 = f32[1024]{0} parameter(5)
+  broadcast_in_dim.7 = f32[1,1024]{1,0} reshape(a_0__layers_2__bias.1)
+  add.40 = f32[1,1024]{1,0} broadcast(broadcast_in_dim.7), dimensions={0,1}
+  add.41 = f32[1024]{0} reshape(add.40)
+  add.42 = f32[4096,1024]{1,0} broadcast(add.41), dimensions={1}
+  add.43 = f32[4096,1024]{0,1} add(transpose.7, add.42)
+  integer_pow.12 = f32[4096,1024]{0,1} multiply(add.43, add.43)
+  integer_pow.13 = f32[4096,1024]{0,1} multiply(integer_pow.12, add.43)
+  mul.24 = f32[4096,1024]{0,1} multiply(integer_pow.13, broadcast.7)
+  add.44 = f32[4096,1024]{0,1} add(add.43, mul.24)
+  mul.25 = f32[4096,1024]{0,1} multiply(add.44, broadcast.6)
+  tanh.6 = f32[4096,1024]{0,1} tanh(mul.25)
+  add.45 = f32[4096,1024]{0,1} add(tanh.6, broadcast.5)
+  mul.26 = f32[4096,1024]{0,1} multiply(add.45, broadcast.4)
+  mul.27 = f32[4096,1024]{0,1} multiply(add.43, mul.26)
+  dot_general.8 = f32[1024,4096]{1,0} dot(a_0__layers_3__weight.1, mul.27), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  transpose.8 = f32[4096,1024]{0,1} transpose(dot_general.8), dimensions={1,0}
+  a_0__layers_3__bias.1 = f32[1024]{0} parameter(7)
+  broadcast_in_dim.8 = f32[1,1024]{1,0} reshape(a_0__layers_3__bias.1)
+  add.46 = f32[1,1024]{1,0} broadcast(broadcast_in_dim.8), dimensions={0,1}
+  add.47 = f32[1024]{0} reshape(add.46)
+  add.48 = f32[4096,1024]{1,0} broadcast(add.47), dimensions={1}
+  add.49 = f32[4096,1024]{0,1} add(transpose.8, add.48)
+  integer_pow.14 = f32[4096,1024]{0,1} multiply(add.49, add.49)
+  integer_pow.15 = f32[4096,1024]{0,1} multiply(integer_pow.14, add.49)
+  mul.28 = f32[4096,1024]{0,1} multiply(integer_pow.15, broadcast.7)
+  add.50 = f32[4096,1024]{0,1} add(add.49, mul.28)
+  mul.29 = f32[4096,1024]{0,1} multiply(add.50, broadcast.6)
+  tanh.7 = f32[4096,1024]{0,1} tanh(mul.29)
+  add.51 = f32[4096,1024]{0,1} add(tanh.7, broadcast.5)
+  mul.30 = f32[4096,1024]{0,1} multiply(add.51, broadcast.4)
+  mul.31 = f32[4096,1024]{0,1} multiply(add.49, mul.30)
+  dot_general.9 = f32[10,4096]{1,0} dot(a_0__layers_4__weight.1, mul.31), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  transpose.9 = f32[4096,10]{0,1} transpose(dot_general.9), dimensions={1,0}
+  a_0__layers_4__bias.1 = f32[10]{0} parameter(9)
+  broadcast_in_dim.9 = f32[1,10]{1,0} reshape(a_0__layers_4__bias.1)
+  add.52 = f32[1,10]{1,0} broadcast(broadcast_in_dim.9), dimensions={0,1}
+  add.53 = f32[10]{0} reshape(add.52)
+  add.54 = f32[4096,10]{1,0} broadcast(add.53), dimensions={1}
+  ROOT add.55 = f32[4096,10]{0,1} add(transpose.9, add.54)
+}
+

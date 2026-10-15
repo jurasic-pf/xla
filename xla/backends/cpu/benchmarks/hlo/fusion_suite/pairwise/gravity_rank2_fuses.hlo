@@ -1,0 +1,31 @@
+HloModule gravity_acceleration_rank2
+
+add_f32 {
+  a = f32[] parameter(0)
+  b = f32[] parameter(1)
+  ROOT s = f32[] add(a, b)
+}
+
+ENTRY main {
+  pos  = f32[1024,3]{1,0} parameter(0)
+  src  = f32[1024,3]{1,0} parameter(1)
+  mass = f32[1024]{0}     parameter(2)
+  zero = f32[] constant(0)
+
+  pos_b = f32[1024,1024,3]{2,1,0} broadcast(pos), dimensions={0,2}
+  src_b = f32[1024,1024,3]{2,1,0} broadcast(src), dimensions={1,2}
+  r     = f32[1024,1024,3]{2,1,0} subtract(pos_b, src_b)
+
+  rr = f32[1024,1024,3]{2,1,0} multiply(r, r)
+  d2 = f32[1024,1024]{1,0} reduce(rr, zero), dimensions={2}, to_apply=add_f32
+  d  = f32[1024,1024]{1,0} sqrt(d2)
+  dd = f32[1024,1024]{1,0} multiply(d, d)
+  d3 = f32[1024,1024]{1,0} multiply(dd, d)
+
+  d3b    = f32[1024,1024,3]{2,1,0} broadcast(d3), dimensions={0,1}
+  mass_b = f32[1024,1024,3]{2,1,0} broadcast(mass), dimensions={1}
+  num    = f32[1024,1024,3]{2,1,0} multiply(mass_b, r)
+  term   = f32[1024,1024,3]{2,1,0} divide(num, d3b)
+
+  ROOT acc = f32[1024,3]{1,0} reduce(term, zero), dimensions={1}, to_apply=add_f32
+}

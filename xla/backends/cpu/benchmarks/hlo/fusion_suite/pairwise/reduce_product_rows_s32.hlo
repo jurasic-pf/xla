@@ -1,0 +1,15 @@
+HloModule reduce_product_rows_s32
+
+add {
+  lhs = s32[] parameter(0)
+  rhs = s32[] parameter(1)
+  ROOT add = s32[] add(lhs, rhs)
+}
+
+ENTRY main {
+  x = s32[64,1048576] parameter(0)
+  y = s32[64,1048576] parameter(1)
+  m = s32[64,1048576] multiply(x, y)
+  c = s32[] constant(0)
+  ROOT r = s32[64] reduce(m, c), dimensions={1}, to_apply=add
+}

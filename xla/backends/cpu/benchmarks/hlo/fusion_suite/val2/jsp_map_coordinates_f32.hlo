@@ -1,0 +1,232 @@
+HloModule jit_warp, entry_computation_layout={(f32[512,512]{1,0}, f32[2]{0})->f32[512,512]{1,0}}
+
+clip.1 {
+  Arg_2.2 = s32[] parameter(2)
+  min.2 = s32[512,512]{1,0} broadcast(Arg_2.2), dimensions={}
+  Arg_1.2 = s32[] parameter(1)
+  max.2 = s32[512,512]{1,0} broadcast(Arg_1.2), dimensions={}
+  Arg_0.2 = s32[512,512]{1,0} parameter(0)
+  max.3 = s32[512,512]{1,0} maximum(max.2, Arg_0.2)
+  ROOT min.3 = s32[512,512]{1,0} minimum(min.2, max.3)
+}
+
+_map_coordinates.2 {
+  constant.12 = f32[] constant(1)
+  broadcast.8 = f32[512,512]{1,0} broadcast(constant.12), dimensions={}
+  Arg_1.3 = f32[512,512]{1,0} parameter(1)
+  floor.2 = f32[512,512]{1,0} floor(Arg_1.3)
+  sub.4 = f32[512,512]{1,0} subtract(Arg_1.3, floor.2)
+  sub.5 = f32[512,512]{1,0} subtract(broadcast.8, sub.4)
+  Arg_2.3 = f32[512,512]{1,0} parameter(2)
+  floor.3 = f32[512,512]{1,0} floor(Arg_2.3)
+  sub.6 = f32[512,512]{1,0} subtract(Arg_2.3, floor.3)
+  sub.7 = f32[512,512]{1,0} subtract(broadcast.8, sub.6)
+  mul.10 = f32[512,512]{1,0} multiply(sub.5, sub.7)
+  Arg_0.3 = f32[512,512]{1,0} parameter(0)
+  convert_element_type.2 = s32[512,512]{1,0} convert(floor.2)
+  constant.14 = s32[] constant(0)
+  constant.13 = s32[] constant(511)
+  jit_clip_.4 = s32[512,512]{1,0} call(convert_element_type.2, constant.14, constant.13), to_apply=clip.1
+  constant.10 = s32[] constant(0)
+  broadcast.6 = s32[512,512]{1,0} broadcast(constant.10), dimensions={}
+  lt.8 = pred[512,512]{1,0} compare(jit_clip_.4, broadcast.6), direction=LT
+  constant.9 = s32[] constant(512)
+  broadcast.5 = s32[512,512]{1,0} broadcast(constant.9), dimensions={}
+  add.21 = s32[512,512]{1,0} add(jit_clip_.4, broadcast.5)
+  select_n.8 = s32[512,512]{1,0} select(lt.8, add.21, jit_clip_.4)
+  broadcast_in_dim.10 = s32[512,512,1]{2,1,0} reshape(select_n.8)
+  convert_element_type.3 = s32[512,512]{1,0} convert(floor.3)
+  jit_clip_.6 = s32[512,512]{1,0} call(convert_element_type.3, constant.14, constant.13), to_apply=clip.1
+  lt.9 = pred[512,512]{1,0} compare(jit_clip_.6, broadcast.6), direction=LT
+  add.22 = s32[512,512]{1,0} add(jit_clip_.6, broadcast.5)
+  select_n.9 = s32[512,512]{1,0} select(lt.9, add.22, jit_clip_.6)
+  broadcast_in_dim.11 = s32[512,512,1]{2,1,0} reshape(select_n.9)
+  concatenate.4 = s32[512,512,2]{2,1,0} concatenate(broadcast_in_dim.10, broadcast_in_dim.11), dimensions={2}
+  gather.4 = f32[512,512]{1,0} gather(Arg_0.3, concatenate.4), offset_dims={}, collapsed_slice_dims={0,1}, start_index_map={0,1}, index_vector_dim=2, slice_sizes={1,1}
+  mul.11 = f32[512,512]{1,0} multiply(mul.10, gather.4)
+  mul.12 = f32[512,512]{1,0} multiply(sub.5, sub.6)
+  lt.10 = pred[512,512]{1,0} compare(jit_clip_.4, broadcast.6), direction=LT
+  add.23 = s32[512,512]{1,0} add(jit_clip_.4, broadcast.5)
+  select_n.10 = s32[512,512]{1,0} select(lt.10, add.23, jit_clip_.4)
+  broadcast_in_dim.12 = s32[512,512,1]{2,1,0} reshape(select_n.10)
+  constant.11 = s32[] constant(1)
+  broadcast.7 = s32[512,512]{1,0} broadcast(constant.11), dimensions={}
+  add.20 = s32[512,512]{1,0} add(convert_element_type.3, broadcast.7)
+  jit_clip_.7 = s32[512,512]{1,0} call(add.20, constant.14, constant.13), to_apply=clip.1
+  lt.11 = pred[512,512]{1,0} compare(jit_clip_.7, broadcast.6), direction=LT
+  add.24 = s32[512,512]{1,0} add(jit_clip_.7, broadcast.5)
+  select_n.11 = s32[512,512]{1,0} select(lt.11, add.24, jit_clip_.7)
+  broadcast_in_dim.13 = s32[512,512,1]{2,1,0} reshape(select_n.11)
+  concatenate.5 = s32[512,512,2]{2,1,0} concatenate(broadcast_in_dim.12, broadcast_in_dim.13), dimensions={2}
+  gather.5 = f32[512,512]{1,0} gather(Arg_0.3, concatenate.5), offset_dims={}, collapsed_slice_dims={0,1}, start_index_map={0,1}, index_vector_dim=2, slice_sizes={1,1}
+  mul.13 = f32[512,512]{1,0} multiply(mul.12, gather.5)
+  add.29 = f32[512,512]{1,0} add(mul.11, mul.13)
+  mul.14 = f32[512,512]{1,0} multiply(sub.4, sub.7)
+  add.19 = s32[512,512]{1,0} add(convert_element_type.2, broadcast.7)
+  jit_clip_.5 = s32[512,512]{1,0} call(add.19, constant.14, constant.13), to_apply=clip.1
+  lt.12 = pred[512,512]{1,0} compare(jit_clip_.5, broadcast.6), direction=LT
+  add.25 = s32[512,512]{1,0} add(jit_clip_.5, broadcast.5)
+  select_n.12 = s32[512,512]{1,0} select(lt.12, add.25, jit_clip_.5)
+  broadcast_in_dim.14 = s32[512,512,1]{2,1,0} reshape(select_n.12)
+  lt.13 = pred[512,512]{1,0} compare(jit_clip_.6, broadcast.6), direction=LT
+  add.26 = s32[512,512]{1,0} add(jit_clip_.6, broadcast.5)
+  select_n.13 = s32[512,512]{1,0} select(lt.13, add.26, jit_clip_.6)
+  broadcast_in_dim.15 = s32[512,512,1]{2,1,0} reshape(select_n.13)
+  concatenate.6 = s32[512,512,2]{2,1,0} concatenate(broadcast_in_dim.14, broadcast_in_dim.15), dimensions={2}
+  gather.6 = f32[512,512]{1,0} gather(Arg_0.3, concatenate.6), offset_dims={}, collapsed_slice_dims={0,1}, start_index_map={0,1}, index_vector_dim=2, slice_sizes={1,1}
+  mul.15 = f32[512,512]{1,0} multiply(mul.14, gather.6)
+  add.30 = f32[512,512]{1,0} add(add.29, mul.15)
+  mul.16 = f32[512,512]{1,0} multiply(sub.4, sub.6)
+  lt.14 = pred[512,512]{1,0} compare(jit_clip_.5, broadcast.6), direction=LT
+  add.27 = s32[512,512]{1,0} add(jit_clip_.5, broadcast.5)
+  select_n.14 = s32[512,512]{1,0} select(lt.14, add.27, jit_clip_.5)
+  broadcast_in_dim.16 = s32[512,512,1]{2,1,0} reshape(select_n.14)
+  lt.15 = pred[512,512]{1,0} compare(jit_clip_.7, broadcast.6), direction=LT
+  add.28 = s32[512,512]{1,0} add(jit_clip_.7, broadcast.5)
+  select_n.15 = s32[512,512]{1,0} select(lt.15, add.28, jit_clip_.7)
+  broadcast_in_dim.17 = s32[512,512,1]{2,1,0} reshape(select_n.15)
+  concatenate.7 = s32[512,512,2]{2,1,0} concatenate(broadcast_in_dim.16, broadcast_in_dim.17), dimensions={2}
+  gather.7 = f32[512,512]{1,0} gather(Arg_0.3, concatenate.7), offset_dims={}, collapsed_slice_dims={0,1}, start_index_map={0,1}, index_vector_dim=2, slice_sizes={1,1}
+  mul.17 = f32[512,512]{1,0} multiply(mul.16, gather.7)
+  ROOT add.31 = f32[512,512]{1,0} add(add.30, mul.17)
+}
+
+_where.3 {
+  Arg_0.6 = pred[512,512]{1,0} parameter(0)
+  Arg_1.6 = f32[512,512]{1,0} parameter(1)
+  Arg_2.6 = f32[] parameter(2)
+  broadcast_in_dim.21 = f32[512,512]{1,0} broadcast(Arg_2.6), dimensions={}
+  ROOT select_n.19 = f32[512,512]{1,0} select(Arg_0.6, Arg_1.6, broadcast_in_dim.21)
+}
+
+_map_coordinates_0.4 {
+  constant.23 = f32[] constant(1)
+  broadcast.16 = f32[512,512]{1,0} broadcast(constant.23), dimensions={}
+  Arg_1.7 = f32[512,512]{1,0} parameter(1)
+  floor.6 = f32[512,512]{1,0} floor(Arg_1.7)
+  sub.12 = f32[512,512]{1,0} subtract(Arg_1.7, floor.6)
+  sub.13 = f32[512,512]{1,0} subtract(broadcast.16, sub.12)
+  Arg_2.7 = f32[512,512]{1,0} parameter(2)
+  floor.7 = f32[512,512]{1,0} floor(Arg_2.7)
+  sub.14 = f32[512,512]{1,0} subtract(Arg_2.7, floor.7)
+  sub.15 = f32[512,512]{1,0} subtract(broadcast.16, sub.14)
+  mul.26 = f32[512,512]{1,0} multiply(sub.13, sub.15)
+  convert_element_type.6 = s32[512,512]{1,0} convert(floor.6)
+  constant.21 = s32[] constant(0)
+  broadcast.14 = s32[512,512]{1,0} broadcast(constant.21), dimensions={}
+  ge.4 = pred[512,512]{1,0} compare(convert_element_type.6, broadcast.14), direction=GE
+  constant.20 = s32[] constant(512)
+  broadcast.13 = s32[512,512]{1,0} broadcast(constant.20), dimensions={}
+  lt.28 = pred[512,512]{1,0} compare(convert_element_type.6, broadcast.13), direction=LT
+  and.8 = pred[512,512]{1,0} and(ge.4, lt.28)
+  convert_element_type.7 = s32[512,512]{1,0} convert(floor.7)
+  ge.6 = pred[512,512]{1,0} compare(convert_element_type.7, broadcast.14), direction=GE
+  lt.30 = pred[512,512]{1,0} compare(convert_element_type.7, broadcast.13), direction=LT
+  and.10 = pred[512,512]{1,0} and(ge.6, lt.30)
+  and.12 = pred[512,512]{1,0} and(and.8, and.10)
+  Arg_0.7 = f32[512,512]{1,0} parameter(0)
+  lt.32 = pred[512,512]{1,0} compare(convert_element_type.6, broadcast.14), direction=LT
+  add.47 = s32[512,512]{1,0} add(convert_element_type.6, broadcast.13)
+  select_n.26 = s32[512,512]{1,0} select(lt.32, add.47, convert_element_type.6)
+  broadcast_in_dim.28 = s32[512,512,1]{2,1,0} reshape(select_n.26)
+  lt.33 = pred[512,512]{1,0} compare(convert_element_type.7, broadcast.14), direction=LT
+  add.48 = s32[512,512]{1,0} add(convert_element_type.7, broadcast.13)
+  select_n.27 = s32[512,512]{1,0} select(lt.33, add.48, convert_element_type.7)
+  broadcast_in_dim.29 = s32[512,512,1]{2,1,0} reshape(select_n.27)
+  concatenate.12 = s32[512,512,2]{2,1,0} concatenate(broadcast_in_dim.28, broadcast_in_dim.29), dimensions={2}
+  gather.12 = f32[512,512]{1,0} gather(Arg_0.7, concatenate.12), offset_dims={}, collapsed_slice_dims={0,1}, start_index_map={0,1}, index_vector_dim=2, slice_sizes={1,1}
+  constant.24 = f32[] constant(0)
+  jit__where_.4 = f32[512,512]{1,0} call(and.12, gather.12, constant.24), to_apply=_where.3
+  mul.27 = f32[512,512]{1,0} multiply(mul.26, jit__where_.4)
+  mul.28 = f32[512,512]{1,0} multiply(sub.13, sub.14)
+  constant.22 = s32[] constant(1)
+  broadcast.15 = s32[512,512]{1,0} broadcast(constant.22), dimensions={}
+  add.46 = s32[512,512]{1,0} add(convert_element_type.7, broadcast.15)
+  ge.7 = pred[512,512]{1,0} compare(add.46, broadcast.14), direction=GE
+  lt.31 = pred[512,512]{1,0} compare(add.46, broadcast.13), direction=LT
+  and.11 = pred[512,512]{1,0} and(ge.7, lt.31)
+  and.13 = pred[512,512]{1,0} and(and.8, and.11)
+  lt.34 = pred[512,512]{1,0} compare(convert_element_type.6, broadcast.14), direction=LT
+  add.49 = s32[512,512]{1,0} add(convert_element_type.6, broadcast.13)
+  select_n.28 = s32[512,512]{1,0} select(lt.34, add.49, convert_element_type.6)
+  broadcast_in_dim.30 = s32[512,512,1]{2,1,0} reshape(select_n.28)
+  lt.35 = pred[512,512]{1,0} compare(add.46, broadcast.14), direction=LT
+  add.50 = s32[512,512]{1,0} add(add.46, broadcast.13)
+  select_n.29 = s32[512,512]{1,0} select(lt.35, add.50, add.46)
+  broadcast_in_dim.31 = s32[512,512,1]{2,1,0} reshape(select_n.29)
+  concatenate.13 = s32[512,512,2]{2,1,0} concatenate(broadcast_in_dim.30, broadcast_in_dim.31), dimensions={2}
+  gather.13 = f32[512,512]{1,0} gather(Arg_0.7, concatenate.13), offset_dims={}, collapsed_slice_dims={0,1}, start_index_map={0,1}, index_vector_dim=2, slice_sizes={1,1}
+  jit__where_.5 = f32[512,512]{1,0} call(and.13, gather.13, constant.24), to_apply=_where.3
+  mul.29 = f32[512,512]{1,0} multiply(mul.28, jit__where_.5)
+  add.55 = f32[512,512]{1,0} add(mul.27, mul.29)
+  mul.30 = f32[512,512]{1,0} multiply(sub.12, sub.15)
+  add.45 = s32[512,512]{1,0} add(convert_element_type.6, broadcast.15)
+  ge.5 = pred[512,512]{1,0} compare(add.45, broadcast.14), direction=GE
+  lt.29 = pred[512,512]{1,0} compare(add.45, broadcast.13), direction=LT
+  and.9 = pred[512,512]{1,0} and(ge.5, lt.29)
+  and.14 = pred[512,512]{1,0} and(and.9, and.10)
+  lt.36 = pred[512,512]{1,0} compare(add.45, broadcast.14), direction=LT
+  add.51 = s32[512,512]{1,0} add(add.45, broadcast.13)
+  select_n.30 = s32[512,512]{1,0} select(lt.36, add.51, add.45)
+  broadcast_in_dim.32 = s32[512,512,1]{2,1,0} reshape(select_n.30)
+  lt.37 = pred[512,512]{1,0} compare(convert_element_type.7, broadcast.14), direction=LT
+  add.52 = s32[512,512]{1,0} add(convert_element_type.7, broadcast.13)
+  select_n.31 = s32[512,512]{1,0} select(lt.37, add.52, convert_element_type.7)
+  broadcast_in_dim.33 = s32[512,512,1]{2,1,0} reshape(select_n.31)
+  concatenate.14 = s32[512,512,2]{2,1,0} concatenate(broadcast_in_dim.32, broadcast_in_dim.33), dimensions={2}
+  gather.14 = f32[512,512]{1,0} gather(Arg_0.7, concatenate.14), offset_dims={}, collapsed_slice_dims={0,1}, start_index_map={0,1}, index_vector_dim=2, slice_sizes={1,1}
+  jit__where_.6 = f32[512,512]{1,0} call(and.14, gather.14, constant.24), to_apply=_where.3
+  mul.31 = f32[512,512]{1,0} multiply(mul.30, jit__where_.6)
+  add.56 = f32[512,512]{1,0} add(add.55, mul.31)
+  mul.32 = f32[512,512]{1,0} multiply(sub.12, sub.14)
+  and.15 = pred[512,512]{1,0} and(and.9, and.11)
+  lt.38 = pred[512,512]{1,0} compare(add.45, broadcast.14), direction=LT
+  add.53 = s32[512,512]{1,0} add(add.45, broadcast.13)
+  select_n.32 = s32[512,512]{1,0} select(lt.38, add.53, add.45)
+  broadcast_in_dim.34 = s32[512,512,1]{2,1,0} reshape(select_n.32)
+  lt.39 = pred[512,512]{1,0} compare(add.46, broadcast.14), direction=LT
+  add.54 = s32[512,512]{1,0} add(add.46, broadcast.13)
+  select_n.33 = s32[512,512]{1,0} select(lt.39, add.54, add.46)
+  broadcast_in_dim.35 = s32[512,512,1]{2,1,0} reshape(select_n.33)
+  concatenate.15 = s32[512,512,2]{2,1,0} concatenate(broadcast_in_dim.34, broadcast_in_dim.35), dimensions={2}
+  gather.15 = f32[512,512]{1,0} gather(Arg_0.7, concatenate.15), offset_dims={}, collapsed_slice_dims={0,1}, start_index_map={0,1}, index_vector_dim=2, slice_sizes={1,1}
+  jit__where_.7 = f32[512,512]{1,0} call(and.15, gather.15, constant.24), to_apply=_where.3
+  mul.33 = f32[512,512]{1,0} multiply(mul.32, jit__where_.7)
+  ROOT add.57 = f32[512,512]{1,0} add(add.56, mul.33)
+}
+
+ENTRY main.5 {
+  img.1 = f32[512,512]{1,0} parameter(0)
+  iota.2 = f32[512]{0} iota(), iota_dimension=0
+  broadcast_in_dim.36 = f32[512,512]{1,0} broadcast(iota.2), dimensions={0}
+  iota.3 = f32[512]{0} iota(), iota_dimension=0
+  broadcast_in_dim.37 = f32[512,512]{1,0} broadcast(iota.3), dimensions={1}
+  constant.27 = f32[] constant(17)
+  div.5 = f32[512,512]{1,0} broadcast(constant.27), dimensions={}
+  div.6 = f32[512,512]{1,0} divide(broadcast_in_dim.37, div.5)
+  d.1 = f32[2]{0} parameter(1)
+  slice.2 = f32[1]{0} slice(d.1), slice={[0:1]}
+  squeeze.2 = f32[] reshape(slice.2)
+  add.58 = f32[512,512]{1,0} broadcast(squeeze.2), dimensions={}
+  add.59 = f32[512,512]{1,0} add(div.6, add.58)
+  sin.1 = f32[512,512]{1,0} sine(add.59)
+  constant.26 = f32[] constant(4)
+  broadcast.17 = f32[512,512]{1,0} broadcast(constant.26), dimensions={}
+  mul.34 = f32[512,512]{1,0} multiply(sin.1, broadcast.17)
+  add.60 = f32[512,512]{1,0} add(broadcast_in_dim.36, mul.34)
+  constant.25 = f32[] constant(13)
+  div.4 = f32[512,512]{1,0} broadcast(constant.25), dimensions={}
+  div.7 = f32[512,512]{1,0} divide(broadcast_in_dim.36, div.4)
+  slice.3 = f32[1]{0} slice(d.1), slice={[1:2]}
+  squeeze.3 = f32[] reshape(slice.3)
+  add.61 = f32[512,512]{1,0} broadcast(squeeze.3), dimensions={}
+  add.62 = f32[512,512]{1,0} add(div.7, add.61)
+  cos.1 = f32[512,512]{1,0} cosine(add.62)
+  mul.35 = f32[512,512]{1,0} multiply(cos.1, broadcast.17)
+  add.63 = f32[512,512]{1,0} add(broadcast_in_dim.37, mul.35)
+  jit__map_coordinates_.2 = f32[512,512]{1,0} call(img.1, add.60, add.63), to_apply=_map_coordinates.2
+  transpose.2 = f32[512,512]{0,1} transpose(add.63), dimensions={1,0}
+  transpose.3 = f32[512,512]{0,1} transpose(add.60), dimensions={1,0}
+  ROOT jit__map_coordinates_.3 = f32[512,512]{1,0} call(jit__map_coordinates_.2, transpose.2, transpose.3), to_apply=_map_coordinates_0.4
+}
+

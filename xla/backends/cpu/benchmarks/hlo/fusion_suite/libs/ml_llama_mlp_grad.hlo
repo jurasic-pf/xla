@@ -1,0 +1,103 @@
+HloModule jit__lambda, entry_computation_layout={(f32[1024,2816]{1,0}, f32[1024,2816]{1,0}, f32[2816,1024]{1,0}, f32[1024]{0}, f32[4096,1024]{1,0})->(f32[1024,2816]{0,1}, f32[1024,2816]{0,1}, f32[2816,1024]{0,1}, f32[1024]{0})}
+
+region_0.1 {
+  reduce_sum.3 = f32[] parameter(0)
+  reduce_sum.4 = f32[] parameter(1)
+  ROOT reduce_sum.5 = f32[] add(reduce_sum.3, reduce_sum.4)
+}
+
+silu.2 {
+  Arg_0.1 = f32[4096,2816]{1,0} parameter(0)
+  constant.5 = f32[] constant(1)
+  broadcast.1 = f32[4096,2816]{1,0} broadcast(constant.5), dimensions={}
+  neg.1 = f32[4096,2816]{1,0} negate(Arg_0.1)
+  exp.1 = f32[4096,2816]{1,0} exponential(neg.1)
+  add.3 = f32[4096,2816]{1,0} add(exp.1, broadcast.1)
+  div.3 = f32[4096,2816]{1,0} divide(broadcast.1, add.3)
+  mul.13 = f32[4096,2816]{1,0} multiply(Arg_0.1, div.3)
+  sub.1 = f32[4096,2816]{1,0} subtract(broadcast.1, div.3)
+  mul.12 = f32[4096,2816]{1,0} multiply(div.3, sub.1)
+  ROOT tuple.1 = (f32[4096,2816]{1,0}, f32[4096,2816]{1,0}, f32[4096,2816]{1,0}) tuple(mul.13, mul.12, div.3)
+}
+
+silu_0.3 {
+  Arg_3.1 = f32[4096,2816]{1,0} parameter(3)
+  Arg_1.1 = f32[4096,2816]{1,0} parameter(1)
+  mul.22 = f32[4096,2816]{1,0} multiply(Arg_3.1, Arg_1.1)
+  Arg_2.1 = f32[4096,2816]{1,0} parameter(2)
+  mul.21 = f32[4096,2816]{1,0} multiply(Arg_2.1, Arg_3.1)
+  Arg_0.3 = f32[4096,2816]{1,0} parameter(0)
+  mul.23 = f32[4096,2816]{1,0} multiply(mul.21, Arg_0.3)
+  ROOT add_any.1 = f32[4096,2816]{1,0} add(mul.22, mul.23)
+}
+
+region_1.4 {
+  reduce_sum.10 = f32[] parameter(0)
+  reduce_sum.11 = f32[] parameter(1)
+  ROOT reduce_sum.12 = f32[] add(reduce_sum.10, reduce_sum.11)
+}
+
+region_2.5 {
+  reduce_sum.17 = f32[] parameter(0)
+  reduce_sum.18 = f32[] parameter(1)
+  ROOT reduce_sum.19 = f32[] add(reduce_sum.17, reduce_sum.18)
+}
+
+ENTRY main.6 {
+  x.1 = f32[4096,1024]{1,0} parameter(4)
+  mul.26 = f32[4096,1024]{1,0} multiply(x.1, x.1)
+  constant.9 = f32[] constant(0)
+  reduce_sum.21 = f32[4096]{0} reduce(mul.26, constant.9), dimensions={1}, to_apply=region_0.1
+  broadcast_in_dim.2 = f32[4096,1]{1,0} reshape(reduce_sum.21)
+  constant.8 = f32[] constant(1024)
+  div.4 = f32[4096,1]{1,0} broadcast(constant.8), dimensions={}
+  div.5 = f32[4096,1]{1,0} divide(broadcast_in_dim.2, div.4)
+  constant.7 = f32[] constant(1e-06)
+  add.5 = f32[4096,1]{1,0} broadcast(constant.7), dimensions={}
+  add.6 = f32[4096,1]{1,0} add(div.5, add.5)
+  rsqrt.1 = f32[4096,1]{1,0} rsqrt(add.6)
+  mul.27 = f32[4096,1]{1,0} broadcast(rsqrt.1), dimensions={0,1}
+  mul.28 = f32[4096]{0} reshape(mul.27)
+  mul.29 = f32[4096,1024]{1,0} broadcast(mul.28), dimensions={0}
+  mul.30 = f32[4096,1024]{1,0} multiply(x.1, mul.29)
+  W_3_.1 = f32[1024]{0} parameter(3)
+  broadcast_in_dim.3 = f32[1,1024]{1,0} reshape(W_3_.1)
+  mul.31 = f32[1,1024]{1,0} broadcast(broadcast_in_dim.3), dimensions={0,1}
+  mul.32 = f32[1024]{0} reshape(mul.31)
+  mul.33 = f32[4096,1024]{1,0} broadcast(mul.32), dimensions={1}
+  mul.34 = f32[4096,1024]{1,0} multiply(mul.30, mul.33)
+  W_0_.1 = f32[1024,2816]{1,0} parameter(0)
+  dot_general.9 = f32[4096,2816]{1,0} dot(mul.34, W_0_.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  jvp_jit_silu__.4 = (f32[4096,2816]{1,0}, f32[4096,2816]{1,0}, f32[4096,2816]{1,0}) call(dot_general.9), to_apply=silu.2
+  jvp_jit_silu__.6 = f32[4096,2816]{1,0} get-tuple-element(jvp_jit_silu__.4), index=1
+  jvp_jit_silu__.7 = f32[4096,2816]{1,0} get-tuple-element(jvp_jit_silu__.4), index=2
+  jvp_jit_silu__.5 = f32[4096,2816]{1,0} get-tuple-element(jvp_jit_silu__.4), index=0
+  W_1_.1 = f32[1024,2816]{1,0} parameter(1)
+  dot_general.10 = f32[4096,2816]{1,0} dot(mul.34, W_1_.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  mul.35 = f32[4096,2816]{1,0} multiply(jvp_jit_silu__.5, dot_general.10)
+  W_2_.1 = f32[2816,1024]{1,0} parameter(2)
+  dot_general.11 = f32[4096,1024]{1,0} dot(mul.35, W_2_.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  add.7 = f32[4096,1024]{1,0} add(x.1, dot_general.11)
+  constant.6 = f32[] constant(2)
+  mul.25 = f32[4096,1024]{1,0} broadcast(constant.6), dimensions={}
+  mul.36 = f32[4096,1024]{1,0} multiply(add.7, mul.25)
+  dot_general.13 = f32[4096,2816]{1,0} dot(mul.36, W_2_.1), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  mul.38 = f32[4096,2816]{1,0} multiply(dot_general.13, dot_general.10)
+  transpose_jvp_jit_silu___.1 = f32[4096,2816]{1,0} call(jvp_jit_silu__.6, jvp_jit_silu__.7, dot_general.9, mul.38), to_apply=silu_0.3
+  dot_general.16 = f32[2816,1024]{1,0} dot(transpose_jvp_jit_silu___.1, mul.34), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  transpose.5 = f32[1024,2816]{0,1} transpose(dot_general.16), dimensions={1,0}
+  mul.37 = f32[4096,2816]{1,0} multiply(jvp_jit_silu__.5, dot_general.13)
+  dot_general.14 = f32[2816,1024]{1,0} dot(mul.37, mul.34), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  transpose.4 = f32[1024,2816]{0,1} transpose(dot_general.14), dimensions={1,0}
+  dot_general.12 = f32[1024,2816]{1,0} dot(mul.36, mul.35), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  transpose.3 = f32[2816,1024]{0,1} transpose(dot_general.12), dimensions={1,0}
+  dot_general.15 = f32[4096,1024]{1,0} dot(mul.37, W_1_.1), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  dot_general.17 = f32[4096,1024]{1,0} dot(transpose_jvp_jit_silu___.1, W_0_.1), lhs_contracting_dims={1}, rhs_contracting_dims={1}
+  add_any.3 = f32[4096,1024]{1,0} add(dot_general.15, dot_general.17)
+  mul.39 = f32[4096,1024]{1,0} multiply(mul.30, add_any.3)
+  reduce_sum.22 = f32[1024]{0} reduce(mul.39, constant.9), dimensions={0}, to_apply=region_1.4
+  reshape.1 = f32[1,1024]{1,0} reshape(reduce_sum.22)
+  reduce_sum.23 = f32[1024]{0} reduce(reshape.1, constant.9), dimensions={0}, to_apply=region_2.5
+  ROOT tuple.3 = (f32[1024,2816]{0,1}, f32[1024,2816]{0,1}, f32[2816,1024]{0,1}, f32[1024]{0}) tuple(transpose.5, transpose.4, transpose.3, reduce_sum.23)
+}
+

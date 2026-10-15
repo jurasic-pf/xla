@@ -1,0 +1,333 @@
+HloModule jit_nlml, entry_computation_layout={(f32[3]{0}, f32[2048,4]{1,0}, f32[2048]{0})->f32[3]{0}}
+
+region_0.1 {
+  reduce_sum.3 = f32[] parameter(0)
+  reduce_sum.4 = f32[] parameter(1)
+  ROOT reduce_sum.5 = f32[] add(reduce_sum.3, reduce_sum.4)
+}
+
+cholesky.2 {
+  iota.48 = s32[2048]{0} iota(), iota_dimension=0
+  iota.49 = s32[2048,2048]{1,0} broadcast(iota.48), dimensions={0}
+  iota.50 = s32[2048]{0} iota(), iota_dimension=0
+  iota.51 = s32[2048,2048]{1,0} broadcast(iota.50), dimensions={1}
+  ge.9 = pred[2048,2048]{1,0} compare(iota.49, iota.51), direction=GE
+  iota.36 = s32[2048]{0} iota(), iota_dimension=0
+  iota.37 = s32[2048,2048]{1,0} broadcast(iota.36), dimensions={0}
+  iota.38 = s32[2048]{0} iota(), iota_dimension=0
+  iota.39 = s32[2048,2048]{1,0} broadcast(iota.38), dimensions={1}
+  ge.7 = pred[2048,2048]{1,0} compare(iota.37, iota.39), direction=GE
+  Arg_0.1 = f32[2048,2048]{1,0} parameter(0)
+  transpose.1 = f32[2048,2048]{0,1} transpose(Arg_0.1), dimensions={1,0}
+  add.9 = f32[2048,2048]{1,0} add(Arg_0.1, transpose.1)
+  constant.14 = f32[] constant(2)
+  div.5 = f32[2048,2048]{1,0} broadcast(constant.14), dimensions={}
+  div.6 = f32[2048,2048]{1,0} divide(add.9, div.5)
+  cholesky.1 = f32[2048,2048]{1,0} cholesky(div.6), lower=true
+  constant.12 = f32[] constant(0)
+  broadcast.1 = f32[2048,2048]{1,0} broadcast(constant.12), dimensions={}
+  select_n.2 = f32[2048,2048]{1,0} select(ge.7, cholesky.1, broadcast.1)
+  select_n.3 = f32[2048,2048]{1,0} select(ge.9, select_n.2, broadcast.1)
+  iota.28 = s32[2048]{0} iota(), iota_dimension=0
+  iota.29 = s32[2048,2048]{1,0} broadcast(iota.28), dimensions={0}
+  iota.30 = s32[2048]{0} iota(), iota_dimension=0
+  iota.31 = s32[2048,2048]{1,0} broadcast(iota.30), dimensions={1}
+  ge.5 = pred[2048,2048]{1,0} compare(iota.29, iota.31), direction=GE
+  iota.32 = s32[2048]{0} iota(), iota_dimension=0
+  iota.33 = s32[2048,2048]{1,0} broadcast(iota.32), dimensions={0}
+  constant.13 = s32[] constant(-1)
+  add.8 = s32[2048,2048]{1,0} broadcast(constant.13), dimensions={}
+  add.10 = s32[2048,2048]{1,0} add(iota.33, add.8)
+  iota.34 = s32[2048]{0} iota(), iota_dimension=0
+  iota.35 = s32[2048,2048]{1,0} broadcast(iota.34), dimensions={1}
+  ge.6 = pred[2048,2048]{1,0} compare(add.10, iota.35), direction=GE
+  iota.40 = s32[2048]{0} iota(), iota_dimension=0
+  iota.41 = s32[2048,2048]{1,0} broadcast(iota.40), dimensions={0}
+  iota.42 = s32[2048]{0} iota(), iota_dimension=0
+  iota.43 = s32[2048,2048]{1,0} broadcast(iota.42), dimensions={1}
+  ge.8 = pred[2048,2048]{1,0} compare(iota.41, iota.43), direction=GE
+  iota.44 = s32[2048]{0} iota(), iota_dimension=0
+  iota.45 = s32[2048,2048]{1,0} broadcast(iota.44), dimensions={0}
+  iota.46 = s32[2048]{0} iota(), iota_dimension=0
+  iota.47 = s32[2048,2048]{1,0} broadcast(iota.46), dimensions={1}
+  eq.2 = pred[2048,2048]{1,0} compare(iota.45, iota.47), direction=EQ
+  convert_element_type.2 = f32[2048,2048]{1,0} convert(eq.2)
+  constant.11 = f32[] constant(1)
+  add.7 = f32[2048,2048]{1,0} broadcast(constant.11), dimensions={}
+  add.11 = f32[2048,2048]{1,0} add(convert_element_type.2, add.7)
+  ROOT tuple.1 = (f32[2048,2048]{1,0}, pred[2048,2048]{1,0}, pred[2048,2048]{1,0}, f32[2048,2048]{1,0}, pred[2048,2048]{1,0}, /*index=5*/f32[2048,2048]{1,0}, pred[2048,2048]{1,0}) tuple(select_n.3, ge.5, ge.6, select_n.2, ge.8, add.11, ge.9)
+}
+
+_cho_solve.3 {
+  iota.60 = s32[2048]{0} iota(), iota_dimension=0
+  iota.61 = s32[2048,2048]{1,0} broadcast(iota.60), dimensions={0}
+  iota.62 = s32[2048]{0} iota(), iota_dimension=0
+  iota.63 = s32[2048,2048]{1,0} broadcast(iota.62), dimensions={1}
+  ge.12 = pred[2048,2048]{1,0} compare(iota.61, iota.63), direction=GE
+  Arg_0.3 = f32[2048,2048]{1,0} parameter(0)
+  Arg_1.1 = f32[2048]{0} parameter(1)
+  broadcast_in_dim.4 = f32[2048,1]{1,0} reshape(Arg_1.1)
+  triangular_solve.2 = f32[2048,1]{1,0} triangular-solve(Arg_0.3, broadcast_in_dim.4), left_side=true, lower=true, transpose_a=NO_TRANSPOSE
+  iota.64 = s32[2048]{0} iota(), iota_dimension=0
+  iota.65 = s32[2048,2048]{1,0} broadcast(iota.64), dimensions={0}
+  iota.66 = s32[2048]{0} iota(), iota_dimension=0
+  iota.67 = s32[2048,2048]{1,0} broadcast(iota.66), dimensions={1}
+  ge.13 = pred[2048,2048]{1,0} compare(iota.65, iota.67), direction=GE
+  triangular_solve.3 = f32[2048,1]{1,0} triangular-solve(Arg_0.3, triangular_solve.2), left_side=true, lower=true, transpose_a=TRANSPOSE
+  ROOT tuple.3 = (pred[2048,2048]{1,0}, f32[2048,1]{1,0}, pred[2048,2048]{1,0}, f32[2048,1]{1,0}) tuple(ge.12, triangular_solve.2, ge.13, triangular_solve.3)
+}
+
+diagonal.4 {
+  Arg_0.6 = f32[2048,2048]{1,0} parameter(0)
+  iota.70 = s32[2048]{0} iota(), iota_dimension=0
+  constant.21 = s32[] constant(0)
+  broadcast.5 = s32[2048]{0} broadcast(constant.21), dimensions={}
+  lt.2 = pred[2048]{0} compare(iota.70, broadcast.5), direction=LT
+  constant.20 = s32[] constant(2048)
+  broadcast.4 = s32[2048]{0} broadcast(constant.20), dimensions={}
+  add.14 = s32[2048]{0} add(iota.70, broadcast.4)
+  select_n.6 = s32[2048]{0} select(lt.2, add.14, iota.70)
+  broadcast_in_dim.9 = s32[2048,1]{1,0} reshape(select_n.6)
+  iota.71 = s32[2048]{0} iota(), iota_dimension=0
+  lt.3 = pred[2048]{0} compare(iota.71, broadcast.5), direction=LT
+  add.15 = s32[2048]{0} add(iota.71, broadcast.4)
+  select_n.7 = s32[2048]{0} select(lt.3, add.15, iota.71)
+  broadcast_in_dim.10 = s32[2048,1]{1,0} reshape(select_n.7)
+  concatenate.1 = s32[2048,2]{1,0} concatenate(broadcast_in_dim.9, broadcast_in_dim.10), dimensions={1}
+  gather.1 = f32[2048]{0} gather(Arg_0.6, concatenate.1), offset_dims={}, collapsed_slice_dims={0,1}, start_index_map={0,1}, index_vector_dim=1, slice_sizes={1,1}
+  constant.22 = s32[] constant(1)
+  constant.19 = f32[] constant(0)
+  broadcast_in_dim.8 = f32[2048,2048]{1,0} broadcast(constant.19), dimensions={}
+  ROOT tuple.5 = (f32[2048]{0}, s32[], f32[2048,2048]{1,0}, s32[2048,2]{1,0}) tuple(gather.1, constant.22, broadcast_in_dim.8, concatenate.1)
+}
+
+_diag.5 {
+  Arg_0.7 = f32[2048,2048]{1,0} parameter(0)
+  jit_diagonal_.5 = (f32[2048]{0}, s32[], f32[2048,2048]{1,0}, s32[2048,2]{1,0}) call(Arg_0.7), to_apply=diagonal.4
+  jit_diagonal_.6 = f32[2048]{0} get-tuple-element(jit_diagonal_.5), index=0
+  jit_diagonal_.7 = s32[] get-tuple-element(jit_diagonal_.5), index=1
+  jit_diagonal_.8 = f32[2048,2048]{1,0} get-tuple-element(jit_diagonal_.5), index=2
+  jit_diagonal_.9 = s32[2048,2]{1,0} get-tuple-element(jit_diagonal_.5), index=3
+  ROOT tuple.7 = (f32[2048]{0}, s32[], f32[2048,2048]{1,0}, s32[2048,2]{1,0}) tuple(jit_diagonal_.6, jit_diagonal_.7, jit_diagonal_.8, jit_diagonal_.9)
+}
+
+region_1.6 {
+  arg_empty_tuple.1 = () parameter(0)
+  ROOT constant.24 = s32[] constant(0)
+}
+
+region_2.7 {
+  arg_empty_tuple.3 = () parameter(0)
+  ROOT constant.26 = s32[] constant(0)
+}
+
+region_4.8 {
+  scatter-add.2 = f32[] parameter(0)
+  scatter-add.3 = f32[] parameter(1)
+  ROOT add.17 = f32[] add(scatter-add.2, scatter-add.3)
+}
+
+region_3.9 {
+  constant.28 = f32[] constant(0)
+  broadcast.7 = f32[2048,2048]{1,0} broadcast(constant.28), dimensions={}
+  arg_tuple.1 = (s32[2048,2]{1,0}, f32[2048]{0}) parameter(0)
+  get-tuple-element.2 = s32[2048,2]{1,0} get-tuple-element(arg_tuple.1), index=0
+  get-tuple-element.3 = f32[2048]{0} get-tuple-element(arg_tuple.1), index=1
+  ROOT scatter-add.5 = f32[2048,2048]{1,0} scatter(broadcast.7, get-tuple-element.2, get-tuple-element.3), update_window_dims={}, inserted_window_dims={0,1}, scatter_dims_to_operand_dims={0,1}, index_vector_dim=1, to_apply=region_4.8
+}
+
+diagonal_1.10 {
+  Arg_1.4 = f32[2048,2048]{1,0} parameter(1)
+  Arg_0.10 = s32[] parameter(0)
+  cond.5 = () tuple()
+  cond.6 = () tuple()
+  cond.7 = s32[] conditional(Arg_0.10, cond.5, cond.6), branch_computations={region_1.6, region_2.7}
+  Arg_2.2 = s32[2048,2]{1,0} parameter(2)
+  Arg_3.2 = f32[2048]{0} parameter(3)
+  cond.8 = (s32[2048,2]{1,0}, f32[2048]{0}) tuple(Arg_2.2, Arg_3.2)
+  ROOT cond.9 = f32[2048,2048]{1,0} conditional(cond.7, cond.8), branch_computations={region_3.9}
+}
+
+_diag_0.11 {
+  Arg_0.11 = s32[] parameter(0)
+  Arg_1.5 = f32[2048,2048]{1,0} parameter(1)
+  Arg_2.3 = s32[2048,2]{1,0} parameter(2)
+  Arg_3.3 = f32[2048]{0} parameter(3)
+  ROOT jit_diagonal_.11 = f32[2048,2048]{1,0} call(Arg_0.11, Arg_1.5, Arg_2.3, Arg_3.3), to_apply=diagonal_1.10
+}
+
+region_5.12 {
+  reduce_sum.10 = f32[] parameter(0)
+  reduce_sum.11 = f32[] parameter(1)
+  ROOT reduce_sum.12 = f32[] add(reduce_sum.10, reduce_sum.11)
+}
+
+_cho_solve_2.13 {
+  Arg_3.5 = pred[2048,2048]{1,0} parameter(3)
+  Arg_2.5 = f32[2048,2048]{1,0} parameter(2)
+  Arg_5.1 = f32[2048]{0} parameter(5)
+  broadcast_in_dim.13 = f32[2048,1]{1,0} reshape(Arg_5.1)
+  triangular_solve.8 = f32[2048,1]{1,0} triangular-solve(Arg_2.5, broadcast_in_dim.13), left_side=true, lower=true, transpose_a=NO_TRANSPOSE
+  Arg_4.1 = f32[2048,1]{1,0} parameter(4)
+  dot_general.3 = f32[2048,2048]{1,0} dot(triangular_solve.8, Arg_4.1), lhs_contracting_dims={1}, rhs_contracting_dims={1}, operand_precision={highest,highest}
+  transpose.3 = f32[2048,2048]{0,1} transpose(dot_general.3), dimensions={1,0}
+  neg.2 = f32[2048,2048]{0,1} negate(transpose.3)
+  constant.31 = f32[] constant(0)
+  broadcast.9 = f32[2048,2048]{1,0} broadcast(constant.31), dimensions={}
+  select_n.10 = f32[2048,2048]{1,0} select(Arg_3.5, neg.2, broadcast.9)
+  Arg_0.13 = pred[2048,2048]{1,0} parameter(0)
+  triangular_solve.7 = f32[2048,1]{1,0} triangular-solve(Arg_2.5, broadcast_in_dim.13), left_side=true, lower=true, transpose_a=NO_TRANSPOSE
+  constant.32 = f32[] constant(0)
+  reduce_sum.14 = f32[2048]{0} reduce(triangular_solve.7, constant.32), dimensions={1}, to_apply=region_5.12
+  broadcast_in_dim.14 = f32[2048,1]{1,0} reshape(reduce_sum.14)
+  triangular_solve.9 = f32[2048,1]{1,0} triangular-solve(Arg_2.5, broadcast_in_dim.14), left_side=true, lower=true, transpose_a=TRANSPOSE
+  Arg_1.7 = f32[2048,1]{1,0} parameter(1)
+  dot_general.4 = f32[2048,2048]{1,0} dot(triangular_solve.9, Arg_1.7), lhs_contracting_dims={1}, rhs_contracting_dims={1}, operand_precision={highest,highest}
+  neg.3 = f32[2048,2048]{1,0} negate(dot_general.4)
+  select_n.11 = f32[2048,2048]{1,0} select(Arg_0.13, neg.3, broadcast.9)
+  ROOT add_any.1 = f32[2048,2048]{1,0} add(select_n.10, select_n.11)
+}
+
+cholesky_3.14 {
+  Arg_1.9 = pred[2048,2048]{1,0} parameter(1)
+  Arg_2.7 = f32[2048,2048]{1,0} parameter(2)
+  Arg_3.7 = pred[2048,2048]{1,0} parameter(3)
+  Arg_5.3 = pred[2048,2048]{1,0} parameter(5)
+  Arg_6.1 = f32[2048,2048]{1,0} parameter(6)
+  constant.36 = f32[] constant(0)
+  broadcast.11 = f32[2048,2048]{1,0} broadcast(constant.36), dimensions={}
+  select_n.16 = f32[2048,2048]{1,0} select(Arg_5.3, Arg_6.1, broadcast.11)
+  dot_general.6 = f32[2048,2048]{1,0} dot(select_n.16, Arg_2.7), lhs_contracting_dims={0}, rhs_contracting_dims={0}, operand_precision={highest,highest}
+  transpose.7 = f32[2048,2048]{0,1} transpose(dot_general.6), dimensions={1,0}
+  Arg_4.3 = f32[2048,2048]{1,0} parameter(4)
+  div.12 = f32[2048,2048]{0,1} divide(transpose.7, Arg_4.3)
+  select_n.17 = f32[2048,2048]{1,0} select(Arg_3.7, div.12, broadcast.11)
+  triangular_solve.12 = f32[2048,2048]{1,0} triangular-solve(Arg_2.7, select_n.17), left_side=true, lower=true, transpose_a=TRANSPOSE
+  triangular_solve.13 = f32[2048,2048]{1,0} triangular-solve(Arg_2.7, triangular_solve.12), lower=true, transpose_a=NO_TRANSPOSE
+  transpose.8 = f32[2048,2048]{0,1} transpose(triangular_solve.13), dimensions={1,0}
+  select_n.18 = f32[2048,2048]{1,0} select(Arg_1.9, transpose.8, broadcast.11)
+  Arg_0.15 = pred[2048,2048]{1,0} parameter(0)
+  select_n.19 = f32[2048,2048]{1,0} select(Arg_0.15, triangular_solve.13, broadcast.11)
+  add_any.5 = f32[2048,2048]{1,0} add(select_n.18, select_n.19)
+  constant.35 = f32[] constant(2)
+  div.11 = f32[2048,2048]{1,0} broadcast(constant.35), dimensions={}
+  div.13 = f32[2048,2048]{1,0} divide(add_any.5, div.11)
+  transpose.9 = f32[2048,2048]{0,1} transpose(div.13), dimensions={1,0}
+  ROOT add_any.6 = f32[2048,2048]{1,0} add(div.13, transpose.9)
+}
+
+region_6.15 {
+  reduce_sum.18 = f32[] parameter(0)
+  reduce_sum.19 = f32[] parameter(1)
+  ROOT reduce_sum.20 = f32[] add(reduce_sum.18, reduce_sum.19)
+}
+
+region_7.16 {
+  reduce_sum.25 = f32[] parameter(0)
+  reduce_sum.26 = f32[] parameter(1)
+  ROOT reduce_sum.27 = f32[] add(reduce_sum.25, reduce_sum.26)
+}
+
+region_8.17 {
+  reduce_sum.32 = f32[] parameter(0)
+  reduce_sum.33 = f32[] parameter(1)
+  ROOT reduce_sum.34 = f32[] add(reduce_sum.32, reduce_sum.33)
+}
+
+ENTRY main.18 {
+  p.1 = f32[3]{0} parameter(0)
+  exp.2 = f32[3]{0} exponential(p.1)
+  unstack.8 = f32[1]{0} slice(exp.2), slice={[1:2]}
+  unstack.9 = f32[] reshape(unstack.8)
+  mul.29 = f32[2048,2048]{1,0} broadcast(unstack.9), dimensions={}
+  mul.23 = f32[2048,2048]{1,0} broadcast(unstack.9), dimensions={}
+  X.1 = f32[2048,4]{1,0} parameter(1)
+  broadcast_in_dim.16 = f32[2048,1,4]{2,1,0} reshape(X.1)
+  sub.7 = f32[2048,1,4]{2,1,0} broadcast(broadcast_in_dim.16), dimensions={0,1,2}
+  sub.8 = f32[2048,4]{1,0} reshape(sub.7)
+  sub.9 = f32[2048,2048,4]{2,1,0} broadcast(sub.8), dimensions={0,2}
+  broadcast_in_dim.17 = f32[1,2048,4]{2,1,0} reshape(X.1)
+  sub.10 = f32[1,2048,4]{2,1,0} broadcast(broadcast_in_dim.17), dimensions={0,1,2}
+  sub.11 = f32[2048,4]{1,0} reshape(sub.10)
+  sub.12 = f32[2048,2048,4]{2,1,0} broadcast(sub.11), dimensions={1,2}
+  sub.13 = f32[2048,2048,4]{2,1,0} subtract(sub.9, sub.12)
+  integer_pow.2 = f32[2048,2048,4]{2,1,0} multiply(sub.13, sub.13)
+  constant.43 = f32[] constant(0)
+  reduce_sum.36 = f32[2048,2048]{1,0} reduce(integer_pow.2, constant.43), dimensions={2}, to_apply=region_0.1
+  constant.39 = f32[] constant(-0.5)
+  mul.20 = f32[2048,2048]{1,0} broadcast(constant.39), dimensions={}
+  mul.21 = f32[2048,2048]{1,0} multiply(reduce_sum.36, mul.20)
+  unstack.6 = f32[1]{0} slice(exp.2), slice={[0:1]}
+  unstack.7 = f32[] reshape(unstack.6)
+  integer_pow.3 = f32[] multiply(unstack.7, unstack.7)
+  div.14 = f32[2048,2048]{1,0} broadcast(integer_pow.3), dimensions={}
+  div.15 = f32[2048,2048]{1,0} divide(mul.21, div.14)
+  exp.3 = f32[2048,2048]{1,0} exponential(div.15)
+  mul.24 = f32[2048,2048]{1,0} multiply(mul.23, exp.3)
+  unstack.10 = f32[1]{0} slice(exp.2), slice={[2:3]}
+  unstack.11 = f32[] reshape(unstack.10)
+  constant.40 = f32[] constant(0.0001)
+  add.18 = f32[] add(unstack.11, constant.40)
+  mul.25 = f32[2048,2048]{1,0} broadcast(add.18), dimensions={}
+  iota.72 = s32[2048]{0} iota(), iota_dimension=0
+  iota.73 = s32[2048,2048]{1,0} broadcast(iota.72), dimensions={0}
+  iota.74 = s32[2048]{0} iota(), iota_dimension=0
+  iota.75 = s32[2048,2048]{1,0} broadcast(iota.74), dimensions={1}
+  eq.3 = pred[2048,2048]{1,0} compare(iota.73, iota.75), direction=EQ
+  convert_element_type.3 = f32[2048,2048]{1,0} convert(eq.3)
+  mul.26 = f32[2048,2048]{1,0} multiply(mul.25, convert_element_type.3)
+  add.19 = f32[2048,2048]{1,0} add(mul.24, mul.26)
+  jvp_jit_cholesky__.8 = (f32[2048,2048]{1,0}, pred[2048,2048]{1,0}, pred[2048,2048]{1,0}, f32[2048,2048]{1,0}, pred[2048,2048]{1,0}, /*index=5*/f32[2048,2048]{1,0}, pred[2048,2048]{1,0}) call(add.19), to_apply=cholesky.2
+  jvp_jit_cholesky__.10 = pred[2048,2048]{1,0} get-tuple-element(jvp_jit_cholesky__.8), index=1
+  jvp_jit_cholesky__.11 = pred[2048,2048]{1,0} get-tuple-element(jvp_jit_cholesky__.8), index=2
+  jvp_jit_cholesky__.12 = f32[2048,2048]{1,0} get-tuple-element(jvp_jit_cholesky__.8), index=3
+  jvp_jit_cholesky__.13 = pred[2048,2048]{1,0} get-tuple-element(jvp_jit_cholesky__.8), index=4
+  jvp_jit_cholesky__.14 = f32[2048,2048]{1,0} get-tuple-element(jvp_jit_cholesky__.8), index=5
+  jvp_jit_cholesky__.15 = pred[2048,2048]{1,0} get-tuple-element(jvp_jit_cholesky__.8), index=6
+  jvp_jit_cholesky__.9 = f32[2048,2048]{1,0} get-tuple-element(jvp_jit_cholesky__.8), index=0
+  jvp_jit__diag__.5 = (f32[2048]{0}, s32[], f32[2048,2048]{1,0}, s32[2048,2]{1,0}) call(jvp_jit_cholesky__.9), to_apply=_diag.5
+  jvp_jit__diag__.7 = s32[] get-tuple-element(jvp_jit__diag__.5), index=1
+  jvp_jit__diag__.8 = f32[2048,2048]{1,0} get-tuple-element(jvp_jit__diag__.5), index=2
+  jvp_jit__diag__.9 = s32[2048,2]{1,0} get-tuple-element(jvp_jit__diag__.5), index=3
+  constant.37 = f32[] constant(1)
+  broadcast_in_dim.15 = f32[2048]{0} broadcast(constant.37), dimensions={}
+  jvp_jit__diag__.6 = f32[2048]{0} get-tuple-element(jvp_jit__diag__.5), index=0
+  div.17 = f32[2048]{0} divide(broadcast_in_dim.15, jvp_jit__diag__.6)
+  transpose_jvp_jit__diag___.1 = f32[2048,2048]{1,0} call(jvp_jit__diag__.7, jvp_jit__diag__.8, jvp_jit__diag__.9, div.17), to_apply=_diag_0.11
+  Y.1 = f32[2048]{0} parameter(2)
+  jvp_jit__cho_solve__.5 = (pred[2048,2048]{1,0}, f32[2048,1]{1,0}, pred[2048,2048]{1,0}, f32[2048,1]{1,0}) call(jvp_jit_cholesky__.9, Y.1), to_apply=_cho_solve.3
+  jvp_jit__cho_solve__.6 = pred[2048,2048]{1,0} get-tuple-element(jvp_jit__cho_solve__.5), index=0
+  jvp_jit__cho_solve__.7 = f32[2048,1]{1,0} get-tuple-element(jvp_jit__cho_solve__.5), index=1
+  jvp_jit__cho_solve__.8 = pred[2048,2048]{1,0} get-tuple-element(jvp_jit__cho_solve__.5), index=2
+  jvp_jit__cho_solve__.9 = f32[2048,1]{1,0} get-tuple-element(jvp_jit__cho_solve__.5), index=3
+  constant.41 = f32[] constant(1)
+  constant.38 = f32[] constant(0.5)
+  mul.19 = f32[2048]{0} broadcast(constant.38), dimensions={}
+  mul.27 = f32[2048]{0} multiply(Y.1, mul.19)
+  dot_general.7 = f32[2048]{0} dot(constant.41, mul.27), lhs_contracting_dims={}, rhs_contracting_dims={}
+  transpose_jvp_jit__cho_solve___.1 = f32[2048,2048]{1,0} call(jvp_jit__cho_solve__.6, jvp_jit__cho_solve__.7, jvp_jit_cholesky__.9, jvp_jit__cho_solve__.8, jvp_jit__cho_solve__.9, dot_general.7), to_apply=_cho_solve_2.13
+  add_any.7 = f32[2048,2048]{1,0} add(transpose_jvp_jit__diag___.1, transpose_jvp_jit__cho_solve___.1)
+  transpose_jvp_jit_cholesky___.1 = f32[2048,2048]{1,0} call(jvp_jit_cholesky__.10, jvp_jit_cholesky__.11, jvp_jit_cholesky__.12, jvp_jit_cholesky__.13, jvp_jit_cholesky__.14, jvp_jit_cholesky__.15, add_any.7), to_apply=cholesky_3.14
+  mul.30 = f32[2048,2048]{1,0} multiply(mul.29, transpose_jvp_jit_cholesky___.1)
+  mul.32 = f32[2048,2048]{1,0} multiply(mul.30, exp.3)
+  mul.22 = f32[] multiply(integer_pow.3, integer_pow.3)
+  div.16 = f32[] divide(constant.41, mul.22)
+  mul.33 = f32[2048,2048]{1,0} broadcast(div.16), dimensions={}
+  mul.34 = f32[2048,2048]{1,0} multiply(mul.32, mul.33)
+  mul.35 = f32[2048,2048]{1,0} multiply(mul.34, mul.21)
+  reduce_sum.39 = f32[] reduce(mul.35, constant.43), dimensions={0,1}, to_apply=region_8.17
+  neg.5 = f32[] negate(reduce_sum.39)
+  constant.42 = f32[] constant(2)
+  mul_jit_nlml_.1 = f32[] multiply(unstack.7, constant.42)
+  mul.36 = f32[] multiply(neg.5, mul_jit_nlml_.1)
+  stack.4 = f32[1]{0} reshape(mul.36)
+  mul.31 = f32[2048,2048]{1,0} multiply(transpose_jvp_jit_cholesky___.1, exp.3)
+  reduce_sum.38 = f32[] reduce(mul.31, constant.43), dimensions={0,1}, to_apply=region_7.16
+  stack.5 = f32[1]{0} reshape(reduce_sum.38)
+  mul.28 = f32[2048,2048]{1,0} multiply(transpose_jvp_jit_cholesky___.1, convert_element_type.3)
+  reduce_sum.37 = f32[] reduce(mul.28, constant.43), dimensions={0,1}, to_apply=region_6.15
+  stack.6 = f32[1]{0} reshape(reduce_sum.37)
+  stack.7 = f32[3]{0} concatenate(stack.4, stack.5, stack.6), dimensions={0}
+  ROOT mul.37 = f32[3]{0} multiply(stack.7, exp.2)
+}
+

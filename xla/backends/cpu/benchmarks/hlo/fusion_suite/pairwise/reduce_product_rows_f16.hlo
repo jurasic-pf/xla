@@ -1,0 +1,15 @@
+HloModule reduce_product_rows_f16
+
+add {
+  lhs = f16[] parameter(0)
+  rhs = f16[] parameter(1)
+  ROOT add = f16[] add(lhs, rhs)
+}
+
+ENTRY main {
+  x = f16[64,1048576] parameter(0)
+  y = f16[64,1048576] parameter(1)
+  m = f16[64,1048576] multiply(x, y)
+  c = f16[] constant(0)
+  ROOT r = f16[64] reduce(m, c), dimensions={1}, to_apply=add
+}

@@ -1,0 +1,121 @@
+HloModule jit_nlml, entry_computation_layout={(f32[3]{0}, f32[2048,4]{1,0}, f32[2048]{0})->f32[]}
+
+region_0.1 {
+  reduce_sum.3 = f32[] parameter(0)
+  reduce_sum.4 = f32[] parameter(1)
+  ROOT reduce_sum.5 = f32[] add(reduce_sum.3, reduce_sum.4)
+}
+
+cholesky.2 {
+  iota.8 = s32[2048]{0} iota(), iota_dimension=0
+  iota.9 = s32[2048,2048]{1,0} broadcast(iota.8), dimensions={0}
+  iota.10 = s32[2048]{0} iota(), iota_dimension=0
+  iota.11 = s32[2048,2048]{1,0} broadcast(iota.10), dimensions={1}
+  ge.1 = pred[2048,2048]{1,0} compare(iota.9, iota.11), direction=GE
+  Arg_0.1 = f32[2048,2048]{1,0} parameter(0)
+  transpose.1 = f32[2048,2048]{0,1} transpose(Arg_0.1), dimensions={1,0}
+  add.3 = f32[2048,2048]{1,0} add(Arg_0.1, transpose.1)
+  constant.7 = f32[] constant(2)
+  div.4 = f32[2048,2048]{1,0} broadcast(constant.7), dimensions={}
+  div.5 = f32[2048,2048]{1,0} divide(add.3, div.4)
+  cholesky.1 = f32[2048,2048]{1,0} cholesky(div.5), lower=true
+  constant.6 = f32[] constant(0)
+  broadcast_in_dim.3 = f32[2048,2048]{1,0} broadcast(constant.6), dimensions={}
+  ROOT select_n.1 = f32[2048,2048]{1,0} select(ge.1, cholesky.1, broadcast_in_dim.3)
+}
+
+_cho_solve.3 {
+  Arg_0.3 = f32[2048,2048]{1,0} parameter(0)
+  Arg_1.1 = f32[2048]{0} parameter(1)
+  broadcast_in_dim.5 = f32[2048,1]{1,0} reshape(Arg_1.1)
+  triangular_solve.2 = f32[2048,1]{1,0} triangular-solve(Arg_0.3, broadcast_in_dim.5), left_side=true, lower=true, transpose_a=NO_TRANSPOSE
+  triangular_solve.3 = f32[2048,1]{1,0} triangular-solve(Arg_0.3, triangular_solve.2), left_side=true, lower=true, transpose_a=TRANSPOSE
+  ROOT squeeze.1 = f32[2048]{0} reshape(triangular_solve.3)
+}
+
+diagonal.4 {
+  Arg_0.6 = f32[2048,2048]{1,0} parameter(0)
+  iota.14 = s32[2048]{0} iota(), iota_dimension=0
+  constant.11 = s32[] constant(0)
+  broadcast.3 = s32[2048]{0} broadcast(constant.11), dimensions={}
+  lt.2 = pred[2048]{0} compare(iota.14, broadcast.3), direction=LT
+  constant.10 = s32[] constant(2048)
+  broadcast.2 = s32[2048]{0} broadcast(constant.10), dimensions={}
+  add.6 = s32[2048]{0} add(iota.14, broadcast.2)
+  select_n.4 = s32[2048]{0} select(lt.2, add.6, iota.14)
+  broadcast_in_dim.8 = s32[2048,1]{1,0} reshape(select_n.4)
+  iota.15 = s32[2048]{0} iota(), iota_dimension=0
+  lt.3 = pred[2048]{0} compare(iota.15, broadcast.3), direction=LT
+  add.7 = s32[2048]{0} add(iota.15, broadcast.2)
+  select_n.5 = s32[2048]{0} select(lt.3, add.7, iota.15)
+  broadcast_in_dim.9 = s32[2048,1]{1,0} reshape(select_n.5)
+  concatenate.1 = s32[2048,2]{1,0} concatenate(broadcast_in_dim.8, broadcast_in_dim.9), dimensions={1}
+  ROOT gather.1 = f32[2048]{0} gather(Arg_0.6, concatenate.1), offset_dims={}, collapsed_slice_dims={0,1}, start_index_map={0,1}, index_vector_dim=1, slice_sizes={1,1}
+}
+
+_diag.5 {
+  Arg_0.7 = f32[2048,2048]{1,0} parameter(0)
+  ROOT jit_diagonal_.1 = f32[2048]{0} call(Arg_0.7), to_apply=diagonal.4
+}
+
+region_1.6 {
+  reduce_sum.10 = f32[] parameter(0)
+  reduce_sum.11 = f32[] parameter(1)
+  ROOT reduce_sum.12 = f32[] add(reduce_sum.10, reduce_sum.11)
+}
+
+ENTRY main.7 {
+  Y.1 = f32[2048]{0} parameter(2)
+  constant.12 = f32[] constant(0.5)
+  mul.8 = f32[2048]{0} broadcast(constant.12), dimensions={}
+  mul.15 = f32[2048]{0} multiply(Y.1, mul.8)
+  p.1 = f32[3]{0} parameter(0)
+  exp.2 = f32[3]{0} exponential(p.1)
+  unstack.8 = f32[1]{0} slice(exp.2), slice={[1:2]}
+  unstack.9 = f32[] reshape(unstack.8)
+  mul.11 = f32[2048,2048]{1,0} broadcast(unstack.9), dimensions={}
+  X.1 = f32[2048,4]{1,0} parameter(1)
+  broadcast_in_dim.10 = f32[2048,1,4]{2,1,0} reshape(X.1)
+  sub.7 = f32[2048,1,4]{2,1,0} broadcast(broadcast_in_dim.10), dimensions={0,1,2}
+  sub.8 = f32[2048,4]{1,0} reshape(sub.7)
+  sub.9 = f32[2048,2048,4]{2,1,0} broadcast(sub.8), dimensions={0,2}
+  broadcast_in_dim.11 = f32[1,2048,4]{2,1,0} reshape(X.1)
+  sub.10 = f32[1,2048,4]{2,1,0} broadcast(broadcast_in_dim.11), dimensions={0,1,2}
+  sub.11 = f32[2048,4]{1,0} reshape(sub.10)
+  sub.12 = f32[2048,2048,4]{2,1,0} broadcast(sub.11), dimensions={1,2}
+  sub.13 = f32[2048,2048,4]{2,1,0} subtract(sub.9, sub.12)
+  integer_pow.2 = f32[2048,2048,4]{2,1,0} multiply(sub.13, sub.13)
+  constant.15 = f32[] constant(0)
+  reduce_sum.14 = f32[2048,2048]{1,0} reduce(integer_pow.2, constant.15), dimensions={2}, to_apply=region_0.1
+  constant.13 = f32[] constant(-0.5)
+  mul.9 = f32[2048,2048]{1,0} broadcast(constant.13), dimensions={}
+  mul.10 = f32[2048,2048]{1,0} multiply(reduce_sum.14, mul.9)
+  unstack.6 = f32[1]{0} slice(exp.2), slice={[0:1]}
+  unstack.7 = f32[] reshape(unstack.6)
+  integer_pow.3 = f32[] multiply(unstack.7, unstack.7)
+  div.6 = f32[2048,2048]{1,0} broadcast(integer_pow.3), dimensions={}
+  div.7 = f32[2048,2048]{1,0} divide(mul.10, div.6)
+  exp.3 = f32[2048,2048]{1,0} exponential(div.7)
+  mul.12 = f32[2048,2048]{1,0} multiply(mul.11, exp.3)
+  unstack.10 = f32[1]{0} slice(exp.2), slice={[2:3]}
+  unstack.11 = f32[] reshape(unstack.10)
+  constant.14 = f32[] constant(0.0001)
+  add.9 = f32[] add(unstack.11, constant.14)
+  mul.13 = f32[2048,2048]{1,0} broadcast(add.9), dimensions={}
+  iota.16 = s32[2048]{0} iota(), iota_dimension=0
+  iota.17 = s32[2048,2048]{1,0} broadcast(iota.16), dimensions={0}
+  iota.18 = s32[2048]{0} iota(), iota_dimension=0
+  iota.19 = s32[2048,2048]{1,0} broadcast(iota.18), dimensions={1}
+  eq.1 = pred[2048,2048]{1,0} compare(iota.17, iota.19), direction=EQ
+  convert_element_type.1 = f32[2048,2048]{1,0} convert(eq.1)
+  mul.14 = f32[2048,2048]{1,0} multiply(mul.13, convert_element_type.1)
+  add.10 = f32[2048,2048]{1,0} add(mul.12, mul.14)
+  jit_cholesky_.1 = f32[2048,2048]{1,0} call(add.10), to_apply=cholesky.2
+  jit__cho_solve_.1 = f32[2048]{0} call(jit_cholesky_.1, Y.1), to_apply=_cho_solve.3
+  dot_general.1 = f32[] dot(mul.15, jit__cho_solve_.1), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  jit__diag_.1 = f32[2048]{0} call(jit_cholesky_.1), to_apply=_diag.5
+  log.1 = f32[2048]{0} log(jit__diag_.1)
+  reduce_sum.15 = f32[] reduce(log.1, constant.15), dimensions={0}, to_apply=region_1.6
+  ROOT add.11 = f32[] add(dot_general.1, reduce_sum.15)
+}
+

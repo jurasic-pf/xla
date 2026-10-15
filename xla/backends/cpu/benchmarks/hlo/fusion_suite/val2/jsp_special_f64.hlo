@@ -1,0 +1,1990 @@
+HloModule jit_special, entry_computation_layout={(f64[256,1024]{1,0}, f64[256,1024]{1,0})->(f64[], f64[256,1024]{1,0})}
+
+_where.1 {
+  Arg_0.1 = pred[256,1024]{1,0} parameter(0)
+  Arg_1.1 = f64[256,1024]{1,0} parameter(1)
+  Arg_2.1 = f64[256,1024]{1,0} parameter(2)
+  ROOT select_n.2 = f64[256,1024]{1,0} select(Arg_0.1, Arg_1.1, Arg_2.1)
+}
+
+region_0.2 {
+  arg_tuple.1 = (pred[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, /*index=5*/f64[], f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, /*index=10*/f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}) parameter(0)
+  get-tuple-element.15 = pred[256,1024]{1,0} get-tuple-element(arg_tuple.1), index=0
+  get-tuple-element.22 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.1), index=7
+  get-tuple-element.19 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.1), index=4
+  constant.227 = f64[] constant(2)
+  broadcast.78 = f64[256,1024]{1,0} broadcast(constant.227), dimensions={}
+  add.99 = f64[256,1024]{1,0} add(get-tuple-element.19, broadcast.78)
+  mul.126 = f64[256,1024]{1,0} multiply(get-tuple-element.22, add.99)
+  get-tuple-element.24 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.1), index=9
+  get-tuple-element.18 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.1), index=3
+  constant.228 = f64[] constant(1)
+  broadcast.79 = f64[256,1024]{1,0} broadcast(constant.228), dimensions={}
+  add.98 = f64[256,1024]{1,0} add(get-tuple-element.18, broadcast.79)
+  get-tuple-element.20 = f64[] get-tuple-element(arg_tuple.1), index=5
+  constant.229 = f64[] constant(1)
+  add.97 = f64[] add(get-tuple-element.20, constant.229)
+  mul.122 = f64[256,1024]{1,0} broadcast(add.97), dimensions={}
+  mul.123 = f64[256,1024]{1,0} multiply(add.98, mul.122)
+  mul.127 = f64[256,1024]{1,0} multiply(get-tuple-element.24, mul.123)
+  sub.80 = f64[256,1024]{1,0} subtract(mul.126, mul.127)
+  constant.226 = f64[] constant(0)
+  broadcast.77 = f64[256,1024]{1,0} broadcast(constant.226), dimensions={}
+  ne.5 = pred[256,1024]{1,0} compare(sub.80, broadcast.77), direction=NE
+  get-tuple-element.16 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.1), index=1
+  get-tuple-element.21 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.1), index=6
+  mul.124 = f64[256,1024]{1,0} multiply(get-tuple-element.21, add.99)
+  get-tuple-element.23 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.1), index=8
+  mul.125 = f64[256,1024]{1,0} multiply(get-tuple-element.23, mul.123)
+  sub.79 = f64[256,1024]{1,0} subtract(mul.124, mul.125)
+  div.17 = f64[256,1024]{1,0} divide(sub.79, sub.80)
+  sub.81 = f64[256,1024]{1,0} subtract(get-tuple-element.16, div.17)
+  div.18 = f64[256,1024]{1,0} divide(sub.81, div.17)
+  abs.4 = f64[256,1024]{1,0} abs(div.18)
+  select_n.29 = f64[256,1024]{1,0} select(ne.5, abs.4, broadcast.79)
+  constant.224 = f64[] constant(2.2204460492503131e-16)
+  broadcast.75 = f64[256,1024]{1,0} broadcast(constant.224), dimensions={}
+  gt.7 = pred[256,1024]{1,0} compare(select_n.29, broadcast.75), direction=GT
+  and.5 = pred[256,1024]{1,0} and(get-tuple-element.15, gt.7)
+  select_n.30 = f64[256,1024]{1,0} select(ne.5, div.17, get-tuple-element.16)
+  select_n.40 = f64[256,1024]{1,0} select(get-tuple-element.15, select_n.30, get-tuple-element.16)
+  get-tuple-element.17 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.1), index=2
+  select_n.41 = f64[256,1024]{1,0} select(get-tuple-element.15, select_n.29, get-tuple-element.17)
+  select_n.42 = f64[256,1024]{1,0} select(get-tuple-element.15, add.98, get-tuple-element.18)
+  select_n.43 = f64[256,1024]{1,0} select(get-tuple-element.15, add.99, get-tuple-element.19)
+  abs.5 = f64[256,1024]{1,0} abs(sub.79)
+  constant.225 = f64[] constant(4503599627370496)
+  broadcast.76 = f64[256,1024]{1,0} broadcast(constant.225), dimensions={}
+  gt.6 = pred[256,1024]{1,0} compare(abs.5, broadcast.76), direction=GT
+  mul.138 = f64[256,1024]{1,0} multiply(sub.79, broadcast.75)
+  select_n.33 = f64[256,1024]{1,0} select(gt.6, mul.138, sub.79)
+  select_n.44 = f64[256,1024]{1,0} select(get-tuple-element.15, select_n.33, get-tuple-element.21)
+  mul.140 = f64[256,1024]{1,0} multiply(sub.80, broadcast.75)
+  select_n.35 = f64[256,1024]{1,0} select(gt.6, mul.140, sub.80)
+  select_n.45 = f64[256,1024]{1,0} select(get-tuple-element.15, select_n.35, get-tuple-element.22)
+  mul.137 = f64[256,1024]{1,0} multiply(get-tuple-element.21, broadcast.75)
+  select_n.32 = f64[256,1024]{1,0} select(gt.6, mul.137, get-tuple-element.21)
+  select_n.46 = f64[256,1024]{1,0} select(get-tuple-element.15, select_n.32, get-tuple-element.23)
+  mul.139 = f64[256,1024]{1,0} multiply(get-tuple-element.22, broadcast.75)
+  select_n.34 = f64[256,1024]{1,0} select(gt.6, mul.139, get-tuple-element.22)
+  select_n.47 = f64[256,1024]{1,0} select(get-tuple-element.15, select_n.34, get-tuple-element.24)
+  get-tuple-element.27 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.1), index=12
+  mul.141 = f64[256,1024]{1,0} multiply(get-tuple-element.27, broadcast.75)
+  select_n.36 = f64[256,1024]{1,0} select(gt.6, mul.141, get-tuple-element.27)
+  get-tuple-element.25 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.1), index=10
+  select_n.48 = f64[256,1024]{1,0} select(get-tuple-element.15, select_n.36, get-tuple-element.25)
+  get-tuple-element.28 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.1), index=13
+  mul.142 = f64[256,1024]{1,0} multiply(get-tuple-element.28, broadcast.75)
+  select_n.37 = f64[256,1024]{1,0} select(gt.6, mul.142, get-tuple-element.28)
+  get-tuple-element.26 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.1), index=11
+  select_n.49 = f64[256,1024]{1,0} select(get-tuple-element.15, select_n.37, get-tuple-element.26)
+  mul.128 = f64[256,1024]{1,0} multiply(get-tuple-element.27, add.99)
+  sub.82 = f64[256,1024]{1,0} subtract(mul.128, get-tuple-element.21)
+  mul.129 = f64[256,1024]{1,0} multiply(get-tuple-element.25, mul.123)
+  sub.83 = f64[256,1024]{1,0} subtract(sub.82, mul.129)
+  mul.130 = f64[256,1024]{1,0} broadcast(add.97), dimensions={}
+  mul.131 = f64[256,1024]{1,0} multiply(get-tuple-element.23, mul.130)
+  add.100 = f64[256,1024]{1,0} add(sub.83, mul.131)
+  mul.143 = f64[256,1024]{1,0} multiply(add.100, broadcast.75)
+  select_n.38 = f64[256,1024]{1,0} select(gt.6, mul.143, add.100)
+  select_n.50 = f64[256,1024]{1,0} select(get-tuple-element.15, select_n.38, get-tuple-element.27)
+  mul.132 = f64[256,1024]{1,0} multiply(get-tuple-element.28, add.99)
+  sub.84 = f64[256,1024]{1,0} subtract(mul.132, get-tuple-element.22)
+  mul.133 = f64[256,1024]{1,0} multiply(get-tuple-element.26, mul.123)
+  sub.85 = f64[256,1024]{1,0} subtract(sub.84, mul.133)
+  mul.134 = f64[256,1024]{1,0} broadcast(add.97), dimensions={}
+  mul.135 = f64[256,1024]{1,0} multiply(get-tuple-element.24, mul.134)
+  add.101 = f64[256,1024]{1,0} add(sub.85, mul.135)
+  mul.144 = f64[256,1024]{1,0} multiply(add.101, broadcast.75)
+  select_n.39 = f64[256,1024]{1,0} select(gt.6, mul.144, add.101)
+  select_n.51 = f64[256,1024]{1,0} select(get-tuple-element.15, select_n.39, get-tuple-element.28)
+  mul.136 = f64[256,1024]{1,0} multiply(select_n.30, add.101)
+  sub.86 = f64[256,1024]{1,0} subtract(add.100, mul.136)
+  div.19 = f64[256,1024]{1,0} divide(sub.86, sub.80)
+  get-tuple-element.29 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.1), index=14
+  select_n.31 = f64[256,1024]{1,0} select(ne.5, div.19, get-tuple-element.29)
+  select_n.52 = f64[256,1024]{1,0} select(get-tuple-element.15, select_n.31, get-tuple-element.29)
+  ROOT tuple.1 = (pred[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, /*index=5*/f64[], f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, /*index=10*/f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}) tuple(and.5, select_n.40, select_n.41, select_n.42, select_n.43, add.97, select_n.44, select_n.45, select_n.46, select_n.47, select_n.48, select_n.49, select_n.50, select_n.51, select_n.52)
+}
+
+region_2.3 {
+  reduce_or.3 = pred[] parameter(0)
+  reduce_or.4 = pred[] parameter(1)
+  ROOT reduce_or.5 = pred[] or(reduce_or.3, reduce_or.4)
+}
+
+region_1.4 {
+  arg_tuple.3 = (pred[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, /*index=5*/f64[], f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, /*index=10*/f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}) parameter(0)
+  get-tuple-element.46 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.3), index=1
+  get-tuple-element.47 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.3), index=2
+  get-tuple-element.48 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.3), index=3
+  get-tuple-element.49 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.3), index=4
+  get-tuple-element.51 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.3), index=6
+  get-tuple-element.52 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.3), index=7
+  get-tuple-element.53 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.3), index=8
+  get-tuple-element.54 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.3), index=9
+  get-tuple-element.55 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.3), index=10
+  get-tuple-element.56 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.3), index=11
+  get-tuple-element.57 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.3), index=12
+  get-tuple-element.58 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.3), index=13
+  get-tuple-element.59 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.3), index=14
+  get-tuple-element.50 = f64[] get-tuple-element(arg_tuple.3), index=5
+  constant.233 = f64[] constant(2000)
+  lt.6 = pred[] compare(get-tuple-element.50, constant.233), direction=LT
+  get-tuple-element.45 = pred[256,1024]{1,0} get-tuple-element(arg_tuple.3), index=0
+  constant.232 = pred[] constant(false)
+  reduce_or.7 = pred[] reduce(get-tuple-element.45, constant.232), dimensions={0,1}, to_apply=region_2.3
+  ROOT and.7 = pred[] and(lt.6, reduce_or.7)
+}
+
+region_3.5 {
+  arg_tuple.5 = (pred[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, /*index=5*/f64[256,1024]{1,0}, f64[256,1024]{1,0}) parameter(0)
+  get-tuple-element.67 = pred[256,1024]{1,0} get-tuple-element(arg_tuple.5), index=0
+  get-tuple-element.69 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.5), index=2
+  get-tuple-element.73 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.5), index=6
+  get-tuple-element.68 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.5), index=1
+  constant.237 = f64[] constant(1)
+  broadcast.83 = f64[256,1024]{1,0} broadcast(constant.237), dimensions={}
+  add.105 = f64[256,1024]{1,0} add(get-tuple-element.68, broadcast.83)
+  div.26 = f64[256,1024]{1,0} divide(get-tuple-element.73, add.105)
+  mul.153 = f64[256,1024]{1,0} multiply(get-tuple-element.69, div.26)
+  get-tuple-element.70 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.5), index=3
+  add.107 = f64[256,1024]{1,0} add(get-tuple-element.70, mul.153)
+  div.27 = f64[256,1024]{1,0} divide(mul.153, add.107)
+  constant.236 = f64[] constant(2.2204460492503131e-16)
+  broadcast.82 = f64[256,1024]{1,0} broadcast(constant.236), dimensions={}
+  gt.9 = pred[256,1024]{1,0} compare(div.27, broadcast.82), direction=GT
+  and.10 = pred[256,1024]{1,0} and(get-tuple-element.67, gt.9)
+  select_n.58 = f64[256,1024]{1,0} select(get-tuple-element.67, add.105, get-tuple-element.68)
+  select_n.59 = f64[256,1024]{1,0} select(get-tuple-element.67, mul.153, get-tuple-element.69)
+  select_n.60 = f64[256,1024]{1,0} select(get-tuple-element.67, add.107, get-tuple-element.70)
+  get-tuple-element.71 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.5), index=4
+  div.24 = f64[256,1024]{1,0} divide(get-tuple-element.73, add.105)
+  mul.150 = f64[256,1024]{1,0} multiply(get-tuple-element.71, div.24)
+  mul.151 = f64[256,1024]{1,0} multiply(get-tuple-element.69, get-tuple-element.73)
+  mul.152 = f64[256,1024]{1,0} multiply(add.105, add.105)
+  div.25 = f64[256,1024]{1,0} divide(mul.151, mul.152)
+  sub.89 = f64[256,1024]{1,0} subtract(mul.150, div.25)
+  select_n.61 = f64[256,1024]{1,0} select(get-tuple-element.67, sub.89, get-tuple-element.71)
+  get-tuple-element.72 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.5), index=5
+  add.106 = f64[256,1024]{1,0} add(get-tuple-element.72, sub.89)
+  select_n.62 = f64[256,1024]{1,0} select(get-tuple-element.67, add.106, get-tuple-element.72)
+  ROOT tuple.3 = (pred[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, /*index=5*/f64[256,1024]{1,0}, f64[256,1024]{1,0}) tuple(and.10, select_n.58, select_n.59, select_n.60, select_n.61, select_n.62, get-tuple-element.73)
+}
+
+region_5.6 {
+  reduce_or.11 = pred[] parameter(0)
+  reduce_or.12 = pred[] parameter(1)
+  ROOT reduce_or.13 = pred[] or(reduce_or.11, reduce_or.12)
+}
+
+region_4.7 {
+  arg_tuple.7 = (pred[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, /*index=5*/f64[256,1024]{1,0}, f64[256,1024]{1,0}) parameter(0)
+  get-tuple-element.82 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.7), index=1
+  get-tuple-element.83 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.7), index=2
+  get-tuple-element.84 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.7), index=3
+  get-tuple-element.85 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.7), index=4
+  get-tuple-element.86 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.7), index=5
+  get-tuple-element.87 = f64[256,1024]{1,0} get-tuple-element(arg_tuple.7), index=6
+  get-tuple-element.81 = pred[256,1024]{1,0} get-tuple-element(arg_tuple.7), index=0
+  constant.239 = pred[] constant(false)
+  ROOT reduce_or.15 = pred[] reduce(get-tuple-element.81, constant.239), dimensions={0,1}, to_apply=region_5.6
+}
+
+region_6.8 {
+  reduce_sum.3 = f64[] parameter(0)
+  reduce_sum.4 = f64[] parameter(1)
+  ROOT reduce_sum.5 = f64[] add(reduce_sum.3, reduce_sum.4)
+}
+
+ENTRY main.9 {
+  x.1 = f64[256,1024]{1,0} parameter(1)
+  constant.446 = f64[] constant(4)
+  broadcast.144 = f64[256,1024]{1,0} broadcast(constant.446), dimensions={}
+  mul.251 = f64[256,1024]{1,0} multiply(x.1, broadcast.144)
+  constant.431 = f64[] constant(0)
+  broadcast.129 = f64[256,1024]{1,0} broadcast(constant.431), dimensions={}
+  eq.7 = pred[256,1024]{1,0} compare(mul.251, broadcast.129), direction=EQ
+  lt.9 = pred[256,1024]{1,0} compare(mul.251, broadcast.129), direction=LT
+  a.1 = f64[256,1024]{1,0} parameter(0)
+  mul.250 = f64[256,1024]{1,0} multiply(a.1, broadcast.144)
+  lt.10 = pred[256,1024]{1,0} compare(mul.250, broadcast.129), direction=LT
+  or.12 = pred[256,1024]{1,0} or(lt.9, lt.10)
+  eq.6 = pred[256,1024]{1,0} compare(mul.250, broadcast.129), direction=EQ
+  and.11 = pred[256,1024]{1,0} and(eq.6, eq.7)
+  or.13 = pred[256,1024]{1,0} or(or.12, and.11)
+  constant.432 = f64[] constant(inf)
+  broadcast.130 = f64[256,1024]{1,0} broadcast(constant.432), dimensions={}
+  eq.5 = pred[256,1024]{1,0} compare(mul.250, broadcast.130), direction=EQ
+  eq.4 = pred[256,1024]{1,0} compare(mul.251, broadcast.130), direction=EQ
+  and.12 = pred[256,1024]{1,0} and(eq.5, eq.4)
+  or.14 = pred[256,1024]{1,0} or(or.13, and.12)
+  ne.8 = pred[256,1024]{1,0} compare(mul.250, mul.250), direction=NE
+  ne.9 = pred[256,1024]{1,0} compare(mul.251, mul.251), direction=NE
+  or.11 = pred[256,1024]{1,0} or(ne.8, ne.9)
+  or.15 = pred[256,1024]{1,0} or(or.14, or.11)
+  or.16 = pred[256,1024]{1,0} or(eq.7, or.15)
+  log.11 = f64[256,1024]{1,0} log(mul.251)
+  mul.252 = f64[256,1024]{1,0} multiply(mul.250, log.11)
+  sub.157 = f64[256,1024]{1,0} subtract(mul.252, mul.251)
+  lgamma.681 = f64[256,1024]{1,0} abs(mul.250)
+  lgamma.682 = pred[256,1024]{1,0} compare(lgamma.681, broadcast.130), direction=EQ
+  constant.455 = f64[] constant(0.5)
+  broadcast.153 = f64[256,1024]{1,0} broadcast(constant.455), dimensions={}
+  lgamma.627 = pred[256,1024]{1,0} compare(mul.250, broadcast.153), direction=LT
+  lgamma.666 = f64[256,1024]{1,0} abs(mul.250)
+  lgamma.667 = f64[256,1024]{1,0} floor(lgamma.666)
+  lgamma.668 = f64[256,1024]{1,0} subtract(lgamma.666, lgamma.667)
+  lgamma.669 = pred[256,1024]{1,0} compare(broadcast.153, lgamma.668), direction=LT
+  constant.454 = f64[] constant(1)
+  broadcast.152 = f64[256,1024]{1,0} broadcast(constant.454), dimensions={}
+  lgamma.670 = f64[256,1024]{1,0} subtract(broadcast.152, lgamma.668)
+  lgamma.671 = f64[256,1024]{1,0} select(lgamma.669, lgamma.670, lgamma.668)
+  constant.434 = f64[] constant(3.1415926535897931)
+  broadcast.132 = f64[256,1024]{1,0} broadcast(constant.434), dimensions={}
+  lgamma.672 = f64[256,1024]{1,0} multiply(lgamma.671, broadcast.132)
+  lgamma.673 = f64[256,1024]{1,0} sine(lgamma.672)
+  lgamma.674 = f64[256,1024]{1,0} log(lgamma.673)
+  lgamma.677 = pred[256,1024]{1,0} is-finite(lgamma.674)
+  constant.433 = f64[] constant(1.1447298858494002)
+  broadcast.131 = f64[256,1024]{1,0} broadcast(constant.433), dimensions={}
+  lgamma.675 = f64[256,1024]{1,0} subtract(broadcast.131, lgamma.674)
+  lgamma.628 = f64[256,1024]{1,0} negate(mul.250)
+  lgamma.629 = f64[256,1024]{1,0} subtract(mul.250, broadcast.152)
+  lgamma.630 = f64[256,1024]{1,0} select(lgamma.627, lgamma.628, lgamma.629)
+  lgamma.660 = f64[256,1024]{1,0} add(lgamma.630, broadcast.153)
+  constant.437 = f64[] constant(7.5)
+  broadcast.135 = f64[256,1024]{1,0} broadcast(constant.437), dimensions={}
+  lgamma.655 = f64[256,1024]{1,0} add(lgamma.630, broadcast.135)
+  lgamma.656 = f64[256,1024]{1,0} divide(lgamma.630, broadcast.135)
+  lgamma.657 = f64[256,1024]{1,0} log-plus-one(lgamma.656)
+  constant.436 = f64[] constant(2.0149030205422647)
+  broadcast.134 = f64[256,1024]{1,0} broadcast(constant.436), dimensions={}
+  lgamma.658 = f64[256,1024]{1,0} add(lgamma.657, broadcast.134)
+  lgamma.659 = f64[256,1024]{1,0} divide(lgamma.655, lgamma.658)
+  lgamma.661 = f64[256,1024]{1,0} subtract(lgamma.660, lgamma.659)
+  lgamma.662 = f64[256,1024]{1,0} multiply(lgamma.661, lgamma.658)
+  constant.435 = f64[] constant(0.91893853320467267)
+  broadcast.133 = f64[256,1024]{1,0} broadcast(constant.435), dimensions={}
+  lgamma.664 = f64[256,1024]{1,0} add(lgamma.662, broadcast.133)
+  constant.452 = f64[] constant(676.5203681218851)
+  broadcast.150 = f64[256,1024]{1,0} broadcast(constant.452), dimensions={}
+  lgamma.631 = f64[256,1024]{1,0} add(lgamma.630, broadcast.152)
+  lgamma.632 = f64[256,1024]{1,0} divide(broadcast.150, lgamma.631)
+  constant.453 = f64[] constant(0.99999999999980993)
+  broadcast.151 = f64[256,1024]{1,0} broadcast(constant.453), dimensions={}
+  lgamma.633 = f64[256,1024]{1,0} add(lgamma.632, broadcast.151)
+  constant.451 = f64[] constant(-1259.1392167224028)
+  broadcast.149 = f64[256,1024]{1,0} broadcast(constant.451), dimensions={}
+  constant.450 = f64[] constant(2)
+  broadcast.148 = f64[256,1024]{1,0} broadcast(constant.450), dimensions={}
+  lgamma.634 = f64[256,1024]{1,0} add(lgamma.630, broadcast.148)
+  lgamma.635 = f64[256,1024]{1,0} divide(broadcast.149, lgamma.634)
+  lgamma.636 = f64[256,1024]{1,0} add(lgamma.633, lgamma.635)
+  constant.449 = f64[] constant(771.32342877765313)
+  broadcast.147 = f64[256,1024]{1,0} broadcast(constant.449), dimensions={}
+  constant.448 = f64[] constant(3)
+  broadcast.146 = f64[256,1024]{1,0} broadcast(constant.448), dimensions={}
+  lgamma.637 = f64[256,1024]{1,0} add(lgamma.630, broadcast.146)
+  lgamma.638 = f64[256,1024]{1,0} divide(broadcast.147, lgamma.637)
+  lgamma.639 = f64[256,1024]{1,0} add(lgamma.636, lgamma.638)
+  constant.447 = f64[] constant(-176.61502916214059)
+  broadcast.145 = f64[256,1024]{1,0} broadcast(constant.447), dimensions={}
+  lgamma.640 = f64[256,1024]{1,0} add(lgamma.630, broadcast.144)
+  lgamma.641 = f64[256,1024]{1,0} divide(broadcast.145, lgamma.640)
+  lgamma.642 = f64[256,1024]{1,0} add(lgamma.639, lgamma.641)
+  constant.445 = f64[] constant(12.507343278686905)
+  broadcast.143 = f64[256,1024]{1,0} broadcast(constant.445), dimensions={}
+  constant.444 = f64[] constant(5)
+  broadcast.142 = f64[256,1024]{1,0} broadcast(constant.444), dimensions={}
+  lgamma.643 = f64[256,1024]{1,0} add(lgamma.630, broadcast.142)
+  lgamma.644 = f64[256,1024]{1,0} divide(broadcast.143, lgamma.643)
+  lgamma.645 = f64[256,1024]{1,0} add(lgamma.642, lgamma.644)
+  constant.443 = f64[] constant(-0.13857109526572012)
+  broadcast.141 = f64[256,1024]{1,0} broadcast(constant.443), dimensions={}
+  constant.442 = f64[] constant(6)
+  broadcast.140 = f64[256,1024]{1,0} broadcast(constant.442), dimensions={}
+  lgamma.646 = f64[256,1024]{1,0} add(lgamma.630, broadcast.140)
+  lgamma.647 = f64[256,1024]{1,0} divide(broadcast.141, lgamma.646)
+  lgamma.648 = f64[256,1024]{1,0} add(lgamma.645, lgamma.647)
+  constant.441 = f64[] constant(9.9843695780195716e-06)
+  broadcast.139 = f64[256,1024]{1,0} broadcast(constant.441), dimensions={}
+  constant.440 = f64[] constant(7)
+  broadcast.138 = f64[256,1024]{1,0} broadcast(constant.440), dimensions={}
+  lgamma.649 = f64[256,1024]{1,0} add(lgamma.630, broadcast.138)
+  lgamma.650 = f64[256,1024]{1,0} divide(broadcast.139, lgamma.649)
+  lgamma.651 = f64[256,1024]{1,0} add(lgamma.648, lgamma.650)
+  constant.439 = f64[] constant(1.5056327351493116e-07)
+  broadcast.137 = f64[256,1024]{1,0} broadcast(constant.439), dimensions={}
+  constant.438 = f64[] constant(8)
+  broadcast.136 = f64[256,1024]{1,0} broadcast(constant.438), dimensions={}
+  lgamma.652 = f64[256,1024]{1,0} add(lgamma.630, broadcast.136)
+  lgamma.653 = f64[256,1024]{1,0} divide(broadcast.137, lgamma.652)
+  lgamma.654 = f64[256,1024]{1,0} add(lgamma.651, lgamma.653)
+  lgamma.663 = f64[256,1024]{1,0} log(lgamma.654)
+  lgamma.665 = f64[256,1024]{1,0} add(lgamma.664, lgamma.663)
+  lgamma.676 = f64[256,1024]{1,0} subtract(lgamma.675, lgamma.665)
+  lgamma.678 = f64[256,1024]{1,0} negate(lgamma.674)
+  lgamma.679 = f64[256,1024]{1,0} select(lgamma.677, lgamma.676, lgamma.678)
+  lgamma.680 = f64[256,1024]{1,0} select(lgamma.627, lgamma.679, lgamma.665)
+  lgamma.683 = f64[256,1024]{1,0} select(lgamma.682, broadcast.130, lgamma.680)
+  sub.158 = f64[256,1024]{1,0} subtract(sub.157, lgamma.683)
+  constant.399 = f64[] constant(-709.782712893384)
+  broadcast.97 = f64[256,1024]{1,0} broadcast(constant.399), dimensions={}
+  lt.11 = pred[256,1024]{1,0} compare(sub.158, broadcast.97), direction=LT
+  or.17 = pred[256,1024]{1,0} or(or.16, lt.11)
+  or.18 = pred[256,1024]{1,0} or(or.17, eq.4)
+  or.19 = pred[256,1024]{1,0} or(or.18, eq.5)
+  not.2 = pred[256,1024]{1,0} not(or.19)
+  ge.1 = pred[256,1024]{1,0} compare(mul.251, broadcast.152), direction=GE
+  gt.13 = pred[256,1024]{1,0} compare(mul.251, mul.250), direction=GT
+  and.13 = pred[256,1024]{1,0} and(ge.1, gt.13)
+  and.14 = pred[256,1024]{1,0} and(not.2, and.13)
+  add.203 = f64[256,1024]{1,0} add(mul.251, broadcast.152)
+  sub.159 = f64[256,1024]{1,0} subtract(broadcast.152, mul.250)
+  add.201 = f64[256,1024]{1,0} add(mul.251, sub.159)
+  add.202 = f64[256,1024]{1,0} add(add.201, broadcast.152)
+  mul.253 = f64[256,1024]{1,0} multiply(add.202, mul.251)
+  div.42 = f64[256,1024]{1,0} divide(add.203, mul.253)
+  constant.456 = f64[] constant(0)
+  neg.8 = f64[256,1024]{1,0} negate(mul.251)
+  mul.254 = f64[256,1024]{1,0} multiply(div.42, neg.8)
+  sub.160 = f64[256,1024]{1,0} subtract(broadcast.129, mul.254)
+  div.43 = f64[256,1024]{1,0} divide(sub.160, mul.253)
+  while.25 = (pred[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, /*index=5*/f64[], f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, /*index=10*/f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}) tuple(and.14, div.42, broadcast.152, sub.159, add.202, constant.456, add.203, mul.253, broadcast.152, mul.251, broadcast.129, broadcast.129, broadcast.129, neg.8, div.43)
+  while.26 = (pred[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, /*index=5*/f64[], f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, /*index=10*/f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}) while(while.25), condition=region_1.4, body=region_0.2
+  while.27 = pred[256,1024]{1,0} get-tuple-element(while.26), index=0
+  while.29 = f64[256,1024]{1,0} get-tuple-element(while.26), index=2
+  while.30 = f64[256,1024]{1,0} get-tuple-element(while.26), index=3
+  while.31 = f64[256,1024]{1,0} get-tuple-element(while.26), index=4
+  while.32 = f64[] get-tuple-element(while.26), index=5
+  while.33 = f64[256,1024]{1,0} get-tuple-element(while.26), index=6
+  while.34 = f64[256,1024]{1,0} get-tuple-element(while.26), index=7
+  while.35 = f64[256,1024]{1,0} get-tuple-element(while.26), index=8
+  while.36 = f64[256,1024]{1,0} get-tuple-element(while.26), index=9
+  while.37 = f64[256,1024]{1,0} get-tuple-element(while.26), index=10
+  while.38 = f64[256,1024]{1,0} get-tuple-element(while.26), index=11
+  while.39 = f64[256,1024]{1,0} get-tuple-element(while.26), index=12
+  while.40 = f64[256,1024]{1,0} get-tuple-element(while.26), index=13
+  while.41 = f64[256,1024]{1,0} get-tuple-element(while.26), index=14
+  not.3 = pred[256,1024]{1,0} not(and.13)
+  and.15 = pred[256,1024]{1,0} and(not.2, not.3)
+  while.42 = (pred[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, /*index=5*/f64[256,1024]{1,0}, f64[256,1024]{1,0}) tuple(and.15, mul.250, broadcast.152, broadcast.152, broadcast.129, broadcast.129, mul.251)
+  while.43 = (pred[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, f64[256,1024]{1,0}, /*index=5*/f64[256,1024]{1,0}, f64[256,1024]{1,0}) while(while.42), condition=region_4.7, body=region_3.5
+  while.44 = pred[256,1024]{1,0} get-tuple-element(while.43), index=0
+  while.45 = f64[256,1024]{1,0} get-tuple-element(while.43), index=1
+  while.46 = f64[256,1024]{1,0} get-tuple-element(while.43), index=2
+  while.48 = f64[256,1024]{1,0} get-tuple-element(while.43), index=4
+  while.49 = f64[256,1024]{1,0} get-tuple-element(while.43), index=5
+  constant.457 = f64[] constant(10)
+  mul.162 = f64[256,1024]{1,0} broadcast(constant.457), dimensions={}
+  mul.163 = f64[256,1024]{1,0} multiply(a.1, mul.162)
+  lgamma.396 = f64[256,1024]{1,0} abs(mul.163)
+  lgamma.397 = pred[256,1024]{1,0} compare(lgamma.396, broadcast.130), direction=EQ
+  lgamma.342 = pred[256,1024]{1,0} compare(mul.163, broadcast.153), direction=LT
+  lgamma.381 = f64[256,1024]{1,0} abs(mul.163)
+  lgamma.382 = f64[256,1024]{1,0} floor(lgamma.381)
+  lgamma.383 = f64[256,1024]{1,0} subtract(lgamma.381, lgamma.382)
+  lgamma.384 = pred[256,1024]{1,0} compare(broadcast.153, lgamma.383), direction=LT
+  lgamma.385 = f64[256,1024]{1,0} subtract(broadcast.152, lgamma.383)
+  lgamma.386 = f64[256,1024]{1,0} select(lgamma.384, lgamma.385, lgamma.383)
+  lgamma.387 = f64[256,1024]{1,0} multiply(lgamma.386, broadcast.132)
+  lgamma.388 = f64[256,1024]{1,0} sine(lgamma.387)
+  lgamma.389 = f64[256,1024]{1,0} log(lgamma.388)
+  lgamma.392 = pred[256,1024]{1,0} is-finite(lgamma.389)
+  lgamma.390 = f64[256,1024]{1,0} subtract(broadcast.131, lgamma.389)
+  lgamma.343 = f64[256,1024]{1,0} negate(mul.163)
+  lgamma.344 = f64[256,1024]{1,0} subtract(mul.163, broadcast.152)
+  lgamma.345 = f64[256,1024]{1,0} select(lgamma.342, lgamma.343, lgamma.344)
+  lgamma.375 = f64[256,1024]{1,0} add(lgamma.345, broadcast.153)
+  lgamma.370 = f64[256,1024]{1,0} add(lgamma.345, broadcast.135)
+  lgamma.371 = f64[256,1024]{1,0} divide(lgamma.345, broadcast.135)
+  lgamma.372 = f64[256,1024]{1,0} log-plus-one(lgamma.371)
+  lgamma.373 = f64[256,1024]{1,0} add(lgamma.372, broadcast.134)
+  lgamma.374 = f64[256,1024]{1,0} divide(lgamma.370, lgamma.373)
+  lgamma.376 = f64[256,1024]{1,0} subtract(lgamma.375, lgamma.374)
+  lgamma.377 = f64[256,1024]{1,0} multiply(lgamma.376, lgamma.373)
+  lgamma.379 = f64[256,1024]{1,0} add(lgamma.377, broadcast.133)
+  lgamma.346 = f64[256,1024]{1,0} add(lgamma.345, broadcast.152)
+  lgamma.347 = f64[256,1024]{1,0} divide(broadcast.150, lgamma.346)
+  lgamma.348 = f64[256,1024]{1,0} add(lgamma.347, broadcast.151)
+  lgamma.349 = f64[256,1024]{1,0} add(lgamma.345, broadcast.148)
+  lgamma.350 = f64[256,1024]{1,0} divide(broadcast.149, lgamma.349)
+  lgamma.351 = f64[256,1024]{1,0} add(lgamma.348, lgamma.350)
+  lgamma.352 = f64[256,1024]{1,0} add(lgamma.345, broadcast.146)
+  lgamma.353 = f64[256,1024]{1,0} divide(broadcast.147, lgamma.352)
+  lgamma.354 = f64[256,1024]{1,0} add(lgamma.351, lgamma.353)
+  lgamma.355 = f64[256,1024]{1,0} add(lgamma.345, broadcast.144)
+  lgamma.356 = f64[256,1024]{1,0} divide(broadcast.145, lgamma.355)
+  lgamma.357 = f64[256,1024]{1,0} add(lgamma.354, lgamma.356)
+  lgamma.358 = f64[256,1024]{1,0} add(lgamma.345, broadcast.142)
+  lgamma.359 = f64[256,1024]{1,0} divide(broadcast.143, lgamma.358)
+  lgamma.360 = f64[256,1024]{1,0} add(lgamma.357, lgamma.359)
+  lgamma.361 = f64[256,1024]{1,0} add(lgamma.345, broadcast.140)
+  lgamma.362 = f64[256,1024]{1,0} divide(broadcast.141, lgamma.361)
+  lgamma.363 = f64[256,1024]{1,0} add(lgamma.360, lgamma.362)
+  lgamma.364 = f64[256,1024]{1,0} add(lgamma.345, broadcast.138)
+  lgamma.365 = f64[256,1024]{1,0} divide(broadcast.139, lgamma.364)
+  lgamma.366 = f64[256,1024]{1,0} add(lgamma.363, lgamma.365)
+  lgamma.367 = f64[256,1024]{1,0} add(lgamma.345, broadcast.136)
+  lgamma.368 = f64[256,1024]{1,0} divide(broadcast.137, lgamma.367)
+  lgamma.369 = f64[256,1024]{1,0} add(lgamma.366, lgamma.368)
+  lgamma.378 = f64[256,1024]{1,0} log(lgamma.369)
+  lgamma.380 = f64[256,1024]{1,0} add(lgamma.379, lgamma.378)
+  lgamma.391 = f64[256,1024]{1,0} subtract(lgamma.390, lgamma.380)
+  lgamma.393 = f64[256,1024]{1,0} negate(lgamma.389)
+  lgamma.394 = f64[256,1024]{1,0} select(lgamma.392, lgamma.391, lgamma.393)
+  lgamma.395 = f64[256,1024]{1,0} select(lgamma.342, lgamma.394, lgamma.380)
+  lgamma.398 = f64[256,1024]{1,0} select(lgamma.397, broadcast.130, lgamma.395)
+  mul.164 = f64[256,1024]{1,0} multiply(a.1, broadcast.146)
+  digamma.149 = pred[256,1024]{1,0} compare(mul.164, broadcast.129), direction=EQ
+  constant.429 = f64[] constant(-inf)
+  broadcast.127 = f64[256,1024]{1,0} broadcast(constant.429), dimensions={}
+  digamma.150 = pred[256,1024]{1,0} compare(mul.164, broadcast.129), direction=LT
+  digamma.151 = f64[256,1024]{1,0} floor(mul.164)
+  digamma.152 = pred[256,1024]{1,0} compare(mul.164, digamma.151), direction=EQ
+  digamma.153 = pred[256,1024]{1,0} and(digamma.150, digamma.152)
+  constant.430 = f64[] constant(nan)
+  broadcast.128 = f64[256,1024]{1,0} broadcast(constant.430), dimensions={}
+  digamma.78 = pred[256,1024]{1,0} compare(mul.164, broadcast.153), direction=LT
+  digamma.79 = f64[256,1024]{1,0} negate(mul.164)
+  digamma.80 = f64[256,1024]{1,0} subtract(mul.164, broadcast.152)
+  digamma.81 = f64[256,1024]{1,0} select(digamma.78, digamma.79, digamma.80)
+  digamma.131 = f64[256,1024]{1,0} divide(digamma.81, broadcast.135)
+  digamma.132 = f64[256,1024]{1,0} log-plus-one(digamma.131)
+  digamma.133 = f64[256,1024]{1,0} add(digamma.132, broadcast.134)
+  digamma.82 = f64[256,1024]{1,0} add(digamma.81, broadcast.152)
+  digamma.83 = f64[256,1024]{1,0} multiply(digamma.82, digamma.82)
+  digamma.84 = f64[256,1024]{1,0} divide(broadcast.150, digamma.83)
+  digamma.85 = f64[256,1024]{1,0} subtract(broadcast.129, digamma.84)
+  digamma.88 = f64[256,1024]{1,0} add(digamma.81, broadcast.148)
+  digamma.89 = f64[256,1024]{1,0} multiply(digamma.88, digamma.88)
+  digamma.90 = f64[256,1024]{1,0} divide(broadcast.149, digamma.89)
+  digamma.91 = f64[256,1024]{1,0} subtract(digamma.85, digamma.90)
+  digamma.94 = f64[256,1024]{1,0} add(digamma.81, broadcast.146)
+  digamma.95 = f64[256,1024]{1,0} multiply(digamma.94, digamma.94)
+  digamma.96 = f64[256,1024]{1,0} divide(broadcast.147, digamma.95)
+  digamma.97 = f64[256,1024]{1,0} subtract(digamma.91, digamma.96)
+  digamma.100 = f64[256,1024]{1,0} add(digamma.81, broadcast.144)
+  digamma.101 = f64[256,1024]{1,0} multiply(digamma.100, digamma.100)
+  digamma.102 = f64[256,1024]{1,0} divide(broadcast.145, digamma.101)
+  digamma.103 = f64[256,1024]{1,0} subtract(digamma.97, digamma.102)
+  digamma.106 = f64[256,1024]{1,0} add(digamma.81, broadcast.142)
+  digamma.107 = f64[256,1024]{1,0} multiply(digamma.106, digamma.106)
+  digamma.108 = f64[256,1024]{1,0} divide(broadcast.143, digamma.107)
+  digamma.109 = f64[256,1024]{1,0} subtract(digamma.103, digamma.108)
+  digamma.112 = f64[256,1024]{1,0} add(digamma.81, broadcast.140)
+  digamma.113 = f64[256,1024]{1,0} multiply(digamma.112, digamma.112)
+  digamma.114 = f64[256,1024]{1,0} divide(broadcast.141, digamma.113)
+  digamma.115 = f64[256,1024]{1,0} subtract(digamma.109, digamma.114)
+  digamma.118 = f64[256,1024]{1,0} add(digamma.81, broadcast.138)
+  digamma.119 = f64[256,1024]{1,0} multiply(digamma.118, digamma.118)
+  digamma.120 = f64[256,1024]{1,0} divide(broadcast.139, digamma.119)
+  digamma.121 = f64[256,1024]{1,0} subtract(digamma.115, digamma.120)
+  digamma.124 = f64[256,1024]{1,0} add(digamma.81, broadcast.136)
+  digamma.125 = f64[256,1024]{1,0} multiply(digamma.124, digamma.124)
+  digamma.126 = f64[256,1024]{1,0} divide(broadcast.137, digamma.125)
+  digamma.127 = f64[256,1024]{1,0} subtract(digamma.121, digamma.126)
+  digamma.86 = f64[256,1024]{1,0} divide(broadcast.150, digamma.82)
+  digamma.87 = f64[256,1024]{1,0} add(digamma.86, broadcast.151)
+  digamma.92 = f64[256,1024]{1,0} divide(broadcast.149, digamma.88)
+  digamma.93 = f64[256,1024]{1,0} add(digamma.87, digamma.92)
+  digamma.98 = f64[256,1024]{1,0} divide(broadcast.147, digamma.94)
+  digamma.99 = f64[256,1024]{1,0} add(digamma.93, digamma.98)
+  digamma.104 = f64[256,1024]{1,0} divide(broadcast.145, digamma.100)
+  digamma.105 = f64[256,1024]{1,0} add(digamma.99, digamma.104)
+  digamma.110 = f64[256,1024]{1,0} divide(broadcast.143, digamma.106)
+  digamma.111 = f64[256,1024]{1,0} add(digamma.105, digamma.110)
+  digamma.116 = f64[256,1024]{1,0} divide(broadcast.141, digamma.112)
+  digamma.117 = f64[256,1024]{1,0} add(digamma.111, digamma.116)
+  digamma.122 = f64[256,1024]{1,0} divide(broadcast.139, digamma.118)
+  digamma.123 = f64[256,1024]{1,0} add(digamma.117, digamma.122)
+  digamma.128 = f64[256,1024]{1,0} divide(broadcast.137, digamma.124)
+  digamma.129 = f64[256,1024]{1,0} add(digamma.123, digamma.128)
+  digamma.134 = f64[256,1024]{1,0} divide(digamma.127, digamma.129)
+  digamma.136 = f64[256,1024]{1,0} add(digamma.133, digamma.134)
+  digamma.130 = f64[256,1024]{1,0} add(digamma.81, broadcast.135)
+  digamma.135 = f64[256,1024]{1,0} divide(broadcast.138, digamma.130)
+  digamma.137 = f64[256,1024]{1,0} subtract(digamma.136, digamma.135)
+  digamma.138 = f64[256,1024]{1,0} add(mul.164, broadcast.153)
+  digamma.139 = f64[256,1024]{1,0} floor(digamma.138)
+  digamma.140 = f64[256,1024]{1,0} abs(digamma.139)
+  digamma.141 = f64[256,1024]{1,0} add(mul.164, digamma.140)
+  digamma.142 = f64[256,1024]{1,0} multiply(digamma.141, broadcast.132)
+  digamma.143 = f64[256,1024]{1,0} cosine(digamma.142)
+  digamma.145 = f64[256,1024]{1,0} multiply(digamma.143, broadcast.132)
+  digamma.144 = f64[256,1024]{1,0} sine(digamma.142)
+  digamma.146 = f64[256,1024]{1,0} divide(digamma.145, digamma.144)
+  digamma.147 = f64[256,1024]{1,0} subtract(digamma.137, digamma.146)
+  digamma.148 = f64[256,1024]{1,0} select(digamma.78, digamma.147, digamma.137)
+  digamma.154 = f64[256,1024]{1,0} select(digamma.153, broadcast.128, digamma.148)
+  digamma.155 = f64[256,1024]{1,0} select(digamma.149, broadcast.127, digamma.154)
+  add.113 = f64[256,1024]{1,0} add(lgamma.398, digamma.155)
+  erf.2 = f64[256,1024]{1,0} erf(x.1)
+  add.114 = f64[256,1024]{1,0} add(add.113, erf.2)
+  mul.165 = f64[256,1024]{1,0} multiply(x.1, broadcast.153)
+  erfc.361 = f64[256,1024]{1,0} abs(mul.165)
+  erfc.362 = pred[256,1024]{1,0} compare(erfc.361, broadcast.152), direction=LT
+  erfc.340 = f64[256,1024]{1,0} multiply(mul.165, mul.165)
+  constant.398 = f64[] constant(9.6049737398705162)
+  broadcast.96 = f64[256,1024]{1,0} broadcast(constant.398), dimensions={}
+  erfc.341 = f64[256,1024]{1,0} multiply(erfc.340, broadcast.96)
+  constant.397 = f64[] constant(90.026019720384269)
+  broadcast.95 = f64[256,1024]{1,0} broadcast(constant.397), dimensions={}
+  erfc.342 = f64[256,1024]{1,0} add(erfc.341, broadcast.95)
+  erfc.343 = f64[256,1024]{1,0} multiply(erfc.342, erfc.340)
+  constant.396 = f64[] constant(2232.0053459468431)
+  broadcast.94 = f64[256,1024]{1,0} broadcast(constant.396), dimensions={}
+  erfc.344 = f64[256,1024]{1,0} add(erfc.343, broadcast.94)
+  erfc.345 = f64[256,1024]{1,0} multiply(erfc.344, erfc.340)
+  constant.395 = f64[] constant(7003.3251411280507)
+  broadcast.93 = f64[256,1024]{1,0} broadcast(constant.395), dimensions={}
+  erfc.346 = f64[256,1024]{1,0} add(erfc.345, broadcast.93)
+  erfc.347 = f64[256,1024]{1,0} multiply(erfc.346, erfc.340)
+  constant.394 = f64[] constant(55592.301301039493)
+  broadcast.92 = f64[256,1024]{1,0} broadcast(constant.394), dimensions={}
+  erfc.348 = f64[256,1024]{1,0} add(erfc.347, broadcast.92)
+  erfc.349 = f64[256,1024]{1,0} multiply(mul.165, erfc.348)
+  constant.393 = f64[] constant(33.561714164750313)
+  broadcast.91 = f64[256,1024]{1,0} broadcast(constant.393), dimensions={}
+  erfc.350 = f64[256,1024]{1,0} add(erfc.340, broadcast.91)
+  erfc.351 = f64[256,1024]{1,0} multiply(erfc.350, erfc.340)
+  constant.392 = f64[] constant(521.35794978015269)
+  broadcast.90 = f64[256,1024]{1,0} broadcast(constant.392), dimensions={}
+  erfc.352 = f64[256,1024]{1,0} add(erfc.351, broadcast.90)
+  erfc.353 = f64[256,1024]{1,0} multiply(erfc.352, erfc.340)
+  constant.391 = f64[] constant(4594.3238297098014)
+  broadcast.89 = f64[256,1024]{1,0} broadcast(constant.391), dimensions={}
+  erfc.354 = f64[256,1024]{1,0} add(erfc.353, broadcast.89)
+  erfc.355 = f64[256,1024]{1,0} multiply(erfc.354, erfc.340)
+  constant.390 = f64[] constant(22629.000061389095)
+  broadcast.88 = f64[256,1024]{1,0} broadcast(constant.390), dimensions={}
+  erfc.356 = f64[256,1024]{1,0} add(erfc.355, broadcast.88)
+  erfc.357 = f64[256,1024]{1,0} multiply(erfc.356, erfc.340)
+  constant.389 = f64[] constant(49267.394260863592)
+  broadcast.87 = f64[256,1024]{1,0} broadcast(constant.389), dimensions={}
+  erfc.358 = f64[256,1024]{1,0} add(erfc.357, broadcast.87)
+  erfc.359 = f64[256,1024]{1,0} divide(erfc.349, erfc.358)
+  erfc.360 = f64[256,1024]{1,0} subtract(broadcast.152, erfc.359)
+  erfc.337 = pred[256,1024]{1,0} compare(mul.165, broadcast.129), direction=LT
+  erfc.273 = f64[256,1024]{1,0} multiply(mul.165, mul.165)
+  erfc.274 = f64[256,1024]{1,0} negate(erfc.273)
+  erfc.335 = pred[256,1024]{1,0} compare(erfc.274, broadcast.97), direction=LT
+  erfc.276 = f64[256,1024]{1,0} abs(mul.165)
+  erfc.333 = pred[256,1024]{1,0} compare(erfc.276, broadcast.136), direction=LT
+  erfc.275 = f64[256,1024]{1,0} exponential(erfc.274)
+  constant.428 = f64[] constant(2.4619698147353052e-10)
+  broadcast.126 = f64[256,1024]{1,0} broadcast(constant.428), dimensions={}
+  erfc.277 = f64[256,1024]{1,0} multiply(erfc.276, broadcast.126)
+  constant.427 = f64[] constant(0.56418956483106886)
+  broadcast.125 = f64[256,1024]{1,0} broadcast(constant.427), dimensions={}
+  erfc.278 = f64[256,1024]{1,0} add(erfc.277, broadcast.125)
+  erfc.279 = f64[256,1024]{1,0} multiply(erfc.278, erfc.276)
+  constant.426 = f64[] constant(7.4632105644226989)
+  broadcast.124 = f64[256,1024]{1,0} broadcast(constant.426), dimensions={}
+  erfc.280 = f64[256,1024]{1,0} add(erfc.279, broadcast.124)
+  erfc.281 = f64[256,1024]{1,0} multiply(erfc.280, erfc.276)
+  constant.425 = f64[] constant(48.637197098568137)
+  broadcast.123 = f64[256,1024]{1,0} broadcast(constant.425), dimensions={}
+  erfc.282 = f64[256,1024]{1,0} add(erfc.281, broadcast.123)
+  erfc.283 = f64[256,1024]{1,0} multiply(erfc.282, erfc.276)
+  constant.424 = f64[] constant(196.5208329560771)
+  broadcast.122 = f64[256,1024]{1,0} broadcast(constant.424), dimensions={}
+  erfc.284 = f64[256,1024]{1,0} add(erfc.283, broadcast.122)
+  erfc.285 = f64[256,1024]{1,0} multiply(erfc.284, erfc.276)
+  constant.423 = f64[] constant(526.44519499547732)
+  broadcast.121 = f64[256,1024]{1,0} broadcast(constant.423), dimensions={}
+  erfc.286 = f64[256,1024]{1,0} add(erfc.285, broadcast.121)
+  erfc.287 = f64[256,1024]{1,0} multiply(erfc.286, erfc.276)
+  constant.422 = f64[] constant(934.52852717195765)
+  broadcast.120 = f64[256,1024]{1,0} broadcast(constant.422), dimensions={}
+  erfc.288 = f64[256,1024]{1,0} add(erfc.287, broadcast.120)
+  erfc.289 = f64[256,1024]{1,0} multiply(erfc.288, erfc.276)
+  constant.421 = f64[] constant(1027.5518868951572)
+  broadcast.119 = f64[256,1024]{1,0} broadcast(constant.421), dimensions={}
+  erfc.290 = f64[256,1024]{1,0} add(erfc.289, broadcast.119)
+  erfc.291 = f64[256,1024]{1,0} multiply(erfc.290, erfc.276)
+  constant.420 = f64[] constant(557.53533536939938)
+  broadcast.118 = f64[256,1024]{1,0} broadcast(constant.420), dimensions={}
+  erfc.292 = f64[256,1024]{1,0} add(erfc.291, broadcast.118)
+  erfc.293 = f64[256,1024]{1,0} multiply(erfc.275, erfc.292)
+  constant.419 = f64[] constant(13.228195115474499)
+  broadcast.117 = f64[256,1024]{1,0} broadcast(constant.419), dimensions={}
+  erfc.294 = f64[256,1024]{1,0} add(erfc.276, broadcast.117)
+  erfc.295 = f64[256,1024]{1,0} multiply(erfc.294, erfc.276)
+  constant.418 = f64[] constant(86.707214088598974)
+  broadcast.116 = f64[256,1024]{1,0} broadcast(constant.418), dimensions={}
+  erfc.296 = f64[256,1024]{1,0} add(erfc.295, broadcast.116)
+  erfc.297 = f64[256,1024]{1,0} multiply(erfc.296, erfc.276)
+  constant.417 = f64[] constant(354.93777888781989)
+  broadcast.115 = f64[256,1024]{1,0} broadcast(constant.417), dimensions={}
+  erfc.298 = f64[256,1024]{1,0} add(erfc.297, broadcast.115)
+  erfc.299 = f64[256,1024]{1,0} multiply(erfc.298, erfc.276)
+  constant.416 = f64[] constant(975.70850174320549)
+  broadcast.114 = f64[256,1024]{1,0} broadcast(constant.416), dimensions={}
+  erfc.300 = f64[256,1024]{1,0} add(erfc.299, broadcast.114)
+  erfc.301 = f64[256,1024]{1,0} multiply(erfc.300, erfc.276)
+  constant.415 = f64[] constant(1823.9091668790973)
+  broadcast.113 = f64[256,1024]{1,0} broadcast(constant.415), dimensions={}
+  erfc.302 = f64[256,1024]{1,0} add(erfc.301, broadcast.113)
+  erfc.303 = f64[256,1024]{1,0} multiply(erfc.302, erfc.276)
+  constant.414 = f64[] constant(2246.3376081871097)
+  broadcast.112 = f64[256,1024]{1,0} broadcast(constant.414), dimensions={}
+  erfc.304 = f64[256,1024]{1,0} add(erfc.303, broadcast.112)
+  erfc.305 = f64[256,1024]{1,0} multiply(erfc.304, erfc.276)
+  constant.413 = f64[] constant(1656.6630919416134)
+  broadcast.111 = f64[256,1024]{1,0} broadcast(constant.413), dimensions={}
+  erfc.306 = f64[256,1024]{1,0} add(erfc.305, broadcast.111)
+  erfc.307 = f64[256,1024]{1,0} multiply(erfc.306, erfc.276)
+  constant.412 = f64[] constant(557.53534081772773)
+  broadcast.110 = f64[256,1024]{1,0} broadcast(constant.412), dimensions={}
+  erfc.308 = f64[256,1024]{1,0} add(erfc.307, broadcast.110)
+  erfc.309 = f64[256,1024]{1,0} divide(erfc.293, erfc.308)
+  constant.411 = f64[] constant(0.56418958354775506)
+  broadcast.109 = f64[256,1024]{1,0} broadcast(constant.411), dimensions={}
+  erfc.310 = f64[256,1024]{1,0} multiply(erfc.276, broadcast.109)
+  constant.410 = f64[] constant(1.275366707599781)
+  broadcast.108 = f64[256,1024]{1,0} broadcast(constant.410), dimensions={}
+  erfc.311 = f64[256,1024]{1,0} add(erfc.310, broadcast.108)
+  erfc.312 = f64[256,1024]{1,0} multiply(erfc.311, erfc.276)
+  constant.409 = f64[] constant(5.0190504225118051)
+  broadcast.107 = f64[256,1024]{1,0} broadcast(constant.409), dimensions={}
+  erfc.313 = f64[256,1024]{1,0} add(erfc.312, broadcast.107)
+  erfc.314 = f64[256,1024]{1,0} multiply(erfc.313, erfc.276)
+  constant.408 = f64[] constant(6.160210979930536)
+  broadcast.106 = f64[256,1024]{1,0} broadcast(constant.408), dimensions={}
+  erfc.315 = f64[256,1024]{1,0} add(erfc.314, broadcast.106)
+  erfc.316 = f64[256,1024]{1,0} multiply(erfc.315, erfc.276)
+  constant.407 = f64[] constant(7.4097426995044895)
+  broadcast.105 = f64[256,1024]{1,0} broadcast(constant.407), dimensions={}
+  erfc.317 = f64[256,1024]{1,0} add(erfc.316, broadcast.105)
+  erfc.318 = f64[256,1024]{1,0} multiply(erfc.317, erfc.276)
+  constant.406 = f64[] constant(2.9788666537210022)
+  broadcast.104 = f64[256,1024]{1,0} broadcast(constant.406), dimensions={}
+  erfc.319 = f64[256,1024]{1,0} add(erfc.318, broadcast.104)
+  erfc.320 = f64[256,1024]{1,0} multiply(erfc.275, erfc.319)
+  constant.405 = f64[] constant(2.2605286322011726)
+  broadcast.103 = f64[256,1024]{1,0} broadcast(constant.405), dimensions={}
+  erfc.321 = f64[256,1024]{1,0} add(erfc.276, broadcast.103)
+  erfc.322 = f64[256,1024]{1,0} multiply(erfc.321, erfc.276)
+  constant.404 = f64[] constant(9.3960352493800148)
+  broadcast.102 = f64[256,1024]{1,0} broadcast(constant.404), dimensions={}
+  erfc.323 = f64[256,1024]{1,0} add(erfc.322, broadcast.102)
+  erfc.324 = f64[256,1024]{1,0} multiply(erfc.323, erfc.276)
+  constant.403 = f64[] constant(12.048953980809666)
+  broadcast.101 = f64[256,1024]{1,0} broadcast(constant.403), dimensions={}
+  erfc.325 = f64[256,1024]{1,0} add(erfc.324, broadcast.101)
+  erfc.326 = f64[256,1024]{1,0} multiply(erfc.325, erfc.276)
+  constant.402 = f64[] constant(17.081445074756591)
+  broadcast.100 = f64[256,1024]{1,0} broadcast(constant.402), dimensions={}
+  erfc.327 = f64[256,1024]{1,0} add(erfc.326, broadcast.100)
+  erfc.328 = f64[256,1024]{1,0} multiply(erfc.327, erfc.276)
+  constant.401 = f64[] constant(9.6089680906328585)
+  broadcast.99 = f64[256,1024]{1,0} broadcast(constant.401), dimensions={}
+  erfc.329 = f64[256,1024]{1,0} add(erfc.328, broadcast.99)
+  erfc.330 = f64[256,1024]{1,0} multiply(erfc.329, erfc.276)
+  constant.400 = f64[] constant(3.3690764510008151)
+  broadcast.98 = f64[256,1024]{1,0} broadcast(constant.400), dimensions={}
+  erfc.331 = f64[256,1024]{1,0} add(erfc.330, broadcast.98)
+  erfc.332 = f64[256,1024]{1,0} divide(erfc.320, erfc.331)
+  erfc.334 = f64[256,1024]{1,0} select(erfc.333, erfc.309, erfc.332)
+  erfc.336 = f64[256,1024]{1,0} select(erfc.335, broadcast.129, erfc.334)
+  erfc.338 = f64[256,1024]{1,0} subtract(broadcast.148, erfc.336)
+  erfc.339 = f64[256,1024]{1,0} select(erfc.337, erfc.338, erfc.336)
+  erfc.363 = f64[256,1024]{1,0} select(erfc.362, erfc.360, erfc.339)
+  add.115 = f64[256,1024]{1,0} add(add.114, erfc.363)
+  mul.166 = f64[256,1024]{1,0} multiply(x.1, broadcast.144)
+  abs.6 = f64[256,1024]{1,0} abs(mul.166)
+  le.2 = pred[256,1024]{1,0} compare(abs.6, broadcast.136), direction=LE
+  broadcast_in_dim.111 = f64[256,1024]{1,0} multiply(abs.6, broadcast.153)
+  sub.90 = f64[256,1024]{1,0} subtract(broadcast_in_dim.111, broadcast.148)
+  mul.167 = f64[256,1024]{1,0} multiply(sub.90, broadcast.129)
+  constant.321 = f64[] constant(-4.4153416464793395e-18)
+  broadcast_in_dim.110 = f64[256,1024]{1,0} broadcast(constant.321), dimensions={}
+  add.116 = f64[256,1024]{1,0} add(mul.167, broadcast_in_dim.110)
+  mul.168 = f64[256,1024]{1,0} multiply(sub.90, add.116)
+  constant.320 = f64[] constant(3.3307945188222384e-17)
+  broadcast_in_dim.109 = f64[256,1024]{1,0} broadcast(constant.320), dimensions={}
+  add.117 = f64[256,1024]{1,0} add(mul.168, broadcast_in_dim.109)
+  mul.169 = f64[256,1024]{1,0} multiply(sub.90, add.117)
+  sub.91 = f64[256,1024]{1,0} subtract(mul.169, add.116)
+  constant.319 = f64[] constant(-2.4312798465479549e-16)
+  broadcast_in_dim.108 = f64[256,1024]{1,0} broadcast(constant.319), dimensions={}
+  add.118 = f64[256,1024]{1,0} add(sub.91, broadcast_in_dim.108)
+  mul.170 = f64[256,1024]{1,0} multiply(sub.90, add.118)
+  sub.92 = f64[256,1024]{1,0} subtract(mul.170, add.117)
+  constant.318 = f64[] constant(1.7153912855551331e-15)
+  broadcast_in_dim.107 = f64[256,1024]{1,0} broadcast(constant.318), dimensions={}
+  add.119 = f64[256,1024]{1,0} add(sub.92, broadcast_in_dim.107)
+  mul.171 = f64[256,1024]{1,0} multiply(sub.90, add.119)
+  sub.93 = f64[256,1024]{1,0} subtract(mul.171, add.118)
+  constant.317 = f64[] constant(-1.1685332877993451e-14)
+  broadcast_in_dim.106 = f64[256,1024]{1,0} broadcast(constant.317), dimensions={}
+  add.120 = f64[256,1024]{1,0} add(sub.93, broadcast_in_dim.106)
+  mul.172 = f64[256,1024]{1,0} multiply(sub.90, add.120)
+  sub.94 = f64[256,1024]{1,0} subtract(mul.172, add.119)
+  constant.316 = f64[] constant(7.6761854986049361e-14)
+  broadcast_in_dim.105 = f64[256,1024]{1,0} broadcast(constant.316), dimensions={}
+  add.121 = f64[256,1024]{1,0} add(sub.94, broadcast_in_dim.105)
+  mul.173 = f64[256,1024]{1,0} multiply(sub.90, add.121)
+  sub.95 = f64[256,1024]{1,0} subtract(mul.173, add.120)
+  constant.315 = f64[] constant(-4.856446783111929e-13)
+  broadcast_in_dim.104 = f64[256,1024]{1,0} broadcast(constant.315), dimensions={}
+  add.122 = f64[256,1024]{1,0} add(sub.95, broadcast_in_dim.104)
+  mul.174 = f64[256,1024]{1,0} multiply(sub.90, add.122)
+  sub.96 = f64[256,1024]{1,0} subtract(mul.174, add.121)
+  constant.314 = f64[] constant(2.95505266312964e-12)
+  broadcast_in_dim.103 = f64[256,1024]{1,0} broadcast(constant.314), dimensions={}
+  add.123 = f64[256,1024]{1,0} add(sub.96, broadcast_in_dim.103)
+  mul.175 = f64[256,1024]{1,0} multiply(sub.90, add.123)
+  sub.97 = f64[256,1024]{1,0} subtract(mul.175, add.122)
+  constant.313 = f64[] constant(-1.7268262914415559e-11)
+  broadcast_in_dim.102 = f64[256,1024]{1,0} broadcast(constant.313), dimensions={}
+  add.124 = f64[256,1024]{1,0} add(sub.97, broadcast_in_dim.102)
+  mul.176 = f64[256,1024]{1,0} multiply(sub.90, add.124)
+  sub.98 = f64[256,1024]{1,0} subtract(mul.176, add.123)
+  constant.312 = f64[] constant(9.675809035373237e-11)
+  broadcast_in_dim.101 = f64[256,1024]{1,0} broadcast(constant.312), dimensions={}
+  add.125 = f64[256,1024]{1,0} add(sub.98, broadcast_in_dim.101)
+  mul.177 = f64[256,1024]{1,0} multiply(sub.90, add.125)
+  sub.99 = f64[256,1024]{1,0} subtract(mul.177, add.124)
+  constant.311 = f64[] constant(-5.1897956016352627e-10)
+  broadcast_in_dim.100 = f64[256,1024]{1,0} broadcast(constant.311), dimensions={}
+  add.126 = f64[256,1024]{1,0} add(sub.99, broadcast_in_dim.100)
+  mul.178 = f64[256,1024]{1,0} multiply(sub.90, add.126)
+  sub.100 = f64[256,1024]{1,0} subtract(mul.178, add.125)
+  constant.310 = f64[] constant(2.6598237246823866e-09)
+  broadcast_in_dim.99 = f64[256,1024]{1,0} broadcast(constant.310), dimensions={}
+  add.127 = f64[256,1024]{1,0} add(sub.100, broadcast_in_dim.99)
+  mul.179 = f64[256,1024]{1,0} multiply(sub.90, add.127)
+  sub.101 = f64[256,1024]{1,0} subtract(mul.179, add.126)
+  constant.309 = f64[] constant(-1.300025009986248e-08)
+  broadcast_in_dim.98 = f64[256,1024]{1,0} broadcast(constant.309), dimensions={}
+  add.128 = f64[256,1024]{1,0} add(sub.101, broadcast_in_dim.98)
+  mul.180 = f64[256,1024]{1,0} multiply(sub.90, add.128)
+  sub.102 = f64[256,1024]{1,0} subtract(mul.180, add.127)
+  constant.308 = f64[] constant(6.0469950225419186e-08)
+  broadcast_in_dim.97 = f64[256,1024]{1,0} broadcast(constant.308), dimensions={}
+  add.129 = f64[256,1024]{1,0} add(sub.102, broadcast_in_dim.97)
+  mul.181 = f64[256,1024]{1,0} multiply(sub.90, add.129)
+  sub.103 = f64[256,1024]{1,0} subtract(mul.181, add.128)
+  constant.307 = f64[] constant(-2.6707938539406119e-07)
+  broadcast_in_dim.96 = f64[256,1024]{1,0} broadcast(constant.307), dimensions={}
+  add.130 = f64[256,1024]{1,0} add(sub.103, broadcast_in_dim.96)
+  mul.182 = f64[256,1024]{1,0} multiply(sub.90, add.130)
+  sub.104 = f64[256,1024]{1,0} subtract(mul.182, add.129)
+  constant.306 = f64[] constant(1.1173875391201037e-06)
+  broadcast_in_dim.95 = f64[256,1024]{1,0} broadcast(constant.306), dimensions={}
+  add.131 = f64[256,1024]{1,0} add(sub.104, broadcast_in_dim.95)
+  mul.183 = f64[256,1024]{1,0} multiply(sub.90, add.131)
+  sub.105 = f64[256,1024]{1,0} subtract(mul.183, add.130)
+  constant.305 = f64[] constant(-4.4167383584587505e-06)
+  broadcast_in_dim.94 = f64[256,1024]{1,0} broadcast(constant.305), dimensions={}
+  add.132 = f64[256,1024]{1,0} add(sub.105, broadcast_in_dim.94)
+  mul.184 = f64[256,1024]{1,0} multiply(sub.90, add.132)
+  sub.106 = f64[256,1024]{1,0} subtract(mul.184, add.131)
+  constant.304 = f64[] constant(1.6448448070728896e-05)
+  broadcast_in_dim.93 = f64[256,1024]{1,0} broadcast(constant.304), dimensions={}
+  add.133 = f64[256,1024]{1,0} add(sub.106, broadcast_in_dim.93)
+  mul.185 = f64[256,1024]{1,0} multiply(sub.90, add.133)
+  sub.107 = f64[256,1024]{1,0} subtract(mul.185, add.132)
+  constant.303 = f64[] constant(-5.754195010082104e-05)
+  broadcast_in_dim.92 = f64[256,1024]{1,0} broadcast(constant.303), dimensions={}
+  add.134 = f64[256,1024]{1,0} add(sub.107, broadcast_in_dim.92)
+  mul.186 = f64[256,1024]{1,0} multiply(sub.90, add.134)
+  sub.108 = f64[256,1024]{1,0} subtract(mul.186, add.133)
+  constant.302 = f64[] constant(0.00018850288509584165)
+  broadcast_in_dim.91 = f64[256,1024]{1,0} broadcast(constant.302), dimensions={}
+  add.135 = f64[256,1024]{1,0} add(sub.108, broadcast_in_dim.91)
+  mul.187 = f64[256,1024]{1,0} multiply(sub.90, add.135)
+  sub.109 = f64[256,1024]{1,0} subtract(mul.187, add.134)
+  constant.301 = f64[] constant(-0.00057637557453858236)
+  broadcast_in_dim.90 = f64[256,1024]{1,0} broadcast(constant.301), dimensions={}
+  add.136 = f64[256,1024]{1,0} add(sub.109, broadcast_in_dim.90)
+  mul.188 = f64[256,1024]{1,0} multiply(sub.90, add.136)
+  sub.110 = f64[256,1024]{1,0} subtract(mul.188, add.135)
+  constant.300 = f64[] constant(0.0016394756169413357)
+  broadcast_in_dim.89 = f64[256,1024]{1,0} broadcast(constant.300), dimensions={}
+  add.137 = f64[256,1024]{1,0} add(sub.110, broadcast_in_dim.89)
+  mul.189 = f64[256,1024]{1,0} multiply(sub.90, add.137)
+  sub.111 = f64[256,1024]{1,0} subtract(mul.189, add.136)
+  constant.299 = f64[] constant(-0.0043243099950505759)
+  broadcast_in_dim.88 = f64[256,1024]{1,0} broadcast(constant.299), dimensions={}
+  add.138 = f64[256,1024]{1,0} add(sub.111, broadcast_in_dim.88)
+  mul.190 = f64[256,1024]{1,0} multiply(sub.90, add.138)
+  sub.112 = f64[256,1024]{1,0} subtract(mul.190, add.137)
+  constant.298 = f64[] constant(0.010546460394594998)
+  broadcast_in_dim.87 = f64[256,1024]{1,0} broadcast(constant.298), dimensions={}
+  add.139 = f64[256,1024]{1,0} add(sub.112, broadcast_in_dim.87)
+  mul.191 = f64[256,1024]{1,0} multiply(sub.90, add.139)
+  sub.113 = f64[256,1024]{1,0} subtract(mul.191, add.138)
+  constant.297 = f64[] constant(-0.023737414805899471)
+  broadcast_in_dim.86 = f64[256,1024]{1,0} broadcast(constant.297), dimensions={}
+  add.140 = f64[256,1024]{1,0} add(sub.113, broadcast_in_dim.86)
+  mul.192 = f64[256,1024]{1,0} multiply(sub.90, add.140)
+  sub.114 = f64[256,1024]{1,0} subtract(mul.192, add.139)
+  constant.296 = f64[] constant(0.049305284239670712)
+  broadcast_in_dim.85 = f64[256,1024]{1,0} broadcast(constant.296), dimensions={}
+  add.141 = f64[256,1024]{1,0} add(sub.114, broadcast_in_dim.85)
+  mul.193 = f64[256,1024]{1,0} multiply(sub.90, add.141)
+  sub.115 = f64[256,1024]{1,0} subtract(mul.193, add.140)
+  constant.295 = f64[] constant(-0.094901097048047639)
+  broadcast_in_dim.84 = f64[256,1024]{1,0} broadcast(constant.295), dimensions={}
+  add.142 = f64[256,1024]{1,0} add(sub.115, broadcast_in_dim.84)
+  mul.194 = f64[256,1024]{1,0} multiply(sub.90, add.142)
+  sub.116 = f64[256,1024]{1,0} subtract(mul.194, add.141)
+  constant.294 = f64[] constant(0.17162090152220877)
+  broadcast_in_dim.83 = f64[256,1024]{1,0} broadcast(constant.294), dimensions={}
+  add.143 = f64[256,1024]{1,0} add(sub.116, broadcast_in_dim.83)
+  mul.195 = f64[256,1024]{1,0} multiply(sub.90, add.143)
+  sub.117 = f64[256,1024]{1,0} subtract(mul.195, add.142)
+  constant.293 = f64[] constant(-0.3046826723431984)
+  broadcast_in_dim.82 = f64[256,1024]{1,0} broadcast(constant.293), dimensions={}
+  add.144 = f64[256,1024]{1,0} add(sub.117, broadcast_in_dim.82)
+  mul.196 = f64[256,1024]{1,0} multiply(sub.90, add.144)
+  sub.118 = f64[256,1024]{1,0} subtract(mul.196, add.143)
+  constant.292 = f64[] constant(0.67679527440947607)
+  broadcast_in_dim.81 = f64[256,1024]{1,0} broadcast(constant.292), dimensions={}
+  add.145 = f64[256,1024]{1,0} add(sub.118, broadcast_in_dim.81)
+  sub.119 = f64[256,1024]{1,0} subtract(add.145, add.143)
+  mul.197 = f64[256,1024]{1,0} multiply(sub.119, broadcast.153)
+  constant.388 = f64[] constant(32)
+  broadcast.86 = f64[256,1024]{1,0} broadcast(constant.388), dimensions={}
+  div.31 = f64[256,1024]{1,0} divide(broadcast.86, abs.6)
+  sub.120 = f64[256,1024]{1,0} subtract(div.31, broadcast.148)
+  mul.198 = f64[256,1024]{1,0} multiply(sub.120, broadcast.129)
+  constant.291 = f64[] constant(-7.2331804878747538e-18)
+  broadcast_in_dim.80 = f64[256,1024]{1,0} broadcast(constant.291), dimensions={}
+  add.146 = f64[256,1024]{1,0} add(mul.198, broadcast_in_dim.80)
+  mul.199 = f64[256,1024]{1,0} multiply(sub.120, add.146)
+  constant.290 = f64[] constant(-4.8305044859441819e-18)
+  broadcast_in_dim.79 = f64[256,1024]{1,0} broadcast(constant.290), dimensions={}
+  add.147 = f64[256,1024]{1,0} add(mul.199, broadcast_in_dim.79)
+  mul.200 = f64[256,1024]{1,0} multiply(sub.120, add.147)
+  sub.121 = f64[256,1024]{1,0} subtract(mul.200, add.146)
+  constant.289 = f64[] constant(4.46562142029676e-17)
+  broadcast_in_dim.78 = f64[256,1024]{1,0} broadcast(constant.289), dimensions={}
+  add.148 = f64[256,1024]{1,0} add(sub.121, broadcast_in_dim.78)
+  mul.201 = f64[256,1024]{1,0} multiply(sub.120, add.148)
+  sub.122 = f64[256,1024]{1,0} subtract(mul.201, add.147)
+  constant.288 = f64[] constant(3.4612228676974612e-17)
+  broadcast_in_dim.77 = f64[256,1024]{1,0} broadcast(constant.288), dimensions={}
+  add.149 = f64[256,1024]{1,0} add(sub.122, broadcast_in_dim.77)
+  mul.202 = f64[256,1024]{1,0} multiply(sub.120, add.149)
+  sub.123 = f64[256,1024]{1,0} subtract(mul.202, add.148)
+  constant.287 = f64[] constant(-2.8276239805165836e-16)
+  broadcast_in_dim.76 = f64[256,1024]{1,0} broadcast(constant.287), dimensions={}
+  add.150 = f64[256,1024]{1,0} add(sub.123, broadcast_in_dim.76)
+  mul.203 = f64[256,1024]{1,0} multiply(sub.120, add.150)
+  sub.124 = f64[256,1024]{1,0} subtract(mul.203, add.149)
+  constant.286 = f64[] constant(-3.425485619677219e-16)
+  broadcast_in_dim.75 = f64[256,1024]{1,0} broadcast(constant.286), dimensions={}
+  add.151 = f64[256,1024]{1,0} add(sub.124, broadcast_in_dim.75)
+  mul.204 = f64[256,1024]{1,0} multiply(sub.120, add.151)
+  sub.125 = f64[256,1024]{1,0} subtract(mul.204, add.150)
+  constant.285 = f64[] constant(1.7725601330565263e-15)
+  broadcast_in_dim.74 = f64[256,1024]{1,0} broadcast(constant.285), dimensions={}
+  add.152 = f64[256,1024]{1,0} add(sub.125, broadcast_in_dim.74)
+  mul.205 = f64[256,1024]{1,0} multiply(sub.120, add.152)
+  sub.126 = f64[256,1024]{1,0} subtract(mul.205, add.151)
+  constant.284 = f64[] constant(3.8116806693526224e-15)
+  broadcast_in_dim.73 = f64[256,1024]{1,0} broadcast(constant.284), dimensions={}
+  add.153 = f64[256,1024]{1,0} add(sub.126, broadcast_in_dim.73)
+  mul.206 = f64[256,1024]{1,0} multiply(sub.120, add.153)
+  sub.127 = f64[256,1024]{1,0} subtract(mul.206, add.152)
+  constant.283 = f64[] constant(-9.5548466988283073e-15)
+  broadcast_in_dim.72 = f64[256,1024]{1,0} broadcast(constant.283), dimensions={}
+  add.154 = f64[256,1024]{1,0} add(sub.127, broadcast_in_dim.72)
+  mul.207 = f64[256,1024]{1,0} multiply(sub.120, add.154)
+  sub.128 = f64[256,1024]{1,0} subtract(mul.207, add.153)
+  constant.282 = f64[] constant(-4.1505693472872222e-14)
+  broadcast_in_dim.71 = f64[256,1024]{1,0} broadcast(constant.282), dimensions={}
+  add.155 = f64[256,1024]{1,0} add(sub.128, broadcast_in_dim.71)
+  mul.208 = f64[256,1024]{1,0} multiply(sub.120, add.155)
+  sub.129 = f64[256,1024]{1,0} subtract(mul.208, add.154)
+  constant.281 = f64[] constant(1.54008621752141e-14)
+  broadcast_in_dim.70 = f64[256,1024]{1,0} broadcast(constant.281), dimensions={}
+  add.156 = f64[256,1024]{1,0} add(sub.129, broadcast_in_dim.70)
+  mul.209 = f64[256,1024]{1,0} multiply(sub.120, add.156)
+  sub.130 = f64[256,1024]{1,0} subtract(mul.209, add.155)
+  constant.280 = f64[] constant(3.8527783827421426e-13)
+  broadcast_in_dim.69 = f64[256,1024]{1,0} broadcast(constant.280), dimensions={}
+  add.157 = f64[256,1024]{1,0} add(sub.130, broadcast_in_dim.69)
+  mul.210 = f64[256,1024]{1,0} multiply(sub.120, add.157)
+  sub.131 = f64[256,1024]{1,0} subtract(mul.210, add.156)
+  constant.279 = f64[] constant(7.180124451383666e-13)
+  broadcast_in_dim.68 = f64[256,1024]{1,0} broadcast(constant.279), dimensions={}
+  add.158 = f64[256,1024]{1,0} add(sub.131, broadcast_in_dim.68)
+  mul.211 = f64[256,1024]{1,0} multiply(sub.120, add.158)
+  sub.132 = f64[256,1024]{1,0} subtract(mul.211, add.157)
+  constant.278 = f64[] constant(-1.7941785315068062e-12)
+  broadcast_in_dim.67 = f64[256,1024]{1,0} broadcast(constant.278), dimensions={}
+  add.159 = f64[256,1024]{1,0} add(sub.132, broadcast_in_dim.67)
+  mul.212 = f64[256,1024]{1,0} multiply(sub.120, add.159)
+  sub.133 = f64[256,1024]{1,0} subtract(mul.212, add.158)
+  constant.277 = f64[] constant(-1.3215811840447713e-11)
+  broadcast_in_dim.66 = f64[256,1024]{1,0} broadcast(constant.277), dimensions={}
+  add.160 = f64[256,1024]{1,0} add(sub.133, broadcast_in_dim.66)
+  mul.213 = f64[256,1024]{1,0} multiply(sub.120, add.160)
+  sub.134 = f64[256,1024]{1,0} subtract(mul.213, add.159)
+  constant.276 = f64[] constant(-3.1499165279632416e-11)
+  broadcast_in_dim.65 = f64[256,1024]{1,0} broadcast(constant.276), dimensions={}
+  add.161 = f64[256,1024]{1,0} add(sub.134, broadcast_in_dim.65)
+  mul.214 = f64[256,1024]{1,0} multiply(sub.120, add.161)
+  sub.135 = f64[256,1024]{1,0} subtract(mul.214, add.160)
+  constant.275 = f64[] constant(1.1889147107846439e-11)
+  broadcast_in_dim.64 = f64[256,1024]{1,0} broadcast(constant.275), dimensions={}
+  add.162 = f64[256,1024]{1,0} add(sub.135, broadcast_in_dim.64)
+  mul.215 = f64[256,1024]{1,0} multiply(sub.120, add.162)
+  sub.136 = f64[256,1024]{1,0} subtract(mul.215, add.161)
+  constant.274 = f64[] constant(4.94060238822497e-10)
+  broadcast_in_dim.63 = f64[256,1024]{1,0} broadcast(constant.274), dimensions={}
+  add.163 = f64[256,1024]{1,0} add(sub.136, broadcast_in_dim.63)
+  mul.216 = f64[256,1024]{1,0} multiply(sub.120, add.163)
+  sub.137 = f64[256,1024]{1,0} subtract(mul.216, add.162)
+  constant.273 = f64[] constant(3.3962320257083865e-09)
+  broadcast_in_dim.62 = f64[256,1024]{1,0} broadcast(constant.273), dimensions={}
+  add.164 = f64[256,1024]{1,0} add(sub.137, broadcast_in_dim.62)
+  mul.217 = f64[256,1024]{1,0} multiply(sub.120, add.164)
+  sub.138 = f64[256,1024]{1,0} subtract(mul.217, add.163)
+  constant.272 = f64[] constant(2.266668990498178e-08)
+  broadcast_in_dim.61 = f64[256,1024]{1,0} broadcast(constant.272), dimensions={}
+  add.165 = f64[256,1024]{1,0} add(sub.138, broadcast_in_dim.61)
+  mul.218 = f64[256,1024]{1,0} multiply(sub.120, add.165)
+  sub.139 = f64[256,1024]{1,0} subtract(mul.218, add.164)
+  constant.271 = f64[] constant(2.0489185894690638e-07)
+  broadcast_in_dim.60 = f64[256,1024]{1,0} broadcast(constant.271), dimensions={}
+  add.166 = f64[256,1024]{1,0} add(sub.139, broadcast_in_dim.60)
+  mul.219 = f64[256,1024]{1,0} multiply(sub.120, add.166)
+  sub.140 = f64[256,1024]{1,0} subtract(mul.219, add.165)
+  constant.270 = f64[] constant(2.8913705208347567e-06)
+  broadcast_in_dim.59 = f64[256,1024]{1,0} broadcast(constant.270), dimensions={}
+  add.167 = f64[256,1024]{1,0} add(sub.140, broadcast_in_dim.59)
+  mul.220 = f64[256,1024]{1,0} multiply(sub.120, add.167)
+  sub.141 = f64[256,1024]{1,0} subtract(mul.220, add.166)
+  constant.269 = f64[] constant(6.8897583469168245e-05)
+  broadcast_in_dim.58 = f64[256,1024]{1,0} broadcast(constant.269), dimensions={}
+  add.168 = f64[256,1024]{1,0} add(sub.141, broadcast_in_dim.58)
+  mul.221 = f64[256,1024]{1,0} multiply(sub.120, add.168)
+  sub.142 = f64[256,1024]{1,0} subtract(mul.221, add.167)
+  constant.268 = f64[] constant(0.0033691164782556943)
+  broadcast_in_dim.57 = f64[256,1024]{1,0} broadcast(constant.268), dimensions={}
+  add.169 = f64[256,1024]{1,0} add(sub.142, broadcast_in_dim.57)
+  mul.222 = f64[256,1024]{1,0} multiply(sub.120, add.169)
+  sub.143 = f64[256,1024]{1,0} subtract(mul.222, add.168)
+  constant.267 = f64[] constant(0.80449041101410879)
+  broadcast_in_dim.56 = f64[256,1024]{1,0} broadcast(constant.267), dimensions={}
+  add.170 = f64[256,1024]{1,0} add(sub.143, broadcast_in_dim.56)
+  sub.144 = f64[256,1024]{1,0} subtract(add.170, add.168)
+  mul.223 = f64[256,1024]{1,0} multiply(sub.144, broadcast.153)
+  sqrt.1 = f64[256,1024]{1,0} sqrt(abs.6)
+  div.32 = f64[256,1024]{1,0} divide(mul.223, sqrt.1)
+  select_n.68 = f64[256,1024]{1,0} select(le.2, mul.197, div.32)
+  add.171 = f64[256,1024]{1,0} add(add.115, select_n.68)
+  mul.224 = f64[256,1024]{1,0} multiply(x.1, broadcast.144)
+  bessel_i1e.454 = f64[256,1024]{1,0} sign(mul.224)
+  bessel_i1e.282 = f64[256,1024]{1,0} abs(mul.224)
+  bessel_i1e.452 = pred[256,1024]{1,0} compare(bessel_i1e.282, broadcast.136), direction=LE
+  bessel_i1e.283 = f64[256,1024]{1,0} multiply(bessel_i1e.282, broadcast.153)
+  bessel_i1e.284 = f64[256,1024]{1,0} subtract(bessel_i1e.283, broadcast.148)
+  bessel_i1e.285 = f64[256,1024]{1,0} multiply(bessel_i1e.284, broadcast.129)
+  constant.387 = f64[] constant(2.7779141127610464e-18)
+  bessel_i1e.281 = f64[256,1024]{1,0} broadcast(constant.387), dimensions={}
+  bessel_i1e.286 = f64[256,1024]{1,0} add(bessel_i1e.285, bessel_i1e.281)
+  bessel_i1e.287 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.286)
+  constant.386 = f64[] constant(-2.111421214358166e-17)
+  bessel_i1e.280 = f64[256,1024]{1,0} broadcast(constant.386), dimensions={}
+  bessel_i1e.288 = f64[256,1024]{1,0} add(bessel_i1e.287, bessel_i1e.280)
+  bessel_i1e.289 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.288)
+  bessel_i1e.290 = f64[256,1024]{1,0} subtract(bessel_i1e.289, bessel_i1e.286)
+  constant.385 = f64[] constant(1.5536319577362005e-16)
+  bessel_i1e.279 = f64[256,1024]{1,0} broadcast(constant.385), dimensions={}
+  bessel_i1e.291 = f64[256,1024]{1,0} add(bessel_i1e.290, bessel_i1e.279)
+  bessel_i1e.292 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.291)
+  bessel_i1e.293 = f64[256,1024]{1,0} subtract(bessel_i1e.292, bessel_i1e.288)
+  constant.384 = f64[] constant(-1.1055969477353862e-15)
+  bessel_i1e.278 = f64[256,1024]{1,0} broadcast(constant.384), dimensions={}
+  bessel_i1e.294 = f64[256,1024]{1,0} add(bessel_i1e.293, bessel_i1e.278)
+  bessel_i1e.295 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.294)
+  bessel_i1e.296 = f64[256,1024]{1,0} subtract(bessel_i1e.295, bessel_i1e.291)
+  constant.383 = f64[] constant(7.6006842947354077e-15)
+  bessel_i1e.277 = f64[256,1024]{1,0} broadcast(constant.383), dimensions={}
+  bessel_i1e.297 = f64[256,1024]{1,0} add(bessel_i1e.296, bessel_i1e.277)
+  bessel_i1e.298 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.297)
+  bessel_i1e.299 = f64[256,1024]{1,0} subtract(bessel_i1e.298, bessel_i1e.294)
+  constant.382 = f64[] constant(-5.0421855047279118e-14)
+  bessel_i1e.276 = f64[256,1024]{1,0} broadcast(constant.382), dimensions={}
+  bessel_i1e.300 = f64[256,1024]{1,0} add(bessel_i1e.299, bessel_i1e.276)
+  bessel_i1e.301 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.300)
+  bessel_i1e.302 = f64[256,1024]{1,0} subtract(bessel_i1e.301, bessel_i1e.297)
+  constant.381 = f64[] constant(3.2237933659455748e-13)
+  bessel_i1e.275 = f64[256,1024]{1,0} broadcast(constant.381), dimensions={}
+  bessel_i1e.303 = f64[256,1024]{1,0} add(bessel_i1e.302, bessel_i1e.275)
+  bessel_i1e.304 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.303)
+  bessel_i1e.305 = f64[256,1024]{1,0} subtract(bessel_i1e.304, bessel_i1e.300)
+  constant.380 = f64[] constant(-1.9839743977649436e-12)
+  bessel_i1e.274 = f64[256,1024]{1,0} broadcast(constant.380), dimensions={}
+  bessel_i1e.306 = f64[256,1024]{1,0} add(bessel_i1e.305, bessel_i1e.274)
+  bessel_i1e.307 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.306)
+  bessel_i1e.308 = f64[256,1024]{1,0} subtract(bessel_i1e.307, bessel_i1e.303)
+  constant.379 = f64[] constant(1.1736186298890901e-11)
+  bessel_i1e.273 = f64[256,1024]{1,0} broadcast(constant.379), dimensions={}
+  bessel_i1e.309 = f64[256,1024]{1,0} add(bessel_i1e.308, bessel_i1e.273)
+  bessel_i1e.310 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.309)
+  bessel_i1e.311 = f64[256,1024]{1,0} subtract(bessel_i1e.310, bessel_i1e.306)
+  constant.378 = f64[] constant(-6.6634897235020271e-11)
+  bessel_i1e.272 = f64[256,1024]{1,0} broadcast(constant.378), dimensions={}
+  bessel_i1e.312 = f64[256,1024]{1,0} add(bessel_i1e.311, bessel_i1e.272)
+  bessel_i1e.313 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.312)
+  bessel_i1e.314 = f64[256,1024]{1,0} subtract(bessel_i1e.313, bessel_i1e.309)
+  constant.377 = f64[] constant(3.6255902815521172e-10)
+  bessel_i1e.271 = f64[256,1024]{1,0} broadcast(constant.377), dimensions={}
+  bessel_i1e.315 = f64[256,1024]{1,0} add(bessel_i1e.314, bessel_i1e.271)
+  bessel_i1e.316 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.315)
+  bessel_i1e.317 = f64[256,1024]{1,0} subtract(bessel_i1e.316, bessel_i1e.312)
+  constant.376 = f64[] constant(-1.8872497517228294e-09)
+  bessel_i1e.270 = f64[256,1024]{1,0} broadcast(constant.376), dimensions={}
+  bessel_i1e.318 = f64[256,1024]{1,0} add(bessel_i1e.317, bessel_i1e.270)
+  bessel_i1e.319 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.318)
+  bessel_i1e.320 = f64[256,1024]{1,0} subtract(bessel_i1e.319, bessel_i1e.315)
+  constant.375 = f64[] constant(9.3815373864957726e-09)
+  bessel_i1e.269 = f64[256,1024]{1,0} broadcast(constant.375), dimensions={}
+  bessel_i1e.321 = f64[256,1024]{1,0} add(bessel_i1e.320, bessel_i1e.269)
+  bessel_i1e.322 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.321)
+  bessel_i1e.323 = f64[256,1024]{1,0} subtract(bessel_i1e.322, bessel_i1e.318)
+  constant.374 = f64[] constant(-4.4450591287963281e-08)
+  bessel_i1e.268 = f64[256,1024]{1,0} broadcast(constant.374), dimensions={}
+  bessel_i1e.324 = f64[256,1024]{1,0} add(bessel_i1e.323, bessel_i1e.268)
+  bessel_i1e.325 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.324)
+  bessel_i1e.326 = f64[256,1024]{1,0} subtract(bessel_i1e.325, bessel_i1e.321)
+  constant.373 = f64[] constant(2.0032947535521353e-07)
+  bessel_i1e.267 = f64[256,1024]{1,0} broadcast(constant.373), dimensions={}
+  bessel_i1e.327 = f64[256,1024]{1,0} add(bessel_i1e.326, bessel_i1e.267)
+  bessel_i1e.328 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.327)
+  bessel_i1e.329 = f64[256,1024]{1,0} subtract(bessel_i1e.328, bessel_i1e.324)
+  constant.372 = f64[] constant(-8.5687202646954547e-07)
+  bessel_i1e.266 = f64[256,1024]{1,0} broadcast(constant.372), dimensions={}
+  bessel_i1e.330 = f64[256,1024]{1,0} add(bessel_i1e.329, bessel_i1e.266)
+  bessel_i1e.331 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.330)
+  bessel_i1e.332 = f64[256,1024]{1,0} subtract(bessel_i1e.331, bessel_i1e.327)
+  constant.371 = f64[] constant(3.4702513081376785e-06)
+  bessel_i1e.265 = f64[256,1024]{1,0} broadcast(constant.371), dimensions={}
+  bessel_i1e.333 = f64[256,1024]{1,0} add(bessel_i1e.332, bessel_i1e.265)
+  bessel_i1e.334 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.333)
+  bessel_i1e.335 = f64[256,1024]{1,0} subtract(bessel_i1e.334, bessel_i1e.330)
+  constant.370 = f64[] constant(-1.3273163656039436e-05)
+  bessel_i1e.264 = f64[256,1024]{1,0} broadcast(constant.370), dimensions={}
+  bessel_i1e.336 = f64[256,1024]{1,0} add(bessel_i1e.335, bessel_i1e.264)
+  bessel_i1e.337 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.336)
+  bessel_i1e.338 = f64[256,1024]{1,0} subtract(bessel_i1e.337, bessel_i1e.333)
+  constant.369 = f64[] constant(4.7815651075500542e-05)
+  bessel_i1e.263 = f64[256,1024]{1,0} broadcast(constant.369), dimensions={}
+  bessel_i1e.339 = f64[256,1024]{1,0} add(bessel_i1e.338, bessel_i1e.263)
+  bessel_i1e.340 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.339)
+  bessel_i1e.341 = f64[256,1024]{1,0} subtract(bessel_i1e.340, bessel_i1e.336)
+  constant.368 = f64[] constant(-0.00016176081582589674)
+  bessel_i1e.262 = f64[256,1024]{1,0} broadcast(constant.368), dimensions={}
+  bessel_i1e.342 = f64[256,1024]{1,0} add(bessel_i1e.341, bessel_i1e.262)
+  bessel_i1e.343 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.342)
+  bessel_i1e.344 = f64[256,1024]{1,0} subtract(bessel_i1e.343, bessel_i1e.339)
+  constant.367 = f64[] constant(0.00051228595616857576)
+  bessel_i1e.261 = f64[256,1024]{1,0} broadcast(constant.367), dimensions={}
+  bessel_i1e.345 = f64[256,1024]{1,0} add(bessel_i1e.344, bessel_i1e.261)
+  bessel_i1e.346 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.345)
+  bessel_i1e.347 = f64[256,1024]{1,0} subtract(bessel_i1e.346, bessel_i1e.342)
+  constant.366 = f64[] constant(-0.0015135724506312532)
+  bessel_i1e.260 = f64[256,1024]{1,0} broadcast(constant.366), dimensions={}
+  bessel_i1e.348 = f64[256,1024]{1,0} add(bessel_i1e.347, bessel_i1e.260)
+  bessel_i1e.349 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.348)
+  bessel_i1e.350 = f64[256,1024]{1,0} subtract(bessel_i1e.349, bessel_i1e.345)
+  constant.365 = f64[] constant(0.0041564229443128882)
+  bessel_i1e.259 = f64[256,1024]{1,0} broadcast(constant.365), dimensions={}
+  bessel_i1e.351 = f64[256,1024]{1,0} add(bessel_i1e.350, bessel_i1e.259)
+  bessel_i1e.352 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.351)
+  bessel_i1e.353 = f64[256,1024]{1,0} subtract(bessel_i1e.352, bessel_i1e.348)
+  constant.364 = f64[] constant(-0.010564084894626197)
+  bessel_i1e.258 = f64[256,1024]{1,0} broadcast(constant.364), dimensions={}
+  bessel_i1e.354 = f64[256,1024]{1,0} add(bessel_i1e.353, bessel_i1e.258)
+  bessel_i1e.355 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.354)
+  bessel_i1e.356 = f64[256,1024]{1,0} subtract(bessel_i1e.355, bessel_i1e.351)
+  constant.363 = f64[] constant(0.024726449030626516)
+  bessel_i1e.257 = f64[256,1024]{1,0} broadcast(constant.363), dimensions={}
+  bessel_i1e.357 = f64[256,1024]{1,0} add(bessel_i1e.356, bessel_i1e.257)
+  bessel_i1e.358 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.357)
+  bessel_i1e.359 = f64[256,1024]{1,0} subtract(bessel_i1e.358, bessel_i1e.354)
+  constant.362 = f64[] constant(-0.052945981208094989)
+  bessel_i1e.256 = f64[256,1024]{1,0} broadcast(constant.362), dimensions={}
+  bessel_i1e.360 = f64[256,1024]{1,0} add(bessel_i1e.359, bessel_i1e.256)
+  bessel_i1e.361 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.360)
+  bessel_i1e.362 = f64[256,1024]{1,0} subtract(bessel_i1e.361, bessel_i1e.357)
+  constant.361 = f64[] constant(0.10264365868984709)
+  bessel_i1e.255 = f64[256,1024]{1,0} broadcast(constant.361), dimensions={}
+  bessel_i1e.363 = f64[256,1024]{1,0} add(bessel_i1e.362, bessel_i1e.255)
+  bessel_i1e.364 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.363)
+  bessel_i1e.365 = f64[256,1024]{1,0} subtract(bessel_i1e.364, bessel_i1e.360)
+  constant.360 = f64[] constant(-0.17641651835783406)
+  bessel_i1e.254 = f64[256,1024]{1,0} broadcast(constant.360), dimensions={}
+  bessel_i1e.366 = f64[256,1024]{1,0} add(bessel_i1e.365, bessel_i1e.254)
+  bessel_i1e.367 = f64[256,1024]{1,0} multiply(bessel_i1e.284, bessel_i1e.366)
+  bessel_i1e.368 = f64[256,1024]{1,0} subtract(bessel_i1e.367, bessel_i1e.363)
+  constant.359 = f64[] constant(0.25258718644363365)
+  bessel_i1e.253 = f64[256,1024]{1,0} broadcast(constant.359), dimensions={}
+  bessel_i1e.369 = f64[256,1024]{1,0} add(bessel_i1e.368, bessel_i1e.253)
+  bessel_i1e.370 = f64[256,1024]{1,0} subtract(bessel_i1e.369, bessel_i1e.363)
+  bessel_i1e.371 = f64[256,1024]{1,0} multiply(bessel_i1e.370, broadcast.153)
+  bessel_i1e.372 = f64[256,1024]{1,0} multiply(bessel_i1e.282, bessel_i1e.371)
+  bessel_i1e.373 = f64[256,1024]{1,0} divide(broadcast.86, bessel_i1e.282)
+  bessel_i1e.374 = f64[256,1024]{1,0} subtract(bessel_i1e.373, broadcast.148)
+  bessel_i1e.375 = f64[256,1024]{1,0} multiply(bessel_i1e.374, broadcast.129)
+  constant.358 = f64[] constant(7.5172963108421052e-18)
+  bessel_i1e.252 = f64[256,1024]{1,0} broadcast(constant.358), dimensions={}
+  bessel_i1e.376 = f64[256,1024]{1,0} add(bessel_i1e.375, bessel_i1e.252)
+  bessel_i1e.377 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.376)
+  constant.357 = f64[] constant(4.4143483230717077e-18)
+  bessel_i1e.251 = f64[256,1024]{1,0} broadcast(constant.357), dimensions={}
+  bessel_i1e.378 = f64[256,1024]{1,0} add(bessel_i1e.377, bessel_i1e.251)
+  bessel_i1e.379 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.378)
+  bessel_i1e.380 = f64[256,1024]{1,0} subtract(bessel_i1e.379, bessel_i1e.376)
+  constant.356 = f64[] constant(-4.6503053684893586e-17)
+  bessel_i1e.250 = f64[256,1024]{1,0} broadcast(constant.356), dimensions={}
+  bessel_i1e.381 = f64[256,1024]{1,0} add(bessel_i1e.380, bessel_i1e.250)
+  bessel_i1e.382 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.381)
+  bessel_i1e.383 = f64[256,1024]{1,0} subtract(bessel_i1e.382, bessel_i1e.378)
+  constant.355 = f64[] constant(-3.2095259219934238e-17)
+  bessel_i1e.249 = f64[256,1024]{1,0} broadcast(constant.355), dimensions={}
+  bessel_i1e.384 = f64[256,1024]{1,0} add(bessel_i1e.383, bessel_i1e.249)
+  bessel_i1e.385 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.384)
+  bessel_i1e.386 = f64[256,1024]{1,0} subtract(bessel_i1e.385, bessel_i1e.381)
+  constant.354 = f64[] constant(2.96262899764595e-16)
+  bessel_i1e.248 = f64[256,1024]{1,0} broadcast(constant.354), dimensions={}
+  bessel_i1e.387 = f64[256,1024]{1,0} add(bessel_i1e.386, bessel_i1e.248)
+  bessel_i1e.388 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.387)
+  bessel_i1e.389 = f64[256,1024]{1,0} subtract(bessel_i1e.388, bessel_i1e.384)
+  constant.353 = f64[] constant(3.3082023109209285e-16)
+  bessel_i1e.247 = f64[256,1024]{1,0} broadcast(constant.353), dimensions={}
+  bessel_i1e.390 = f64[256,1024]{1,0} add(bessel_i1e.389, bessel_i1e.247)
+  bessel_i1e.391 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.390)
+  bessel_i1e.392 = f64[256,1024]{1,0} subtract(bessel_i1e.391, bessel_i1e.387)
+  constant.352 = f64[] constant(-1.8803547755107825e-15)
+  bessel_i1e.246 = f64[256,1024]{1,0} broadcast(constant.352), dimensions={}
+  bessel_i1e.393 = f64[256,1024]{1,0} add(bessel_i1e.392, bessel_i1e.246)
+  bessel_i1e.394 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.393)
+  bessel_i1e.395 = f64[256,1024]{1,0} subtract(bessel_i1e.394, bessel_i1e.390)
+  constant.351 = f64[] constant(-3.8144030724370075e-15)
+  bessel_i1e.245 = f64[256,1024]{1,0} broadcast(constant.351), dimensions={}
+  bessel_i1e.396 = f64[256,1024]{1,0} add(bessel_i1e.395, bessel_i1e.245)
+  bessel_i1e.397 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.396)
+  bessel_i1e.398 = f64[256,1024]{1,0} subtract(bessel_i1e.397, bessel_i1e.393)
+  constant.350 = f64[] constant(1.0420276984128802e-14)
+  bessel_i1e.244 = f64[256,1024]{1,0} broadcast(constant.350), dimensions={}
+  bessel_i1e.399 = f64[256,1024]{1,0} add(bessel_i1e.398, bessel_i1e.244)
+  bessel_i1e.400 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.399)
+  bessel_i1e.401 = f64[256,1024]{1,0} subtract(bessel_i1e.400, bessel_i1e.396)
+  constant.349 = f64[] constant(4.272440016711951e-14)
+  bessel_i1e.243 = f64[256,1024]{1,0} broadcast(constant.349), dimensions={}
+  bessel_i1e.402 = f64[256,1024]{1,0} add(bessel_i1e.401, bessel_i1e.243)
+  bessel_i1e.403 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.402)
+  bessel_i1e.404 = f64[256,1024]{1,0} subtract(bessel_i1e.403, bessel_i1e.399)
+  constant.348 = f64[] constant(-2.1015418427726643e-14)
+  bessel_i1e.242 = f64[256,1024]{1,0} broadcast(constant.348), dimensions={}
+  bessel_i1e.405 = f64[256,1024]{1,0} add(bessel_i1e.404, bessel_i1e.242)
+  bessel_i1e.406 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.405)
+  bessel_i1e.407 = f64[256,1024]{1,0} subtract(bessel_i1e.406, bessel_i1e.402)
+  constant.347 = f64[] constant(-4.0835511110921974e-13)
+  bessel_i1e.241 = f64[256,1024]{1,0} broadcast(constant.347), dimensions={}
+  bessel_i1e.408 = f64[256,1024]{1,0} add(bessel_i1e.407, bessel_i1e.241)
+  bessel_i1e.409 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.408)
+  bessel_i1e.410 = f64[256,1024]{1,0} subtract(bessel_i1e.409, bessel_i1e.405)
+  constant.346 = f64[] constant(-7.1985517762459084e-13)
+  bessel_i1e.240 = f64[256,1024]{1,0} broadcast(constant.346), dimensions={}
+  bessel_i1e.411 = f64[256,1024]{1,0} add(bessel_i1e.410, bessel_i1e.240)
+  bessel_i1e.412 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.411)
+  bessel_i1e.413 = f64[256,1024]{1,0} subtract(bessel_i1e.412, bessel_i1e.408)
+  constant.345 = f64[] constant(2.0356285441470896e-12)
+  bessel_i1e.239 = f64[256,1024]{1,0} broadcast(constant.345), dimensions={}
+  bessel_i1e.414 = f64[256,1024]{1,0} add(bessel_i1e.413, bessel_i1e.239)
+  bessel_i1e.415 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.414)
+  bessel_i1e.416 = f64[256,1024]{1,0} subtract(bessel_i1e.415, bessel_i1e.411)
+  constant.344 = f64[] constant(1.4125807436613782e-11)
+  bessel_i1e.238 = f64[256,1024]{1,0} broadcast(constant.344), dimensions={}
+  bessel_i1e.417 = f64[256,1024]{1,0} add(bessel_i1e.416, bessel_i1e.238)
+  bessel_i1e.418 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.417)
+  bessel_i1e.419 = f64[256,1024]{1,0} subtract(bessel_i1e.418, bessel_i1e.414)
+  constant.343 = f64[] constant(3.2526035830154884e-11)
+  bessel_i1e.237 = f64[256,1024]{1,0} broadcast(constant.343), dimensions={}
+  bessel_i1e.420 = f64[256,1024]{1,0} add(bessel_i1e.419, bessel_i1e.237)
+  bessel_i1e.421 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.420)
+  bessel_i1e.422 = f64[256,1024]{1,0} subtract(bessel_i1e.421, bessel_i1e.417)
+  constant.342 = f64[] constant(-1.8974958123505413e-11)
+  bessel_i1e.236 = f64[256,1024]{1,0} broadcast(constant.342), dimensions={}
+  bessel_i1e.423 = f64[256,1024]{1,0} add(bessel_i1e.422, bessel_i1e.236)
+  bessel_i1e.424 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.423)
+  bessel_i1e.425 = f64[256,1024]{1,0} subtract(bessel_i1e.424, bessel_i1e.420)
+  constant.341 = f64[] constant(-5.5897434621965838e-10)
+  bessel_i1e.235 = f64[256,1024]{1,0} broadcast(constant.341), dimensions={}
+  bessel_i1e.426 = f64[256,1024]{1,0} add(bessel_i1e.425, bessel_i1e.235)
+  bessel_i1e.427 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.426)
+  bessel_i1e.428 = f64[256,1024]{1,0} subtract(bessel_i1e.427, bessel_i1e.423)
+  constant.340 = f64[] constant(-3.835380385964237e-09)
+  bessel_i1e.234 = f64[256,1024]{1,0} broadcast(constant.340), dimensions={}
+  bessel_i1e.429 = f64[256,1024]{1,0} add(bessel_i1e.428, bessel_i1e.234)
+  bessel_i1e.430 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.429)
+  bessel_i1e.431 = f64[256,1024]{1,0} subtract(bessel_i1e.430, bessel_i1e.426)
+  constant.339 = f64[] constant(-2.6314688468895196e-08)
+  bessel_i1e.233 = f64[256,1024]{1,0} broadcast(constant.339), dimensions={}
+  bessel_i1e.432 = f64[256,1024]{1,0} add(bessel_i1e.431, bessel_i1e.233)
+  bessel_i1e.433 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.432)
+  bessel_i1e.434 = f64[256,1024]{1,0} subtract(bessel_i1e.433, bessel_i1e.429)
+  constant.338 = f64[] constant(-2.5122362378702088e-07)
+  bessel_i1e.232 = f64[256,1024]{1,0} broadcast(constant.338), dimensions={}
+  bessel_i1e.435 = f64[256,1024]{1,0} add(bessel_i1e.434, bessel_i1e.232)
+  bessel_i1e.436 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.435)
+  bessel_i1e.437 = f64[256,1024]{1,0} subtract(bessel_i1e.436, bessel_i1e.432)
+  constant.337 = f64[] constant(-3.8825648088776906e-06)
+  bessel_i1e.231 = f64[256,1024]{1,0} broadcast(constant.337), dimensions={}
+  bessel_i1e.438 = f64[256,1024]{1,0} add(bessel_i1e.437, bessel_i1e.231)
+  bessel_i1e.439 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.438)
+  bessel_i1e.440 = f64[256,1024]{1,0} subtract(bessel_i1e.439, bessel_i1e.435)
+  constant.336 = f64[] constant(-0.00011058893876262371)
+  bessel_i1e.230 = f64[256,1024]{1,0} broadcast(constant.336), dimensions={}
+  bessel_i1e.441 = f64[256,1024]{1,0} add(bessel_i1e.440, bessel_i1e.230)
+  bessel_i1e.442 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.441)
+  bessel_i1e.443 = f64[256,1024]{1,0} subtract(bessel_i1e.442, bessel_i1e.438)
+  constant.335 = f64[] constant(-0.0097610974913614687)
+  bessel_i1e.229 = f64[256,1024]{1,0} broadcast(constant.335), dimensions={}
+  bessel_i1e.444 = f64[256,1024]{1,0} add(bessel_i1e.443, bessel_i1e.229)
+  bessel_i1e.445 = f64[256,1024]{1,0} multiply(bessel_i1e.374, bessel_i1e.444)
+  bessel_i1e.446 = f64[256,1024]{1,0} subtract(bessel_i1e.445, bessel_i1e.441)
+  constant.334 = f64[] constant(0.77857623501828011)
+  bessel_i1e.228 = f64[256,1024]{1,0} broadcast(constant.334), dimensions={}
+  bessel_i1e.447 = f64[256,1024]{1,0} add(bessel_i1e.446, bessel_i1e.228)
+  bessel_i1e.448 = f64[256,1024]{1,0} subtract(bessel_i1e.447, bessel_i1e.441)
+  bessel_i1e.449 = f64[256,1024]{1,0} multiply(bessel_i1e.448, broadcast.153)
+  bessel_i1e.450 = f64[256,1024]{1,0} sqrt(bessel_i1e.282)
+  bessel_i1e.451 = f64[256,1024]{1,0} divide(bessel_i1e.449, bessel_i1e.450)
+  bessel_i1e.453 = f64[256,1024]{1,0} select(bessel_i1e.452, bessel_i1e.372, bessel_i1e.451)
+  bessel_i1e.455 = f64[256,1024]{1,0} multiply(bessel_i1e.454, bessel_i1e.453)
+  add.172 = f64[256,1024]{1,0} add(add.171, bessel_i1e.455)
+  mul.225 = f64[256,1024]{1,0} multiply(x.1, broadcast.146)
+  sub.145 = f64[256,1024]{1,0} subtract(mul.225, broadcast.144)
+  gt.10 = pred[256,1024]{1,0} compare(sub.145, broadcast.136), direction=GT
+  neg.5 = f64[256,1024]{1,0} negate(sub.145)
+  constant.266 = f64[] constant(-20)
+  broadcast.85 = f64[256,1024]{1,0} broadcast(constant.266), dimensions={}
+  max.2 = f64[256,1024]{1,0} maximum(sub.145, broadcast.85)
+  jit__where_.6 = f64[256,1024]{1,0} call(gt.10, neg.5, max.2), to_apply=_where.1
+  constant.265 = f64[] constant(0.70710678118654757)
+  broadcast.84 = f64[256,1024]{1,0} broadcast(constant.265), dimensions={}
+  mul.226 = f64[256,1024]{1,0} multiply(jit__where_.6, broadcast.84)
+  abs.7 = f64[256,1024]{1,0} abs(mul.226)
+  lt.7 = pred[256,1024]{1,0} compare(abs.7, broadcast.84), direction=LT
+  erf.3 = f64[256,1024]{1,0} erf(mul.226)
+  add.173 = f64[256,1024]{1,0} add(erf.3, broadcast.152)
+  gt.11 = pred[256,1024]{1,0} compare(mul.226, broadcast.129), direction=GT
+  erfc.452 = f64[256,1024]{1,0} abs(abs.7)
+  erfc.453 = pred[256,1024]{1,0} compare(erfc.452, broadcast.152), direction=LT
+  erfc.431 = f64[256,1024]{1,0} multiply(abs.7, abs.7)
+  erfc.432 = f64[256,1024]{1,0} multiply(erfc.431, broadcast.96)
+  erfc.433 = f64[256,1024]{1,0} add(erfc.432, broadcast.95)
+  erfc.434 = f64[256,1024]{1,0} multiply(erfc.433, erfc.431)
+  erfc.435 = f64[256,1024]{1,0} add(erfc.434, broadcast.94)
+  erfc.436 = f64[256,1024]{1,0} multiply(erfc.435, erfc.431)
+  erfc.437 = f64[256,1024]{1,0} add(erfc.436, broadcast.93)
+  erfc.438 = f64[256,1024]{1,0} multiply(erfc.437, erfc.431)
+  erfc.439 = f64[256,1024]{1,0} add(erfc.438, broadcast.92)
+  erfc.440 = f64[256,1024]{1,0} multiply(abs.7, erfc.439)
+  erfc.441 = f64[256,1024]{1,0} add(erfc.431, broadcast.91)
+  erfc.442 = f64[256,1024]{1,0} multiply(erfc.441, erfc.431)
+  erfc.443 = f64[256,1024]{1,0} add(erfc.442, broadcast.90)
+  erfc.444 = f64[256,1024]{1,0} multiply(erfc.443, erfc.431)
+  erfc.445 = f64[256,1024]{1,0} add(erfc.444, broadcast.89)
+  erfc.446 = f64[256,1024]{1,0} multiply(erfc.445, erfc.431)
+  erfc.447 = f64[256,1024]{1,0} add(erfc.446, broadcast.88)
+  erfc.448 = f64[256,1024]{1,0} multiply(erfc.447, erfc.431)
+  erfc.449 = f64[256,1024]{1,0} add(erfc.448, broadcast.87)
+  erfc.450 = f64[256,1024]{1,0} divide(erfc.440, erfc.449)
+  erfc.451 = f64[256,1024]{1,0} subtract(broadcast.152, erfc.450)
+  erfc.428 = pred[256,1024]{1,0} compare(abs.7, broadcast.129), direction=LT
+  erfc.364 = f64[256,1024]{1,0} multiply(abs.7, abs.7)
+  erfc.365 = f64[256,1024]{1,0} negate(erfc.364)
+  erfc.426 = pred[256,1024]{1,0} compare(erfc.365, broadcast.97), direction=LT
+  erfc.367 = f64[256,1024]{1,0} abs(abs.7)
+  erfc.424 = pred[256,1024]{1,0} compare(erfc.367, broadcast.136), direction=LT
+  erfc.366 = f64[256,1024]{1,0} exponential(erfc.365)
+  erfc.368 = f64[256,1024]{1,0} multiply(erfc.367, broadcast.126)
+  erfc.369 = f64[256,1024]{1,0} add(erfc.368, broadcast.125)
+  erfc.370 = f64[256,1024]{1,0} multiply(erfc.369, erfc.367)
+  erfc.371 = f64[256,1024]{1,0} add(erfc.370, broadcast.124)
+  erfc.372 = f64[256,1024]{1,0} multiply(erfc.371, erfc.367)
+  erfc.373 = f64[256,1024]{1,0} add(erfc.372, broadcast.123)
+  erfc.374 = f64[256,1024]{1,0} multiply(erfc.373, erfc.367)
+  erfc.375 = f64[256,1024]{1,0} add(erfc.374, broadcast.122)
+  erfc.376 = f64[256,1024]{1,0} multiply(erfc.375, erfc.367)
+  erfc.377 = f64[256,1024]{1,0} add(erfc.376, broadcast.121)
+  erfc.378 = f64[256,1024]{1,0} multiply(erfc.377, erfc.367)
+  erfc.379 = f64[256,1024]{1,0} add(erfc.378, broadcast.120)
+  erfc.380 = f64[256,1024]{1,0} multiply(erfc.379, erfc.367)
+  erfc.381 = f64[256,1024]{1,0} add(erfc.380, broadcast.119)
+  erfc.382 = f64[256,1024]{1,0} multiply(erfc.381, erfc.367)
+  erfc.383 = f64[256,1024]{1,0} add(erfc.382, broadcast.118)
+  erfc.384 = f64[256,1024]{1,0} multiply(erfc.366, erfc.383)
+  erfc.385 = f64[256,1024]{1,0} add(erfc.367, broadcast.117)
+  erfc.386 = f64[256,1024]{1,0} multiply(erfc.385, erfc.367)
+  erfc.387 = f64[256,1024]{1,0} add(erfc.386, broadcast.116)
+  erfc.388 = f64[256,1024]{1,0} multiply(erfc.387, erfc.367)
+  erfc.389 = f64[256,1024]{1,0} add(erfc.388, broadcast.115)
+  erfc.390 = f64[256,1024]{1,0} multiply(erfc.389, erfc.367)
+  erfc.391 = f64[256,1024]{1,0} add(erfc.390, broadcast.114)
+  erfc.392 = f64[256,1024]{1,0} multiply(erfc.391, erfc.367)
+  erfc.393 = f64[256,1024]{1,0} add(erfc.392, broadcast.113)
+  erfc.394 = f64[256,1024]{1,0} multiply(erfc.393, erfc.367)
+  erfc.395 = f64[256,1024]{1,0} add(erfc.394, broadcast.112)
+  erfc.396 = f64[256,1024]{1,0} multiply(erfc.395, erfc.367)
+  erfc.397 = f64[256,1024]{1,0} add(erfc.396, broadcast.111)
+  erfc.398 = f64[256,1024]{1,0} multiply(erfc.397, erfc.367)
+  erfc.399 = f64[256,1024]{1,0} add(erfc.398, broadcast.110)
+  erfc.400 = f64[256,1024]{1,0} divide(erfc.384, erfc.399)
+  erfc.401 = f64[256,1024]{1,0} multiply(erfc.367, broadcast.109)
+  erfc.402 = f64[256,1024]{1,0} add(erfc.401, broadcast.108)
+  erfc.403 = f64[256,1024]{1,0} multiply(erfc.402, erfc.367)
+  erfc.404 = f64[256,1024]{1,0} add(erfc.403, broadcast.107)
+  erfc.405 = f64[256,1024]{1,0} multiply(erfc.404, erfc.367)
+  erfc.406 = f64[256,1024]{1,0} add(erfc.405, broadcast.106)
+  erfc.407 = f64[256,1024]{1,0} multiply(erfc.406, erfc.367)
+  erfc.408 = f64[256,1024]{1,0} add(erfc.407, broadcast.105)
+  erfc.409 = f64[256,1024]{1,0} multiply(erfc.408, erfc.367)
+  erfc.410 = f64[256,1024]{1,0} add(erfc.409, broadcast.104)
+  erfc.411 = f64[256,1024]{1,0} multiply(erfc.366, erfc.410)
+  erfc.412 = f64[256,1024]{1,0} add(erfc.367, broadcast.103)
+  erfc.413 = f64[256,1024]{1,0} multiply(erfc.412, erfc.367)
+  erfc.414 = f64[256,1024]{1,0} add(erfc.413, broadcast.102)
+  erfc.415 = f64[256,1024]{1,0} multiply(erfc.414, erfc.367)
+  erfc.416 = f64[256,1024]{1,0} add(erfc.415, broadcast.101)
+  erfc.417 = f64[256,1024]{1,0} multiply(erfc.416, erfc.367)
+  erfc.418 = f64[256,1024]{1,0} add(erfc.417, broadcast.100)
+  erfc.419 = f64[256,1024]{1,0} multiply(erfc.418, erfc.367)
+  erfc.420 = f64[256,1024]{1,0} add(erfc.419, broadcast.99)
+  erfc.421 = f64[256,1024]{1,0} multiply(erfc.420, erfc.367)
+  erfc.422 = f64[256,1024]{1,0} add(erfc.421, broadcast.98)
+  erfc.423 = f64[256,1024]{1,0} divide(erfc.411, erfc.422)
+  erfc.425 = f64[256,1024]{1,0} select(erfc.424, erfc.400, erfc.423)
+  erfc.427 = f64[256,1024]{1,0} select(erfc.426, broadcast.129, erfc.425)
+  erfc.429 = f64[256,1024]{1,0} subtract(broadcast.148, erfc.427)
+  erfc.430 = f64[256,1024]{1,0} select(erfc.428, erfc.429, erfc.427)
+  erfc.454 = f64[256,1024]{1,0} select(erfc.453, erfc.451, erfc.430)
+  sub.146 = f64[256,1024]{1,0} subtract(broadcast.148, erfc.454)
+  erfc.543 = f64[256,1024]{1,0} abs(abs.7)
+  erfc.544 = pred[256,1024]{1,0} compare(erfc.543, broadcast.152), direction=LT
+  erfc.522 = f64[256,1024]{1,0} multiply(abs.7, abs.7)
+  erfc.523 = f64[256,1024]{1,0} multiply(erfc.522, broadcast.96)
+  erfc.524 = f64[256,1024]{1,0} add(erfc.523, broadcast.95)
+  erfc.525 = f64[256,1024]{1,0} multiply(erfc.524, erfc.522)
+  erfc.526 = f64[256,1024]{1,0} add(erfc.525, broadcast.94)
+  erfc.527 = f64[256,1024]{1,0} multiply(erfc.526, erfc.522)
+  erfc.528 = f64[256,1024]{1,0} add(erfc.527, broadcast.93)
+  erfc.529 = f64[256,1024]{1,0} multiply(erfc.528, erfc.522)
+  erfc.530 = f64[256,1024]{1,0} add(erfc.529, broadcast.92)
+  erfc.531 = f64[256,1024]{1,0} multiply(abs.7, erfc.530)
+  erfc.532 = f64[256,1024]{1,0} add(erfc.522, broadcast.91)
+  erfc.533 = f64[256,1024]{1,0} multiply(erfc.532, erfc.522)
+  erfc.534 = f64[256,1024]{1,0} add(erfc.533, broadcast.90)
+  erfc.535 = f64[256,1024]{1,0} multiply(erfc.534, erfc.522)
+  erfc.536 = f64[256,1024]{1,0} add(erfc.535, broadcast.89)
+  erfc.537 = f64[256,1024]{1,0} multiply(erfc.536, erfc.522)
+  erfc.538 = f64[256,1024]{1,0} add(erfc.537, broadcast.88)
+  erfc.539 = f64[256,1024]{1,0} multiply(erfc.538, erfc.522)
+  erfc.540 = f64[256,1024]{1,0} add(erfc.539, broadcast.87)
+  erfc.541 = f64[256,1024]{1,0} divide(erfc.531, erfc.540)
+  erfc.542 = f64[256,1024]{1,0} subtract(broadcast.152, erfc.541)
+  erfc.519 = pred[256,1024]{1,0} compare(abs.7, broadcast.129), direction=LT
+  erfc.455 = f64[256,1024]{1,0} multiply(abs.7, abs.7)
+  erfc.456 = f64[256,1024]{1,0} negate(erfc.455)
+  erfc.517 = pred[256,1024]{1,0} compare(erfc.456, broadcast.97), direction=LT
+  erfc.458 = f64[256,1024]{1,0} abs(abs.7)
+  erfc.515 = pred[256,1024]{1,0} compare(erfc.458, broadcast.136), direction=LT
+  erfc.457 = f64[256,1024]{1,0} exponential(erfc.456)
+  erfc.459 = f64[256,1024]{1,0} multiply(erfc.458, broadcast.126)
+  erfc.460 = f64[256,1024]{1,0} add(erfc.459, broadcast.125)
+  erfc.461 = f64[256,1024]{1,0} multiply(erfc.460, erfc.458)
+  erfc.462 = f64[256,1024]{1,0} add(erfc.461, broadcast.124)
+  erfc.463 = f64[256,1024]{1,0} multiply(erfc.462, erfc.458)
+  erfc.464 = f64[256,1024]{1,0} add(erfc.463, broadcast.123)
+  erfc.465 = f64[256,1024]{1,0} multiply(erfc.464, erfc.458)
+  erfc.466 = f64[256,1024]{1,0} add(erfc.465, broadcast.122)
+  erfc.467 = f64[256,1024]{1,0} multiply(erfc.466, erfc.458)
+  erfc.468 = f64[256,1024]{1,0} add(erfc.467, broadcast.121)
+  erfc.469 = f64[256,1024]{1,0} multiply(erfc.468, erfc.458)
+  erfc.470 = f64[256,1024]{1,0} add(erfc.469, broadcast.120)
+  erfc.471 = f64[256,1024]{1,0} multiply(erfc.470, erfc.458)
+  erfc.472 = f64[256,1024]{1,0} add(erfc.471, broadcast.119)
+  erfc.473 = f64[256,1024]{1,0} multiply(erfc.472, erfc.458)
+  erfc.474 = f64[256,1024]{1,0} add(erfc.473, broadcast.118)
+  erfc.475 = f64[256,1024]{1,0} multiply(erfc.457, erfc.474)
+  erfc.476 = f64[256,1024]{1,0} add(erfc.458, broadcast.117)
+  erfc.477 = f64[256,1024]{1,0} multiply(erfc.476, erfc.458)
+  erfc.478 = f64[256,1024]{1,0} add(erfc.477, broadcast.116)
+  erfc.479 = f64[256,1024]{1,0} multiply(erfc.478, erfc.458)
+  erfc.480 = f64[256,1024]{1,0} add(erfc.479, broadcast.115)
+  erfc.481 = f64[256,1024]{1,0} multiply(erfc.480, erfc.458)
+  erfc.482 = f64[256,1024]{1,0} add(erfc.481, broadcast.114)
+  erfc.483 = f64[256,1024]{1,0} multiply(erfc.482, erfc.458)
+  erfc.484 = f64[256,1024]{1,0} add(erfc.483, broadcast.113)
+  erfc.485 = f64[256,1024]{1,0} multiply(erfc.484, erfc.458)
+  erfc.486 = f64[256,1024]{1,0} add(erfc.485, broadcast.112)
+  erfc.487 = f64[256,1024]{1,0} multiply(erfc.486, erfc.458)
+  erfc.488 = f64[256,1024]{1,0} add(erfc.487, broadcast.111)
+  erfc.489 = f64[256,1024]{1,0} multiply(erfc.488, erfc.458)
+  erfc.490 = f64[256,1024]{1,0} add(erfc.489, broadcast.110)
+  erfc.491 = f64[256,1024]{1,0} divide(erfc.475, erfc.490)
+  erfc.492 = f64[256,1024]{1,0} multiply(erfc.458, broadcast.109)
+  erfc.493 = f64[256,1024]{1,0} add(erfc.492, broadcast.108)
+  erfc.494 = f64[256,1024]{1,0} multiply(erfc.493, erfc.458)
+  erfc.495 = f64[256,1024]{1,0} add(erfc.494, broadcast.107)
+  erfc.496 = f64[256,1024]{1,0} multiply(erfc.495, erfc.458)
+  erfc.497 = f64[256,1024]{1,0} add(erfc.496, broadcast.106)
+  erfc.498 = f64[256,1024]{1,0} multiply(erfc.497, erfc.458)
+  erfc.499 = f64[256,1024]{1,0} add(erfc.498, broadcast.105)
+  erfc.500 = f64[256,1024]{1,0} multiply(erfc.499, erfc.458)
+  erfc.501 = f64[256,1024]{1,0} add(erfc.500, broadcast.104)
+  erfc.502 = f64[256,1024]{1,0} multiply(erfc.457, erfc.501)
+  erfc.503 = f64[256,1024]{1,0} add(erfc.458, broadcast.103)
+  erfc.504 = f64[256,1024]{1,0} multiply(erfc.503, erfc.458)
+  erfc.505 = f64[256,1024]{1,0} add(erfc.504, broadcast.102)
+  erfc.506 = f64[256,1024]{1,0} multiply(erfc.505, erfc.458)
+  erfc.507 = f64[256,1024]{1,0} add(erfc.506, broadcast.101)
+  erfc.508 = f64[256,1024]{1,0} multiply(erfc.507, erfc.458)
+  erfc.509 = f64[256,1024]{1,0} add(erfc.508, broadcast.100)
+  erfc.510 = f64[256,1024]{1,0} multiply(erfc.509, erfc.458)
+  erfc.511 = f64[256,1024]{1,0} add(erfc.510, broadcast.99)
+  erfc.512 = f64[256,1024]{1,0} multiply(erfc.511, erfc.458)
+  erfc.513 = f64[256,1024]{1,0} add(erfc.512, broadcast.98)
+  erfc.514 = f64[256,1024]{1,0} divide(erfc.502, erfc.513)
+  erfc.516 = f64[256,1024]{1,0} select(erfc.515, erfc.491, erfc.514)
+  erfc.518 = f64[256,1024]{1,0} select(erfc.517, broadcast.129, erfc.516)
+  erfc.520 = f64[256,1024]{1,0} subtract(broadcast.148, erfc.518)
+  erfc.521 = f64[256,1024]{1,0} select(erfc.519, erfc.520, erfc.518)
+  erfc.545 = f64[256,1024]{1,0} select(erfc.544, erfc.542, erfc.521)
+  select_n.69 = f64[256,1024]{1,0} select(gt.11, sub.146, erfc.545)
+  select_n.70 = f64[256,1024]{1,0} select(lt.7, add.173, select_n.69)
+  mul.227 = f64[256,1024]{1,0} multiply(select_n.70, broadcast.153)
+  neg.6 = f64[256,1024]{1,0} negate(mul.227)
+  gt.12 = pred[256,1024]{1,0} compare(sub.145, broadcast.85), direction=GT
+  log.6 = f64[256,1024]{1,0} log(mul.227)
+  min.2 = f64[256,1024]{1,0} minimum(sub.145, broadcast.85)
+  square.2 = f64[256,1024]{1,0} multiply(min.2, min.2)
+  constant.264 = f64[] constant(-0.5)
+  mul.161 = f64[256,1024]{1,0} broadcast(constant.264), dimensions={}
+  mul.228 = f64[256,1024]{1,0} multiply(square.2, mul.161)
+  neg.7 = f64[256,1024]{1,0} negate(min.2)
+  log.7 = f64[256,1024]{1,0} log(neg.7)
+  sub.147 = f64[256,1024]{1,0} subtract(mul.228, log.7)
+  sub.148 = f64[256,1024]{1,0} subtract(sub.147, broadcast.133)
+  square.3 = f64[256,1024]{1,0} multiply(min.2, min.2)
+  mul.229 = f64[256,1024]{1,0} multiply(square.3, square.3)
+  div.34 = f64[256,1024]{1,0} divide(broadcast.146, mul.229)
+  add.175 = f64[256,1024]{1,0} add(div.34, broadcast.152)
+  div.33 = f64[256,1024]{1,0} divide(broadcast.152, square.3)
+  constant.263 = f64[] constant(15)
+  div.30 = f64[256,1024]{1,0} broadcast(constant.263), dimensions={}
+  mul.230 = f64[256,1024]{1,0} multiply(mul.229, square.3)
+  div.35 = f64[256,1024]{1,0} divide(div.30, mul.230)
+  add.174 = f64[256,1024]{1,0} add(div.33, div.35)
+  sub.149 = f64[256,1024]{1,0} subtract(add.175, add.174)
+  log.8 = f64[256,1024]{1,0} log(sub.149)
+  add.176 = f64[256,1024]{1,0} add(sub.148, log.8)
+  jit__where_.7 = f64[256,1024]{1,0} call(gt.12, log.6, add.176), to_apply=_where.1
+  jit__where_.8 = f64[256,1024]{1,0} call(gt.10, neg.6, jit__where_.7), to_apply=_where.1
+  add.177 = f64[256,1024]{1,0} add(add.172, jit__where_.8)
+  ne.6 = pred[256,1024]{1,0} compare(a.1, broadcast.129), direction=NE
+  ne.7 = pred[256,1024]{1,0} compare(x.1, x.1), direction=NE
+  or.10 = pred[256,1024]{1,0} or(ne.6, ne.7)
+  log.9 = f64[256,1024]{1,0} log(x.1)
+  mul.231 = f64[256,1024]{1,0} multiply(a.1, log.9)
+  jit__where_.9 = f64[256,1024]{1,0} call(or.10, mul.231, broadcast.129), to_apply=_where.1
+  add.178 = f64[256,1024]{1,0} add(add.177, jit__where_.9)
+  max.3 = f64[256,1024]{1,0} maximum(a.1, x.1)
+  lt.8 = pred[256,1024]{1,0} compare(max.3, broadcast.136), direction=LT
+  min.3 = f64[256,1024]{1,0} minimum(a.1, x.1)
+  lgamma.453 = f64[256,1024]{1,0} abs(min.3)
+  lgamma.454 = pred[256,1024]{1,0} compare(lgamma.453, broadcast.130), direction=EQ
+  lgamma.399 = pred[256,1024]{1,0} compare(min.3, broadcast.153), direction=LT
+  lgamma.438 = f64[256,1024]{1,0} abs(min.3)
+  lgamma.439 = f64[256,1024]{1,0} floor(lgamma.438)
+  lgamma.440 = f64[256,1024]{1,0} subtract(lgamma.438, lgamma.439)
+  lgamma.441 = pred[256,1024]{1,0} compare(broadcast.153, lgamma.440), direction=LT
+  lgamma.442 = f64[256,1024]{1,0} subtract(broadcast.152, lgamma.440)
+  lgamma.443 = f64[256,1024]{1,0} select(lgamma.441, lgamma.442, lgamma.440)
+  lgamma.444 = f64[256,1024]{1,0} multiply(lgamma.443, broadcast.132)
+  lgamma.445 = f64[256,1024]{1,0} sine(lgamma.444)
+  lgamma.446 = f64[256,1024]{1,0} log(lgamma.445)
+  lgamma.449 = pred[256,1024]{1,0} is-finite(lgamma.446)
+  lgamma.447 = f64[256,1024]{1,0} subtract(broadcast.131, lgamma.446)
+  lgamma.400 = f64[256,1024]{1,0} negate(min.3)
+  lgamma.401 = f64[256,1024]{1,0} subtract(min.3, broadcast.152)
+  lgamma.402 = f64[256,1024]{1,0} select(lgamma.399, lgamma.400, lgamma.401)
+  lgamma.432 = f64[256,1024]{1,0} add(lgamma.402, broadcast.153)
+  lgamma.427 = f64[256,1024]{1,0} add(lgamma.402, broadcast.135)
+  lgamma.428 = f64[256,1024]{1,0} divide(lgamma.402, broadcast.135)
+  lgamma.429 = f64[256,1024]{1,0} log-plus-one(lgamma.428)
+  lgamma.430 = f64[256,1024]{1,0} add(lgamma.429, broadcast.134)
+  lgamma.431 = f64[256,1024]{1,0} divide(lgamma.427, lgamma.430)
+  lgamma.433 = f64[256,1024]{1,0} subtract(lgamma.432, lgamma.431)
+  lgamma.434 = f64[256,1024]{1,0} multiply(lgamma.433, lgamma.430)
+  lgamma.436 = f64[256,1024]{1,0} add(lgamma.434, broadcast.133)
+  lgamma.403 = f64[256,1024]{1,0} add(lgamma.402, broadcast.152)
+  lgamma.404 = f64[256,1024]{1,0} divide(broadcast.150, lgamma.403)
+  lgamma.405 = f64[256,1024]{1,0} add(lgamma.404, broadcast.151)
+  lgamma.406 = f64[256,1024]{1,0} add(lgamma.402, broadcast.148)
+  lgamma.407 = f64[256,1024]{1,0} divide(broadcast.149, lgamma.406)
+  lgamma.408 = f64[256,1024]{1,0} add(lgamma.405, lgamma.407)
+  lgamma.409 = f64[256,1024]{1,0} add(lgamma.402, broadcast.146)
+  lgamma.410 = f64[256,1024]{1,0} divide(broadcast.147, lgamma.409)
+  lgamma.411 = f64[256,1024]{1,0} add(lgamma.408, lgamma.410)
+  lgamma.412 = f64[256,1024]{1,0} add(lgamma.402, broadcast.144)
+  lgamma.413 = f64[256,1024]{1,0} divide(broadcast.145, lgamma.412)
+  lgamma.414 = f64[256,1024]{1,0} add(lgamma.411, lgamma.413)
+  lgamma.415 = f64[256,1024]{1,0} add(lgamma.402, broadcast.142)
+  lgamma.416 = f64[256,1024]{1,0} divide(broadcast.143, lgamma.415)
+  lgamma.417 = f64[256,1024]{1,0} add(lgamma.414, lgamma.416)
+  lgamma.418 = f64[256,1024]{1,0} add(lgamma.402, broadcast.140)
+  lgamma.419 = f64[256,1024]{1,0} divide(broadcast.141, lgamma.418)
+  lgamma.420 = f64[256,1024]{1,0} add(lgamma.417, lgamma.419)
+  lgamma.421 = f64[256,1024]{1,0} add(lgamma.402, broadcast.138)
+  lgamma.422 = f64[256,1024]{1,0} divide(broadcast.139, lgamma.421)
+  lgamma.423 = f64[256,1024]{1,0} add(lgamma.420, lgamma.422)
+  lgamma.424 = f64[256,1024]{1,0} add(lgamma.402, broadcast.136)
+  lgamma.425 = f64[256,1024]{1,0} divide(broadcast.137, lgamma.424)
+  lgamma.426 = f64[256,1024]{1,0} add(lgamma.423, lgamma.425)
+  lgamma.435 = f64[256,1024]{1,0} log(lgamma.426)
+  lgamma.437 = f64[256,1024]{1,0} add(lgamma.436, lgamma.435)
+  lgamma.448 = f64[256,1024]{1,0} subtract(lgamma.447, lgamma.437)
+  lgamma.450 = f64[256,1024]{1,0} negate(lgamma.446)
+  lgamma.451 = f64[256,1024]{1,0} select(lgamma.449, lgamma.448, lgamma.450)
+  lgamma.452 = f64[256,1024]{1,0} select(lgamma.399, lgamma.451, lgamma.437)
+  lgamma.455 = f64[256,1024]{1,0} select(lgamma.454, broadcast.130, lgamma.452)
+  lgamma.510 = f64[256,1024]{1,0} abs(max.3)
+  lgamma.511 = pred[256,1024]{1,0} compare(lgamma.510, broadcast.130), direction=EQ
+  lgamma.456 = pred[256,1024]{1,0} compare(max.3, broadcast.153), direction=LT
+  lgamma.495 = f64[256,1024]{1,0} abs(max.3)
+  lgamma.496 = f64[256,1024]{1,0} floor(lgamma.495)
+  lgamma.497 = f64[256,1024]{1,0} subtract(lgamma.495, lgamma.496)
+  lgamma.498 = pred[256,1024]{1,0} compare(broadcast.153, lgamma.497), direction=LT
+  lgamma.499 = f64[256,1024]{1,0} subtract(broadcast.152, lgamma.497)
+  lgamma.500 = f64[256,1024]{1,0} select(lgamma.498, lgamma.499, lgamma.497)
+  lgamma.501 = f64[256,1024]{1,0} multiply(lgamma.500, broadcast.132)
+  lgamma.502 = f64[256,1024]{1,0} sine(lgamma.501)
+  lgamma.503 = f64[256,1024]{1,0} log(lgamma.502)
+  lgamma.506 = pred[256,1024]{1,0} is-finite(lgamma.503)
+  lgamma.504 = f64[256,1024]{1,0} subtract(broadcast.131, lgamma.503)
+  lgamma.457 = f64[256,1024]{1,0} negate(max.3)
+  lgamma.458 = f64[256,1024]{1,0} subtract(max.3, broadcast.152)
+  lgamma.459 = f64[256,1024]{1,0} select(lgamma.456, lgamma.457, lgamma.458)
+  lgamma.489 = f64[256,1024]{1,0} add(lgamma.459, broadcast.153)
+  lgamma.484 = f64[256,1024]{1,0} add(lgamma.459, broadcast.135)
+  lgamma.485 = f64[256,1024]{1,0} divide(lgamma.459, broadcast.135)
+  lgamma.486 = f64[256,1024]{1,0} log-plus-one(lgamma.485)
+  lgamma.487 = f64[256,1024]{1,0} add(lgamma.486, broadcast.134)
+  lgamma.488 = f64[256,1024]{1,0} divide(lgamma.484, lgamma.487)
+  lgamma.490 = f64[256,1024]{1,0} subtract(lgamma.489, lgamma.488)
+  lgamma.491 = f64[256,1024]{1,0} multiply(lgamma.490, lgamma.487)
+  lgamma.493 = f64[256,1024]{1,0} add(lgamma.491, broadcast.133)
+  lgamma.460 = f64[256,1024]{1,0} add(lgamma.459, broadcast.152)
+  lgamma.461 = f64[256,1024]{1,0} divide(broadcast.150, lgamma.460)
+  lgamma.462 = f64[256,1024]{1,0} add(lgamma.461, broadcast.151)
+  lgamma.463 = f64[256,1024]{1,0} add(lgamma.459, broadcast.148)
+  lgamma.464 = f64[256,1024]{1,0} divide(broadcast.149, lgamma.463)
+  lgamma.465 = f64[256,1024]{1,0} add(lgamma.462, lgamma.464)
+  lgamma.466 = f64[256,1024]{1,0} add(lgamma.459, broadcast.146)
+  lgamma.467 = f64[256,1024]{1,0} divide(broadcast.147, lgamma.466)
+  lgamma.468 = f64[256,1024]{1,0} add(lgamma.465, lgamma.467)
+  lgamma.469 = f64[256,1024]{1,0} add(lgamma.459, broadcast.144)
+  lgamma.470 = f64[256,1024]{1,0} divide(broadcast.145, lgamma.469)
+  lgamma.471 = f64[256,1024]{1,0} add(lgamma.468, lgamma.470)
+  lgamma.472 = f64[256,1024]{1,0} add(lgamma.459, broadcast.142)
+  lgamma.473 = f64[256,1024]{1,0} divide(broadcast.143, lgamma.472)
+  lgamma.474 = f64[256,1024]{1,0} add(lgamma.471, lgamma.473)
+  lgamma.475 = f64[256,1024]{1,0} add(lgamma.459, broadcast.140)
+  lgamma.476 = f64[256,1024]{1,0} divide(broadcast.141, lgamma.475)
+  lgamma.477 = f64[256,1024]{1,0} add(lgamma.474, lgamma.476)
+  lgamma.478 = f64[256,1024]{1,0} add(lgamma.459, broadcast.138)
+  lgamma.479 = f64[256,1024]{1,0} divide(broadcast.139, lgamma.478)
+  lgamma.480 = f64[256,1024]{1,0} add(lgamma.477, lgamma.479)
+  lgamma.481 = f64[256,1024]{1,0} add(lgamma.459, broadcast.136)
+  lgamma.482 = f64[256,1024]{1,0} divide(broadcast.137, lgamma.481)
+  lgamma.483 = f64[256,1024]{1,0} add(lgamma.480, lgamma.482)
+  lgamma.492 = f64[256,1024]{1,0} log(lgamma.483)
+  lgamma.494 = f64[256,1024]{1,0} add(lgamma.493, lgamma.492)
+  lgamma.505 = f64[256,1024]{1,0} subtract(lgamma.504, lgamma.494)
+  lgamma.507 = f64[256,1024]{1,0} negate(lgamma.503)
+  lgamma.508 = f64[256,1024]{1,0} select(lgamma.506, lgamma.505, lgamma.507)
+  lgamma.509 = f64[256,1024]{1,0} select(lgamma.456, lgamma.508, lgamma.494)
+  lgamma.512 = f64[256,1024]{1,0} select(lgamma.511, broadcast.130, lgamma.509)
+  add.179 = f64[256,1024]{1,0} add(min.3, max.3)
+  lgamma.567 = f64[256,1024]{1,0} abs(add.179)
+  lgamma.568 = pred[256,1024]{1,0} compare(lgamma.567, broadcast.130), direction=EQ
+  lgamma.513 = pred[256,1024]{1,0} compare(add.179, broadcast.153), direction=LT
+  lgamma.552 = f64[256,1024]{1,0} abs(add.179)
+  lgamma.553 = f64[256,1024]{1,0} floor(lgamma.552)
+  lgamma.554 = f64[256,1024]{1,0} subtract(lgamma.552, lgamma.553)
+  lgamma.555 = pred[256,1024]{1,0} compare(broadcast.153, lgamma.554), direction=LT
+  lgamma.556 = f64[256,1024]{1,0} subtract(broadcast.152, lgamma.554)
+  lgamma.557 = f64[256,1024]{1,0} select(lgamma.555, lgamma.556, lgamma.554)
+  lgamma.558 = f64[256,1024]{1,0} multiply(lgamma.557, broadcast.132)
+  lgamma.559 = f64[256,1024]{1,0} sine(lgamma.558)
+  lgamma.560 = f64[256,1024]{1,0} log(lgamma.559)
+  lgamma.563 = pred[256,1024]{1,0} is-finite(lgamma.560)
+  lgamma.561 = f64[256,1024]{1,0} subtract(broadcast.131, lgamma.560)
+  lgamma.514 = f64[256,1024]{1,0} negate(add.179)
+  lgamma.515 = f64[256,1024]{1,0} subtract(add.179, broadcast.152)
+  lgamma.516 = f64[256,1024]{1,0} select(lgamma.513, lgamma.514, lgamma.515)
+  lgamma.546 = f64[256,1024]{1,0} add(lgamma.516, broadcast.153)
+  lgamma.541 = f64[256,1024]{1,0} add(lgamma.516, broadcast.135)
+  lgamma.542 = f64[256,1024]{1,0} divide(lgamma.516, broadcast.135)
+  lgamma.543 = f64[256,1024]{1,0} log-plus-one(lgamma.542)
+  lgamma.544 = f64[256,1024]{1,0} add(lgamma.543, broadcast.134)
+  lgamma.545 = f64[256,1024]{1,0} divide(lgamma.541, lgamma.544)
+  lgamma.547 = f64[256,1024]{1,0} subtract(lgamma.546, lgamma.545)
+  lgamma.548 = f64[256,1024]{1,0} multiply(lgamma.547, lgamma.544)
+  lgamma.550 = f64[256,1024]{1,0} add(lgamma.548, broadcast.133)
+  lgamma.517 = f64[256,1024]{1,0} add(lgamma.516, broadcast.152)
+  lgamma.518 = f64[256,1024]{1,0} divide(broadcast.150, lgamma.517)
+  lgamma.519 = f64[256,1024]{1,0} add(lgamma.518, broadcast.151)
+  lgamma.520 = f64[256,1024]{1,0} add(lgamma.516, broadcast.148)
+  lgamma.521 = f64[256,1024]{1,0} divide(broadcast.149, lgamma.520)
+  lgamma.522 = f64[256,1024]{1,0} add(lgamma.519, lgamma.521)
+  lgamma.523 = f64[256,1024]{1,0} add(lgamma.516, broadcast.146)
+  lgamma.524 = f64[256,1024]{1,0} divide(broadcast.147, lgamma.523)
+  lgamma.525 = f64[256,1024]{1,0} add(lgamma.522, lgamma.524)
+  lgamma.526 = f64[256,1024]{1,0} add(lgamma.516, broadcast.144)
+  lgamma.527 = f64[256,1024]{1,0} divide(broadcast.145, lgamma.526)
+  lgamma.528 = f64[256,1024]{1,0} add(lgamma.525, lgamma.527)
+  lgamma.529 = f64[256,1024]{1,0} add(lgamma.516, broadcast.142)
+  lgamma.530 = f64[256,1024]{1,0} divide(broadcast.143, lgamma.529)
+  lgamma.531 = f64[256,1024]{1,0} add(lgamma.528, lgamma.530)
+  lgamma.532 = f64[256,1024]{1,0} add(lgamma.516, broadcast.140)
+  lgamma.533 = f64[256,1024]{1,0} divide(broadcast.141, lgamma.532)
+  lgamma.534 = f64[256,1024]{1,0} add(lgamma.531, lgamma.533)
+  lgamma.535 = f64[256,1024]{1,0} add(lgamma.516, broadcast.138)
+  lgamma.536 = f64[256,1024]{1,0} divide(broadcast.139, lgamma.535)
+  lgamma.537 = f64[256,1024]{1,0} add(lgamma.534, lgamma.536)
+  lgamma.538 = f64[256,1024]{1,0} add(lgamma.516, broadcast.136)
+  lgamma.539 = f64[256,1024]{1,0} divide(broadcast.137, lgamma.538)
+  lgamma.540 = f64[256,1024]{1,0} add(lgamma.537, lgamma.539)
+  lgamma.549 = f64[256,1024]{1,0} log(lgamma.540)
+  lgamma.551 = f64[256,1024]{1,0} add(lgamma.550, lgamma.549)
+  lgamma.562 = f64[256,1024]{1,0} subtract(lgamma.561, lgamma.551)
+  lgamma.564 = f64[256,1024]{1,0} negate(lgamma.560)
+  lgamma.565 = f64[256,1024]{1,0} select(lgamma.563, lgamma.562, lgamma.564)
+  lgamma.566 = f64[256,1024]{1,0} select(lgamma.513, lgamma.565, lgamma.551)
+  lgamma.569 = f64[256,1024]{1,0} select(lgamma.568, broadcast.130, lgamma.566)
+  sub.150 = f64[256,1024]{1,0} subtract(lgamma.512, lgamma.569)
+  add.180 = f64[256,1024]{1,0} add(lgamma.455, sub.150)
+  lgamma.624 = f64[256,1024]{1,0} abs(min.3)
+  lgamma.625 = pred[256,1024]{1,0} compare(lgamma.624, broadcast.130), direction=EQ
+  lgamma.570 = pred[256,1024]{1,0} compare(min.3, broadcast.153), direction=LT
+  lgamma.609 = f64[256,1024]{1,0} abs(min.3)
+  lgamma.610 = f64[256,1024]{1,0} floor(lgamma.609)
+  lgamma.611 = f64[256,1024]{1,0} subtract(lgamma.609, lgamma.610)
+  lgamma.612 = pred[256,1024]{1,0} compare(broadcast.153, lgamma.611), direction=LT
+  lgamma.613 = f64[256,1024]{1,0} subtract(broadcast.152, lgamma.611)
+  lgamma.614 = f64[256,1024]{1,0} select(lgamma.612, lgamma.613, lgamma.611)
+  lgamma.615 = f64[256,1024]{1,0} multiply(lgamma.614, broadcast.132)
+  lgamma.616 = f64[256,1024]{1,0} sine(lgamma.615)
+  lgamma.617 = f64[256,1024]{1,0} log(lgamma.616)
+  lgamma.620 = pred[256,1024]{1,0} is-finite(lgamma.617)
+  lgamma.618 = f64[256,1024]{1,0} subtract(broadcast.131, lgamma.617)
+  lgamma.571 = f64[256,1024]{1,0} negate(min.3)
+  lgamma.572 = f64[256,1024]{1,0} subtract(min.3, broadcast.152)
+  lgamma.573 = f64[256,1024]{1,0} select(lgamma.570, lgamma.571, lgamma.572)
+  lgamma.603 = f64[256,1024]{1,0} add(lgamma.573, broadcast.153)
+  lgamma.598 = f64[256,1024]{1,0} add(lgamma.573, broadcast.135)
+  lgamma.599 = f64[256,1024]{1,0} divide(lgamma.573, broadcast.135)
+  lgamma.600 = f64[256,1024]{1,0} log-plus-one(lgamma.599)
+  lgamma.601 = f64[256,1024]{1,0} add(lgamma.600, broadcast.134)
+  lgamma.602 = f64[256,1024]{1,0} divide(lgamma.598, lgamma.601)
+  lgamma.604 = f64[256,1024]{1,0} subtract(lgamma.603, lgamma.602)
+  lgamma.605 = f64[256,1024]{1,0} multiply(lgamma.604, lgamma.601)
+  lgamma.607 = f64[256,1024]{1,0} add(lgamma.605, broadcast.133)
+  lgamma.574 = f64[256,1024]{1,0} add(lgamma.573, broadcast.152)
+  lgamma.575 = f64[256,1024]{1,0} divide(broadcast.150, lgamma.574)
+  lgamma.576 = f64[256,1024]{1,0} add(lgamma.575, broadcast.151)
+  lgamma.577 = f64[256,1024]{1,0} add(lgamma.573, broadcast.148)
+  lgamma.578 = f64[256,1024]{1,0} divide(broadcast.149, lgamma.577)
+  lgamma.579 = f64[256,1024]{1,0} add(lgamma.576, lgamma.578)
+  lgamma.580 = f64[256,1024]{1,0} add(lgamma.573, broadcast.146)
+  lgamma.581 = f64[256,1024]{1,0} divide(broadcast.147, lgamma.580)
+  lgamma.582 = f64[256,1024]{1,0} add(lgamma.579, lgamma.581)
+  lgamma.583 = f64[256,1024]{1,0} add(lgamma.573, broadcast.144)
+  lgamma.584 = f64[256,1024]{1,0} divide(broadcast.145, lgamma.583)
+  lgamma.585 = f64[256,1024]{1,0} add(lgamma.582, lgamma.584)
+  lgamma.586 = f64[256,1024]{1,0} add(lgamma.573, broadcast.142)
+  lgamma.587 = f64[256,1024]{1,0} divide(broadcast.143, lgamma.586)
+  lgamma.588 = f64[256,1024]{1,0} add(lgamma.585, lgamma.587)
+  lgamma.589 = f64[256,1024]{1,0} add(lgamma.573, broadcast.140)
+  lgamma.590 = f64[256,1024]{1,0} divide(broadcast.141, lgamma.589)
+  lgamma.591 = f64[256,1024]{1,0} add(lgamma.588, lgamma.590)
+  lgamma.592 = f64[256,1024]{1,0} add(lgamma.573, broadcast.138)
+  lgamma.593 = f64[256,1024]{1,0} divide(broadcast.139, lgamma.592)
+  lgamma.594 = f64[256,1024]{1,0} add(lgamma.591, lgamma.593)
+  lgamma.595 = f64[256,1024]{1,0} add(lgamma.573, broadcast.136)
+  lgamma.596 = f64[256,1024]{1,0} divide(broadcast.137, lgamma.595)
+  lgamma.597 = f64[256,1024]{1,0} add(lgamma.594, lgamma.596)
+  lgamma.606 = f64[256,1024]{1,0} log(lgamma.597)
+  lgamma.608 = f64[256,1024]{1,0} add(lgamma.607, lgamma.606)
+  lgamma.619 = f64[256,1024]{1,0} subtract(lgamma.618, lgamma.608)
+  lgamma.621 = f64[256,1024]{1,0} negate(lgamma.617)
+  lgamma.622 = f64[256,1024]{1,0} select(lgamma.620, lgamma.619, lgamma.621)
+  lgamma.623 = f64[256,1024]{1,0} select(lgamma.570, lgamma.622, lgamma.608)
+  lgamma.626 = f64[256,1024]{1,0} select(lgamma.625, broadcast.130, lgamma.623)
+  sub.151 = f64[256,1024]{1,0} subtract(min.3, broadcast.153)
+  add.183 = f64[256,1024]{1,0} add(max.3, sub.151)
+  div.41 = f64[256,1024]{1,0} divide(min.3, max.3)
+  log1p.1 = f64[256,1024]{1,0} log-plus-one(div.41)
+  mul.248 = f64[256,1024]{1,0} multiply(add.183, log1p.1)
+  log.10 = f64[256,1024]{1,0} log(max.3)
+  sub.152 = f64[256,1024]{1,0} subtract(log.10, broadcast.152)
+  mul.249 = f64[256,1024]{1,0} multiply(min.3, sub.152)
+  le.3 = pred[256,1024]{1,0} compare(mul.248, mul.249), direction=LE
+  div.36 = f64[256,1024]{1,0} divide(min.3, max.3)
+  add.182 = f64[256,1024]{1,0} add(div.36, broadcast.152)
+  div.38 = f64[256,1024]{1,0} divide(div.36, add.182)
+  mul.232 = f64[256,1024]{1,0} multiply(div.38, div.38)
+  add.184 = f64[256,1024]{1,0} add(div.38, mul.232)
+  add.185 = f64[256,1024]{1,0} add(add.184, broadcast.152)
+  mul.233 = f64[256,1024]{1,0} multiply(mul.232, add.185)
+  add.186 = f64[256,1024]{1,0} add(div.38, mul.233)
+  add.187 = f64[256,1024]{1,0} add(add.186, broadcast.152)
+  mul.234 = f64[256,1024]{1,0} multiply(mul.232, add.187)
+  add.188 = f64[256,1024]{1,0} add(div.38, mul.234)
+  add.189 = f64[256,1024]{1,0} add(add.188, broadcast.152)
+  mul.235 = f64[256,1024]{1,0} multiply(mul.232, add.189)
+  add.190 = f64[256,1024]{1,0} add(div.38, mul.235)
+  add.191 = f64[256,1024]{1,0} add(add.190, broadcast.152)
+  mul.236 = f64[256,1024]{1,0} multiply(mul.232, add.191)
+  add.192 = f64[256,1024]{1,0} add(div.38, mul.236)
+  add.193 = f64[256,1024]{1,0} add(add.192, broadcast.152)
+  constant.262 = f64[] constant(-0.00165322962780713)
+  mul.160 = f64[256,1024]{1,0} broadcast(constant.262), dimensions={}
+  mul.237 = f64[256,1024]{1,0} multiply(add.193, mul.160)
+  div.39 = f64[256,1024]{1,0} divide(broadcast.152, max.3)
+  integer_pow.1 = f64[256,1024]{1,0} multiply(div.39, div.39)
+  mul.238 = f64[256,1024]{1,0} multiply(mul.237, integer_pow.1)
+  constant.261 = f64[] constant(0.000837308034031215)
+  mul.159 = f64[256,1024]{1,0} broadcast(constant.261), dimensions={}
+  mul.239 = f64[256,1024]{1,0} multiply(add.191, mul.159)
+  add.194 = f64[256,1024]{1,0} add(mul.238, mul.239)
+  mul.240 = f64[256,1024]{1,0} multiply(add.194, integer_pow.1)
+  constant.260 = f64[] constant(-0.00059520293135187)
+  mul.158 = f64[256,1024]{1,0} broadcast(constant.260), dimensions={}
+  mul.241 = f64[256,1024]{1,0} multiply(add.189, mul.158)
+  add.195 = f64[256,1024]{1,0} add(mul.240, mul.241)
+  mul.242 = f64[256,1024]{1,0} multiply(add.195, integer_pow.1)
+  constant.259 = f64[] constant(0.00079365066682539)
+  mul.157 = f64[256,1024]{1,0} broadcast(constant.259), dimensions={}
+  mul.243 = f64[256,1024]{1,0} multiply(add.187, mul.157)
+  add.196 = f64[256,1024]{1,0} add(mul.242, mul.243)
+  mul.244 = f64[256,1024]{1,0} multiply(add.196, integer_pow.1)
+  constant.258 = f64[] constant(-0.00277777777760991)
+  mul.156 = f64[256,1024]{1,0} broadcast(constant.258), dimensions={}
+  mul.245 = f64[256,1024]{1,0} multiply(add.185, mul.156)
+  add.197 = f64[256,1024]{1,0} add(mul.244, mul.245)
+  mul.246 = f64[256,1024]{1,0} multiply(add.197, integer_pow.1)
+  constant.257 = f64[] constant(0.0833333333333333)
+  add.112 = f64[256,1024]{1,0} broadcast(constant.257), dimensions={}
+  add.198 = f64[256,1024]{1,0} add(mul.246, add.112)
+  add.181 = f64[256,1024]{1,0} add(div.36, broadcast.152)
+  div.37 = f64[256,1024]{1,0} divide(div.36, add.181)
+  div.40 = f64[256,1024]{1,0} divide(div.37, max.3)
+  mul.247 = f64[256,1024]{1,0} multiply(add.198, div.40)
+  sub.153 = f64[256,1024]{1,0} subtract(mul.247, mul.249)
+  sub.154 = f64[256,1024]{1,0} subtract(sub.153, mul.248)
+  sub.155 = f64[256,1024]{1,0} subtract(mul.247, mul.248)
+  sub.156 = f64[256,1024]{1,0} subtract(sub.155, mul.249)
+  jit__where_.10 = f64[256,1024]{1,0} call(le.3, sub.154, sub.156), to_apply=_where.1
+  add.199 = f64[256,1024]{1,0} add(lgamma.626, jit__where_.10)
+  jit__where_.11 = f64[256,1024]{1,0} call(lt.8, add.180, add.199), to_apply=_where.1
+  add.200 = f64[256,1024]{1,0} add(add.178, jit__where_.11)
+  while.28 = f64[256,1024]{1,0} get-tuple-element(while.26), index=1
+  exp.2 = f64[256,1024]{1,0} exponential(sub.158)
+  mul.255 = f64[256,1024]{1,0} multiply(while.28, exp.2)
+  sub.161 = f64[256,1024]{1,0} subtract(broadcast.152, mul.255)
+  while.47 = f64[256,1024]{1,0} get-tuple-element(while.43), index=3
+  mul.256 = f64[256,1024]{1,0} multiply(while.47, exp.2)
+  div.44 = f64[256,1024]{1,0} divide(mul.256, mul.250)
+  select_n.71 = f64[256,1024]{1,0} select(and.13, sub.161, div.44)
+  select_n.72 = f64[256,1024]{1,0} select(eq.5, broadcast.129, select_n.71)
+  select_n.73 = f64[256,1024]{1,0} select(eq.7, broadcast.129, select_n.72)
+  select_n.74 = f64[256,1024]{1,0} select(eq.4, broadcast.152, select_n.73)
+  select_n.75 = f64[256,1024]{1,0} select(or.15, broadcast.128, select_n.74)
+  add.204 = f64[256,1024]{1,0} add(add.200, select_n.75)
+  polygamma.259 = f64[256,1024]{1,0} floor(broadcast.152)
+  polygamma.260 = pred[256,1024]{1,0} compare(broadcast.152, polygamma.259), direction=NE
+  constant.254 = f64[] constant(1.5)
+  polygamma.145 = f64[256,1024]{1,0} broadcast(constant.254), dimensions={}
+  constant.256 = f64[] constant(8.5)
+  polygamma.147 = f64[256,1024]{1,0} broadcast(constant.256), dimensions={}
+  constant.255 = f64[] constant(0.13333333333333333)
+  polygamma.146 = f64[256,1024]{1,0} broadcast(constant.255), dimensions={}
+  polygamma.160 = f64[256,1024]{1,0} log-plus-one(polygamma.146)
+  polygamma.161 = f64[256,1024]{1,0} add(polygamma.160, broadcast.134)
+  polygamma.162 = f64[256,1024]{1,0} divide(polygamma.147, polygamma.161)
+  polygamma.163 = f64[256,1024]{1,0} subtract(polygamma.145, polygamma.162)
+  polygamma.164 = f64[256,1024]{1,0} multiply(polygamma.163, polygamma.161)
+  polygamma.165 = f64[256,1024]{1,0} add(polygamma.164, broadcast.133)
+  constant.253 = f64[] constant(4.3709622215509212)
+  polygamma.144 = f64[256,1024]{1,0} broadcast(constant.253), dimensions={}
+  polygamma.166 = f64[256,1024]{1,0} add(polygamma.165, polygamma.144)
+  polygamma.167 = f64[256,1024]{1,0} exponential(polygamma.166)
+  mul.257 = f64[256,1024]{1,0} multiply(a.1, broadcast.148)
+  polygamma.246 = pred[256,1024]{1,0} compare(mul.257, broadcast.129), direction=LE
+  polygamma.251 = f64[256,1024]{1,0} floor(mul.257)
+  polygamma.252 = pred[256,1024]{1,0} compare(mul.257, polygamma.251), direction=EQ
+  polygamma.253 = pred[256,1024]{1,0} and(polygamma.246, polygamma.252)
+  polygamma.254 = f64[256,1024]{1,0} floor(broadcast.148)
+  polygamma.255 = pred[256,1024]{1,0} compare(broadcast.148, polygamma.254), direction=EQ
+  polygamma.256 = f64[256,1024]{1,0} select(polygamma.255, broadcast.130, broadcast.128)
+  polygamma.247 = f64[256,1024]{1,0} floor(broadcast.148)
+  polygamma.248 = pred[256,1024]{1,0} compare(broadcast.148, polygamma.247), direction=NE
+  polygamma.249 = pred[256,1024]{1,0} and(polygamma.246, polygamma.248)
+  polygamma.169 = f64[256,1024]{1,0} add(mul.257, broadcast.152)
+  polygamma.172 = f64[256,1024]{1,0} add(polygamma.169, broadcast.152)
+  polygamma.175 = f64[256,1024]{1,0} add(polygamma.172, broadcast.152)
+  polygamma.178 = f64[256,1024]{1,0} add(polygamma.175, broadcast.152)
+  polygamma.181 = f64[256,1024]{1,0} add(polygamma.178, broadcast.152)
+  polygamma.184 = f64[256,1024]{1,0} add(polygamma.181, broadcast.152)
+  polygamma.187 = f64[256,1024]{1,0} add(polygamma.184, broadcast.152)
+  polygamma.190 = f64[256,1024]{1,0} add(polygamma.187, broadcast.152)
+  polygamma.193 = f64[256,1024]{1,0} add(polygamma.190, broadcast.152)
+  polygamma.196 = f64[256,1024]{1,0} add(polygamma.193, broadcast.152)
+  constant.252 = f64[] constant(-2)
+  polygamma.143 = f64[256,1024]{1,0} broadcast(constant.252), dimensions={}
+  polygamma.197 = f64[256,1024]{1,0} power(polygamma.196, polygamma.143)
+  polygamma.241 = f64[256,1024]{1,0} abs(polygamma.197)
+  polygamma.168 = f64[256,1024]{1,0} power(mul.257, polygamma.143)
+  polygamma.170 = f64[256,1024]{1,0} power(polygamma.169, polygamma.143)
+  polygamma.171 = f64[256,1024]{1,0} add(polygamma.168, polygamma.170)
+  polygamma.173 = f64[256,1024]{1,0} power(polygamma.172, polygamma.143)
+  polygamma.174 = f64[256,1024]{1,0} add(polygamma.171, polygamma.173)
+  polygamma.176 = f64[256,1024]{1,0} power(polygamma.175, polygamma.143)
+  polygamma.177 = f64[256,1024]{1,0} add(polygamma.174, polygamma.176)
+  polygamma.179 = f64[256,1024]{1,0} power(polygamma.178, polygamma.143)
+  polygamma.180 = f64[256,1024]{1,0} add(polygamma.177, polygamma.179)
+  polygamma.182 = f64[256,1024]{1,0} power(polygamma.181, polygamma.143)
+  polygamma.183 = f64[256,1024]{1,0} add(polygamma.180, polygamma.182)
+  polygamma.185 = f64[256,1024]{1,0} power(polygamma.184, polygamma.143)
+  polygamma.186 = f64[256,1024]{1,0} add(polygamma.183, polygamma.185)
+  polygamma.188 = f64[256,1024]{1,0} power(polygamma.187, polygamma.143)
+  polygamma.189 = f64[256,1024]{1,0} add(polygamma.186, polygamma.188)
+  polygamma.191 = f64[256,1024]{1,0} power(polygamma.190, polygamma.143)
+  polygamma.192 = f64[256,1024]{1,0} add(polygamma.189, polygamma.191)
+  polygamma.194 = f64[256,1024]{1,0} power(polygamma.193, polygamma.143)
+  polygamma.195 = f64[256,1024]{1,0} add(polygamma.192, polygamma.194)
+  polygamma.242 = f64[256,1024]{1,0} abs(polygamma.195)
+  constant.322 = f64[] constant(4.94065645841247e-324)
+  polygamma.148 = f64[256,1024]{1,0} broadcast(constant.322), dimensions={}
+  polygamma.243 = f64[256,1024]{1,0} multiply(polygamma.242, polygamma.148)
+  polygamma.244 = pred[256,1024]{1,0} compare(polygamma.241, polygamma.243), direction=LT
+  polygamma.198 = f64[256,1024]{1,0} multiply(polygamma.197, polygamma.196)
+  polygamma.199 = f64[256,1024]{1,0} divide(polygamma.198, broadcast.152)
+  polygamma.239 = f64[256,1024]{1,0} add(polygamma.195, polygamma.199)
+  polygamma.234 = f64[256,1024]{1,0} divide(broadcast.148, polygamma.196)
+  polygamma.200 = f64[256,1024]{1,0} multiply(polygamma.196, polygamma.196)
+  polygamma.201 = f64[256,1024]{1,0} divide(broadcast.152, polygamma.200)
+  constant.250 = f64[] constant(-1.3954464685812522e-19)
+  polygamma.141 = f64[256,1024]{1,0} broadcast(constant.250), dimensions={}
+  polygamma.202 = f64[256,1024]{1,0} multiply(polygamma.201, polygamma.141)
+  constant.251 = f64[] constant(552)
+  polygamma.142 = f64[256,1024]{1,0} broadcast(constant.251), dimensions={}
+  polygamma.203 = f64[256,1024]{1,0} multiply(polygamma.202, polygamma.142)
+  constant.333 = f64[] constant(5.5090028283602295e-18)
+  polygamma.159 = f64[256,1024]{1,0} broadcast(constant.333), dimensions={}
+  polygamma.204 = f64[256,1024]{1,0} add(polygamma.203, polygamma.159)
+  polygamma.205 = f64[256,1024]{1,0} multiply(polygamma.201, polygamma.204)
+  constant.249 = f64[] constant(462)
+  polygamma.140 = f64[256,1024]{1,0} broadcast(constant.249), dimensions={}
+  polygamma.206 = f64[256,1024]{1,0} multiply(polygamma.205, polygamma.140)
+  constant.332 = f64[] constant(-2.1748686985580617e-16)
+  polygamma.158 = f64[256,1024]{1,0} broadcast(constant.332), dimensions={}
+  polygamma.207 = f64[256,1024]{1,0} add(polygamma.206, polygamma.158)
+  polygamma.208 = f64[256,1024]{1,0} multiply(polygamma.201, polygamma.207)
+  constant.248 = f64[] constant(380)
+  polygamma.139 = f64[256,1024]{1,0} broadcast(constant.248), dimensions={}
+  polygamma.209 = f64[256,1024]{1,0} multiply(polygamma.208, polygamma.139)
+  constant.331 = f64[] constant(8.5860620562778452e-15)
+  polygamma.157 = f64[256,1024]{1,0} broadcast(constant.331), dimensions={}
+  polygamma.210 = f64[256,1024]{1,0} add(polygamma.209, polygamma.157)
+  polygamma.211 = f64[256,1024]{1,0} multiply(polygamma.201, polygamma.210)
+  constant.247 = f64[] constant(306)
+  polygamma.138 = f64[256,1024]{1,0} broadcast(constant.247), dimensions={}
+  polygamma.212 = f64[256,1024]{1,0} multiply(polygamma.211, polygamma.138)
+  constant.330 = f64[] constant(-3.3896802963225832e-13)
+  polygamma.156 = f64[256,1024]{1,0} broadcast(constant.330), dimensions={}
+  polygamma.213 = f64[256,1024]{1,0} add(polygamma.212, polygamma.156)
+  polygamma.214 = f64[256,1024]{1,0} multiply(polygamma.201, polygamma.213)
+  constant.246 = f64[] constant(240)
+  polygamma.137 = f64[256,1024]{1,0} broadcast(constant.246), dimensions={}
+  polygamma.215 = f64[256,1024]{1,0} multiply(polygamma.214, polygamma.137)
+  constant.329 = f64[] constant(1.3382536530684679e-11)
+  polygamma.155 = f64[256,1024]{1,0} broadcast(constant.329), dimensions={}
+  polygamma.216 = f64[256,1024]{1,0} add(polygamma.215, polygamma.155)
+  polygamma.217 = f64[256,1024]{1,0} multiply(polygamma.201, polygamma.216)
+  constant.245 = f64[] constant(182)
+  polygamma.136 = f64[256,1024]{1,0} broadcast(constant.245), dimensions={}
+  polygamma.218 = f64[256,1024]{1,0} multiply(polygamma.217, polygamma.136)
+  constant.328 = f64[] constant(-5.2841901386874932e-10)
+  polygamma.154 = f64[256,1024]{1,0} broadcast(constant.328), dimensions={}
+  polygamma.219 = f64[256,1024]{1,0} add(polygamma.218, polygamma.154)
+  polygamma.220 = f64[256,1024]{1,0} multiply(polygamma.201, polygamma.219)
+  constant.244 = f64[] constant(132)
+  polygamma.135 = f64[256,1024]{1,0} broadcast(constant.244), dimensions={}
+  polygamma.221 = f64[256,1024]{1,0} multiply(polygamma.220, polygamma.135)
+  constant.327 = f64[] constant(2.08767569878681e-08)
+  polygamma.153 = f64[256,1024]{1,0} broadcast(constant.327), dimensions={}
+  polygamma.222 = f64[256,1024]{1,0} add(polygamma.221, polygamma.153)
+  polygamma.223 = f64[256,1024]{1,0} multiply(polygamma.201, polygamma.222)
+  constant.243 = f64[] constant(90)
+  polygamma.134 = f64[256,1024]{1,0} broadcast(constant.243), dimensions={}
+  polygamma.224 = f64[256,1024]{1,0} multiply(polygamma.223, polygamma.134)
+  constant.326 = f64[] constant(-8.2671957671957675e-07)
+  polygamma.152 = f64[256,1024]{1,0} broadcast(constant.326), dimensions={}
+  polygamma.225 = f64[256,1024]{1,0} add(polygamma.224, polygamma.152)
+  polygamma.226 = f64[256,1024]{1,0} multiply(polygamma.201, polygamma.225)
+  constant.242 = f64[] constant(56)
+  polygamma.133 = f64[256,1024]{1,0} broadcast(constant.242), dimensions={}
+  polygamma.227 = f64[256,1024]{1,0} multiply(polygamma.226, polygamma.133)
+  constant.325 = f64[] constant(3.3068783068783071e-05)
+  polygamma.151 = f64[256,1024]{1,0} broadcast(constant.325), dimensions={}
+  polygamma.228 = f64[256,1024]{1,0} add(polygamma.227, polygamma.151)
+  polygamma.229 = f64[256,1024]{1,0} multiply(polygamma.201, polygamma.228)
+  constant.241 = f64[] constant(30)
+  polygamma.132 = f64[256,1024]{1,0} broadcast(constant.241), dimensions={}
+  polygamma.230 = f64[256,1024]{1,0} multiply(polygamma.229, polygamma.132)
+  constant.324 = f64[] constant(-0.0013888888888888889)
+  polygamma.150 = f64[256,1024]{1,0} broadcast(constant.324), dimensions={}
+  polygamma.231 = f64[256,1024]{1,0} add(polygamma.230, polygamma.150)
+  polygamma.232 = f64[256,1024]{1,0} multiply(polygamma.201, polygamma.231)
+  constant.240 = f64[] constant(12)
+  polygamma.131 = f64[256,1024]{1,0} broadcast(constant.240), dimensions={}
+  polygamma.233 = f64[256,1024]{1,0} multiply(polygamma.232, polygamma.131)
+  constant.323 = f64[] constant(0.083333333333333329)
+  polygamma.149 = f64[256,1024]{1,0} broadcast(constant.323), dimensions={}
+  polygamma.235 = f64[256,1024]{1,0} add(polygamma.233, polygamma.149)
+  polygamma.236 = f64[256,1024]{1,0} multiply(polygamma.234, polygamma.235)
+  polygamma.237 = f64[256,1024]{1,0} add(polygamma.236, broadcast.153)
+  polygamma.238 = f64[256,1024]{1,0} multiply(polygamma.197, polygamma.237)
+  polygamma.240 = f64[256,1024]{1,0} add(polygamma.239, polygamma.238)
+  polygamma.245 = f64[256,1024]{1,0} select(polygamma.244, polygamma.195, polygamma.240)
+  polygamma.250 = f64[256,1024]{1,0} select(polygamma.249, broadcast.128, polygamma.245)
+  polygamma.257 = f64[256,1024]{1,0} select(polygamma.253, polygamma.256, polygamma.250)
+  polygamma.258 = f64[256,1024]{1,0} multiply(polygamma.167, polygamma.257)
+  polygamma.261 = f64[256,1024]{1,0} select(polygamma.260, broadcast.128, polygamma.258)
+  add.205 = f64[256,1024]{1,0} add(add.204, polygamma.261)
+  neg.9 = f64[256,1024]{1,0} negate(x.1)
+  exp.3 = f64[256,1024]{1,0} exponential(neg.9)
+  add.206 = f64[256,1024]{1,0} add(exp.3, broadcast.152)
+  div.45 = f64[256,1024]{1,0} divide(broadcast.152, add.206)
+  add.207 = f64[256,1024]{1,0} add(add.205, div.45)
+  reduce_sum.7 = f64[] reduce(add.207, constant.456), dimensions={0,1}, to_apply=region_6.8
+  ROOT tuple.5 = (f64[], f64[256,1024]{1,0}) tuple(reduce_sum.7, add.207)
+}
+

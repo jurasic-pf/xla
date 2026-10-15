@@ -1,0 +1,108 @@
+HloModule jit_swe, entry_computation_layout={(f64[4096]{0}, f64[4096]{0})->(f64[4096]{0}, f64[4096]{0})}
+
+region_1.1 {
+  reduce_max.3 = f64[] parameter(0)
+  reduce_max.4 = f64[] parameter(1)
+  ROOT reduce_max.5 = f64[] maximum(reduce_max.3, reduce_max.4)
+}
+
+_roll_static.2 {
+  Arg_0.1 = f64[4096]{0} parameter(0)
+  slice.2 = f64[4095]{0} slice(Arg_0.1), slice={[1:4096]}
+  slice.3 = f64[1]{0} slice(Arg_0.1), slice={[0:1]}
+  ROOT concatenate.1 = f64[4096]{0} concatenate(slice.2, slice.3), dimensions={0}
+}
+
+_roll_static_0.3 {
+  Arg_0.3 = f64[4096]{0} parameter(0)
+  slice.6 = f64[1]{0} slice(Arg_0.3), slice={[4095:4096]}
+  slice.7 = f64[4095]{0} slice(Arg_0.3), slice={[0:4095]}
+  ROOT concatenate.3 = f64[4096]{0} concatenate(slice.6, slice.7), dimensions={0}
+}
+
+region_0.4 {
+  arg_tuple.1 = (s64[], f64[4096]{0}, f64[4096]{0}) parameter(0)
+  get-tuple-element.3 = s64[] get-tuple-element(arg_tuple.1), index=0
+  constant.8 = s64[] constant(1)
+  add.11 = s64[] add(get-tuple-element.3, constant.8)
+  get-tuple-element.4 = f64[4096]{0} get-tuple-element(arg_tuple.1), index=1
+  constant.12 = f64[] constant(9.765625e-05)
+  get-tuple-element.5 = f64[4096]{0} get-tuple-element(arg_tuple.1), index=2
+  div.6 = f64[4096]{0} divide(get-tuple-element.5, get-tuple-element.4)
+  abs.1 = f64[4096]{0} abs(div.6)
+  constant.14 = f64[] constant(9.81)
+  broadcast.5 = f64[4096]{0} broadcast(constant.14), dimensions={}
+  mul.18 = f64[4096]{0} multiply(get-tuple-element.4, broadcast.5)
+  sqrt.1 = f64[4096]{0} sqrt(mul.18)
+  add.6 = f64[4096]{0} add(abs.1, sqrt.1)
+  constant.13 = f64[] constant(-inf)
+  reduce_max.7 = f64[] reduce(add.6, constant.13), dimensions={0}, to_apply=region_1.1
+  div.7 = f64[] divide(constant.12, reduce_max.7)
+  constant.9 = f64[] constant(0.000244140625)
+  div.10 = f64[] divide(div.7, constant.9)
+  mul.31 = f64[4096]{0} broadcast(div.10), dimensions={}
+  jit__roll_static_.6 = f64[4096]{0} call(get-tuple-element.5), to_apply=_roll_static.2
+  add.9 = f64[4096]{0} add(get-tuple-element.5, jit__roll_static_.6)
+  constant.10 = f64[] constant(0.5)
+  broadcast.3 = f64[4096]{0} broadcast(constant.10), dimensions={}
+  mul.25 = f64[4096]{0} multiply(add.9, broadcast.3)
+  jit__roll_static_.7 = f64[4096]{0} call(add.6), to_apply=_roll_static.2
+  max.1 = f64[4096]{0} maximum(add.6, jit__roll_static_.7)
+  mul.26 = f64[4096]{0} multiply(max.1, broadcast.3)
+  jit__roll_static_.5 = f64[4096]{0} call(get-tuple-element.4), to_apply=_roll_static.2
+  sub.8 = f64[4096]{0} subtract(jit__roll_static_.5, get-tuple-element.4)
+  mul.27 = f64[4096]{0} multiply(mul.26, sub.8)
+  sub.9 = f64[4096]{0} subtract(mul.25, mul.27)
+  jit__roll_static_.8 = f64[4096]{0} call(sub.9), to_apply=_roll_static_0.3
+  sub.12 = f64[4096]{0} subtract(sub.9, jit__roll_static_.8)
+  mul.32 = f64[4096]{0} multiply(mul.31, sub.12)
+  sub.13 = f64[4096]{0} subtract(get-tuple-element.4, mul.32)
+  div.11 = f64[] divide(div.7, constant.9)
+  mul.33 = f64[4096]{0} broadcast(div.11), dimensions={}
+  div.8 = f64[4096]{0} divide(get-tuple-element.5, get-tuple-element.4)
+  mul.19 = f64[4096]{0} multiply(get-tuple-element.5, div.8)
+  constant.11 = f64[] constant(4.905)
+  broadcast.4 = f64[4096]{0} broadcast(constant.11), dimensions={}
+  mul.20 = f64[4096]{0} multiply(get-tuple-element.4, broadcast.4)
+  mul.21 = f64[4096]{0} multiply(mul.20, get-tuple-element.4)
+  add.7 = f64[4096]{0} add(mul.19, mul.21)
+  div.9 = f64[4096]{0} divide(jit__roll_static_.6, jit__roll_static_.5)
+  mul.22 = f64[4096]{0} multiply(jit__roll_static_.6, div.9)
+  mul.23 = f64[4096]{0} multiply(jit__roll_static_.5, broadcast.4)
+  mul.24 = f64[4096]{0} multiply(mul.23, jit__roll_static_.5)
+  add.8 = f64[4096]{0} add(mul.22, mul.24)
+  add.10 = f64[4096]{0} add(add.7, add.8)
+  mul.28 = f64[4096]{0} multiply(add.10, broadcast.3)
+  mul.29 = f64[4096]{0} multiply(max.1, broadcast.3)
+  sub.10 = f64[4096]{0} subtract(jit__roll_static_.6, get-tuple-element.5)
+  mul.30 = f64[4096]{0} multiply(mul.29, sub.10)
+  sub.11 = f64[4096]{0} subtract(mul.28, mul.30)
+  jit__roll_static_.9 = f64[4096]{0} call(sub.11), to_apply=_roll_static_0.3
+  sub.14 = f64[4096]{0} subtract(sub.11, jit__roll_static_.9)
+  mul.34 = f64[4096]{0} multiply(mul.33, sub.14)
+  sub.15 = f64[4096]{0} subtract(get-tuple-element.5, mul.34)
+  ROOT tuple.1 = (s64[], f64[4096]{0}, f64[4096]{0}) tuple(add.11, sub.13, sub.15)
+}
+
+region_2.5 {
+  arg_tuple.3 = (s64[], f64[4096]{0}, f64[4096]{0}) parameter(0)
+  get-tuple-element.10 = f64[4096]{0} get-tuple-element(arg_tuple.3), index=1
+  get-tuple-element.11 = f64[4096]{0} get-tuple-element(arg_tuple.3), index=2
+  get-tuple-element.9 = s64[] get-tuple-element(arg_tuple.3), index=0
+  constant.16 = s64[] constant(2000)
+  ROOT lt.1 = pred[] compare(get-tuple-element.9, constant.16), direction=LT
+}
+
+ENTRY main.6 {
+  constant.17 = s64[] constant(0)
+  h0.1 = f64[4096]{0} parameter(0)
+  u0.1 = f64[4096]{0} parameter(1)
+  mul.35 = f64[4096]{0} multiply(h0.1, u0.1)
+  while.5 = (s64[], f64[4096]{0}, f64[4096]{0}) tuple(constant.17, h0.1, mul.35)
+  while.6 = (s64[], f64[4096]{0}, f64[4096]{0}) while(while.5), condition=region_2.5, body=region_0.4
+  while.7 = s64[] get-tuple-element(while.6), index=0
+  while.8 = f64[4096]{0} get-tuple-element(while.6), index=1
+  while.9 = f64[4096]{0} get-tuple-element(while.6), index=2
+  ROOT tuple.3 = (f64[4096]{0}, f64[4096]{0}) tuple(while.8, while.9)
+}
+

@@ -1,0 +1,482 @@
+HloModule jit_loss, entry_computation_layout={(f32[1,256,256]{2,1,0})->f32[1,256,256]{2,1,0}}
+
+_pad.1 {
+  Arg_0.1 = s32[] parameter(0)
+  ROOT convert_element_type.2 = c64[] convert(Arg_0.1)
+}
+
+_pad_0.2 {
+  Arg_0.3 = s32[] parameter(0)
+  ROOT convert_element_type.9 = c64[] convert(Arg_0.3)
+}
+
+fft.3 {
+  Arg_0.5 = f32[1,256,256]{2,1,0} parameter(0)
+  ROOT fft.1 = c64[1,256,129]{2,1,0} fft(Arg_0.5), fft_type=RFFT, fft_length={256,256}
+}
+
+_pad_1.4 {
+  ROOT Arg_0.7 = c64[1,2,256,129]{3,2,1,0} parameter(0)
+  Arg_1.1 = c64[] parameter(1)
+}
+
+fft_2.5 {
+  Arg_0.9 = c64[1,2,256,129]{3,2,1,0} parameter(0)
+  ROOT fft.3 = f32[1,2,256,256]{3,2,1,0} fft(Arg_0.9), fft_type=IRFFT, fft_length={256,256}
+}
+
+region_1.6 {
+  reduce_sum.3 = f32[] parameter(0)
+  reduce_sum.4 = f32[] parameter(1)
+  ROOT reduce_sum.5 = f32[] add(reduce_sum.3, reduce_sum.4)
+}
+
+region_2.7 {
+  reduce_sum.10 = f32[] parameter(0)
+  reduce_sum.11 = f32[] parameter(1)
+  ROOT reduce_sum.12 = f32[] add(reduce_sum.10, reduce_sum.11)
+}
+
+region_3.8 {
+  reduce_sum.17 = f32[] parameter(0)
+  reduce_sum.18 = f32[] parameter(1)
+  ROOT reduce_sum.19 = f32[] add(reduce_sum.17, reduce_sum.18)
+}
+
+region_4.9 {
+  reduce_sum.24 = f32[] parameter(0)
+  reduce_sum.25 = f32[] parameter(1)
+  ROOT reduce_sum.26 = f32[] add(reduce_sum.24, reduce_sum.25)
+}
+
+_pad_3.10 {
+  ROOT Arg_0.11 = c64[1,256,129]{2,1,0} parameter(0)
+  Arg_1.3 = c64[] parameter(1)
+}
+
+fft_4.11 {
+  Arg_0.13 = c64[1,256,129]{2,1,0} parameter(0)
+  ROOT fft.5 = f32[1,256,256]{2,1,0} fft(Arg_0.13), fft_type=IRFFT, fft_length={256,256}
+}
+
+dynamic_update_index_in_dim.12 {
+  Arg_0.15 = f32[100,1,2,256,256]{4,3,2,1,0} parameter(0)
+  Arg_1.5 = f32[1,2,256,256]{3,2,1,0} parameter(1)
+  broadcast_in_dim.10 = f32[1,1,2,256,256]{4,3,2,1,0} reshape(Arg_1.5)
+  Arg_2.1 = s32[] parameter(2)
+  constant.17 = s32[] constant(0)
+  ROOT dynamic_update_slice.1 = f32[100,1,2,256,256]{4,3,2,1,0} dynamic-update-slice(Arg_0.15, broadcast_in_dim.10, Arg_2.1, constant.17, constant.17, constant.17, constant.17)
+}
+
+region_0.13 {
+  arg_tuple.1 = (s32[], f32[1,256,256]{2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, c64[1,1,256,129]{3,2,1,0}, /*index=5*/c64[], c64[1,256,129]{2,1,0}, c64[1,256,129]{2,1,0}, c64[1,1,256,129]{3,2,1,0}, c64[], /*index=10*/c64[1,256,129]{2,1,0}, c64[1,256,129]{2,1,0}, c64[]) parameter(0)
+  get-tuple-element.13 = s32[] get-tuple-element(arg_tuple.1), index=0
+  constant.18 = s32[] constant(1)
+  add.5 = s32[] add(get-tuple-element.13, constant.18)
+  get-tuple-element.14 = f32[1,256,256]{2,1,0} get-tuple-element(arg_tuple.1), index=1
+  jit_fft_.6 = c64[1,256,129]{2,1,0} call(get-tuple-element.14), to_apply=fft.3
+  constant.19 = c64[1,256,129]{2,1,0} constant({...})
+  mul_jit_loss_.1 = c64[1,256,129]{2,1,0} multiply(jit_fft_.6, constant.19)
+  get-tuple-element.20 = c64[1,256,129]{2,1,0} get-tuple-element(arg_tuple.1), index=7
+  get-tuple-element.19 = c64[1,256,129]{2,1,0} get-tuple-element(arg_tuple.1), index=6
+  get-tuple-element.17 = c64[1,1,256,129]{3,2,1,0} get-tuple-element(arg_tuple.1), index=4
+  mul.28 = c64[1,1,256,129]{3,2,1,0} broadcast(get-tuple-element.17), dimensions={0,1,2,3}
+  mul.29 = c64[1,256,129]{2,1,0} reshape(mul.28)
+  mul.30 = c64[1,2,256,129]{3,2,1,0} broadcast(mul.29), dimensions={0,2,3}
+  broadcast_in_dim.11 = c64[1,1,256,129]{3,2,1,0} reshape(jit_fft_.6)
+  mul.25 = c64[1,1,256,129]{3,2,1,0} broadcast(broadcast_in_dim.11), dimensions={0,1,2,3}
+  mul.26 = c64[1,256,129]{2,1,0} reshape(mul.25)
+  mul.27 = c64[1,2,256,129]{3,2,1,0} broadcast(mul.26), dimensions={0,2,3}
+  constant.25 = c64[1,2,256,129]{3,2,1,0} constant({...})
+  broadcast_in_dim.12 = c64[1,2,256,129]{3,2,1,0} multiply(mul.27, constant.25)
+  mul.31 = c64[1,2,256,129]{3,2,1,0} multiply(mul.30, broadcast_in_dim.12)
+  get-tuple-element.18 = c64[] get-tuple-element(arg_tuple.1), index=5
+  jit__pad_.6 = c64[1,2,256,129]{3,2,1,0} call(mul.31, get-tuple-element.18), to_apply=_pad_1.4
+  jit_fft_.7 = f32[1,2,256,256]{3,2,1,0} call(jit__pad_.6), to_apply=fft_2.5
+  integer_pow.2 = f32[1,2,256,256]{3,2,1,0} multiply(jit_fft_.7, jit_fft_.7)
+  constant.23 = f32[] constant(0)
+  reduce_sum.28 = f32[1,256,256]{2,1,0} reduce(integer_pow.2, constant.23), dimensions={1}, to_apply=region_1.6
+  reduce_sum.29 = f32[1]{0} reduce(reduce_sum.28, constant.23), dimensions={1,2}, to_apply=region_2.7
+  constant.22 = f32[1]{0} constant({65536})
+  div.2 = f32[1]{0} divide(reduce_sum.29, constant.22)
+  broadcast_in_dim.13 = f32[1,1,1]{2,1,0} reshape(div.2)
+  sub.9 = f32[1,1,1]{2,1,0} broadcast(broadcast_in_dim.13), dimensions={0,1,2}
+  sub.10 = f32[1]{0} reshape(sub.9)
+  sub.11 = f32[1,256,256]{2,1,0} broadcast(sub.10), dimensions={0}
+  sub.12 = f32[1,256,256]{2,1,0} subtract(reduce_sum.28, sub.11)
+  jit_fft_.8 = c64[1,256,129]{2,1,0} call(sub.12), to_apply=fft.3
+  mul.33 = c64[1,256,129]{2,1,0} multiply(get-tuple-element.19, jit_fft_.8)
+  constant.21 = c64[] constant((0.5, 0))
+  broadcast.5 = c64[1,256,129]{2,1,0} broadcast(constant.21), dimensions={}
+  mul.34 = c64[1,256,129]{2,1,0} multiply(mul.33, broadcast.5)
+  constant.20 = c64[] constant((-1, 0))
+  broadcast.4 = c64[1,256,129]{2,1,0} broadcast(constant.20), dimensions={}
+  mul.35 = c64[1,256,129]{2,1,0} multiply(mul.34, broadcast.4)
+  mul.36 = c64[1,256,129]{2,1,0} multiply(get-tuple-element.20, mul.35)
+  add.3 = c64[1,256,129]{2,1,0} add(mul_jit_loss_.1, mul.36)
+  get-tuple-element.24 = c64[1,256,129]{2,1,0} get-tuple-element(arg_tuple.1), index=11
+  get-tuple-element.23 = c64[1,256,129]{2,1,0} get-tuple-element(arg_tuple.1), index=10
+  get-tuple-element.21 = c64[1,1,256,129]{3,2,1,0} get-tuple-element(arg_tuple.1), index=8
+  mul.40 = c64[1,1,256,129]{3,2,1,0} broadcast(get-tuple-element.21), dimensions={0,1,2,3}
+  mul.41 = c64[1,256,129]{2,1,0} reshape(mul.40)
+  mul.42 = c64[1,2,256,129]{3,2,1,0} broadcast(mul.41), dimensions={0,2,3}
+  broadcast_in_dim.14 = c64[1,1,256,129]{3,2,1,0} reshape(add.3)
+  mul.37 = c64[1,1,256,129]{3,2,1,0} broadcast(broadcast_in_dim.14), dimensions={0,1,2,3}
+  mul.38 = c64[1,256,129]{2,1,0} reshape(mul.37)
+  mul.39 = c64[1,2,256,129]{3,2,1,0} broadcast(mul.38), dimensions={0,2,3}
+  broadcast_in_dim.15 = c64[1,2,256,129]{3,2,1,0} multiply(mul.39, constant.25)
+  mul.43 = c64[1,2,256,129]{3,2,1,0} multiply(mul.42, broadcast_in_dim.15)
+  get-tuple-element.22 = c64[] get-tuple-element(arg_tuple.1), index=9
+  jit__pad_.7 = c64[1,2,256,129]{3,2,1,0} call(mul.43, get-tuple-element.22), to_apply=_pad_1.4
+  jit_fft_.9 = f32[1,2,256,256]{3,2,1,0} call(jit__pad_.7), to_apply=fft_2.5
+  integer_pow.3 = f32[1,2,256,256]{3,2,1,0} multiply(jit_fft_.9, jit_fft_.9)
+  reduce_sum.30 = f32[1,256,256]{2,1,0} reduce(integer_pow.3, constant.23), dimensions={1}, to_apply=region_3.8
+  reduce_sum.31 = f32[1]{0} reduce(reduce_sum.30, constant.23), dimensions={1,2}, to_apply=region_4.9
+  div.3 = f32[1]{0} divide(reduce_sum.31, constant.22)
+  broadcast_in_dim.16 = f32[1,1,1]{2,1,0} reshape(div.3)
+  sub.13 = f32[1,1,1]{2,1,0} broadcast(broadcast_in_dim.16), dimensions={0,1,2}
+  sub.14 = f32[1]{0} reshape(sub.13)
+  sub.15 = f32[1,256,256]{2,1,0} broadcast(sub.14), dimensions={0}
+  sub.16 = f32[1,256,256]{2,1,0} subtract(reduce_sum.30, sub.15)
+  jit_fft_.10 = c64[1,256,129]{2,1,0} call(sub.16), to_apply=fft.3
+  mul.45 = c64[1,256,129]{2,1,0} multiply(get-tuple-element.23, jit_fft_.10)
+  mul.46 = c64[1,256,129]{2,1,0} multiply(mul.45, broadcast.5)
+  mul.47 = c64[1,256,129]{2,1,0} multiply(mul.46, broadcast.4)
+  sub.17 = c64[1,256,129]{2,1,0} subtract(mul.47, mul.35)
+  mul.48 = c64[1,256,129]{2,1,0} multiply(get-tuple-element.24, sub.17)
+  add.4 = c64[1,256,129]{2,1,0} add(add.3, mul.48)
+  get-tuple-element.25 = c64[] get-tuple-element(arg_tuple.1), index=12
+  jit__pad_.8 = c64[1,256,129]{2,1,0} call(add.4, get-tuple-element.25), to_apply=_pad_3.10
+  jit_fft_.11 = f32[1,256,256]{2,1,0} call(jit__pad_.8), to_apply=fft_4.11
+  get-tuple-element.15 = f32[100,1,2,256,256]{4,3,2,1,0} get-tuple-element(arg_tuple.1), index=2
+  constant.24 = f32[] constant(2)
+  broadcast.6 = f32[1,2,256,256]{3,2,1,0} broadcast(constant.24), dimensions={}
+  mul.32 = f32[1,2,256,256]{3,2,1,0} multiply(jit_fft_.7, broadcast.6)
+  jit_dynamic_update_index_in_dim_.2 = f32[100,1,2,256,256]{4,3,2,1,0} call(get-tuple-element.15, mul.32, get-tuple-element.13), to_apply=dynamic_update_index_in_dim.12
+  get-tuple-element.16 = f32[100,1,2,256,256]{4,3,2,1,0} get-tuple-element(arg_tuple.1), index=3
+  mul.44 = f32[1,2,256,256]{3,2,1,0} multiply(jit_fft_.9, broadcast.6)
+  jit_dynamic_update_index_in_dim_.3 = f32[100,1,2,256,256]{4,3,2,1,0} call(get-tuple-element.16, mul.44, get-tuple-element.13), to_apply=dynamic_update_index_in_dim.12
+  ROOT tuple.1 = (s32[], f32[1,256,256]{2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, c64[1,1,256,129]{3,2,1,0}, /*index=5*/c64[], c64[1,256,129]{2,1,0}, c64[1,256,129]{2,1,0}, c64[1,1,256,129]{3,2,1,0}, c64[], /*index=10*/c64[1,256,129]{2,1,0}, c64[1,256,129]{2,1,0}, c64[]) tuple(add.5, jit_fft_.11, jit_dynamic_update_index_in_dim_.2, jit_dynamic_update_index_in_dim_.3, get-tuple-element.17, get-tuple-element.18, get-tuple-element.19, get-tuple-element.20, get-tuple-element.21, get-tuple-element.22, get-tuple-element.23, get-tuple-element.24, get-tuple-element.25)
+}
+
+region_5.14 {
+  arg_tuple.3 = (s32[], f32[1,256,256]{2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, c64[1,1,256,129]{3,2,1,0}, /*index=5*/c64[], c64[1,256,129]{2,1,0}, c64[1,256,129]{2,1,0}, c64[1,1,256,129]{3,2,1,0}, c64[], /*index=10*/c64[1,256,129]{2,1,0}, c64[1,256,129]{2,1,0}, c64[]) parameter(0)
+  get-tuple-element.40 = f32[1,256,256]{2,1,0} get-tuple-element(arg_tuple.3), index=1
+  get-tuple-element.41 = f32[100,1,2,256,256]{4,3,2,1,0} get-tuple-element(arg_tuple.3), index=2
+  get-tuple-element.42 = f32[100,1,2,256,256]{4,3,2,1,0} get-tuple-element(arg_tuple.3), index=3
+  get-tuple-element.43 = c64[1,1,256,129]{3,2,1,0} get-tuple-element(arg_tuple.3), index=4
+  get-tuple-element.44 = c64[] get-tuple-element(arg_tuple.3), index=5
+  get-tuple-element.45 = c64[1,256,129]{2,1,0} get-tuple-element(arg_tuple.3), index=6
+  get-tuple-element.46 = c64[1,256,129]{2,1,0} get-tuple-element(arg_tuple.3), index=7
+  get-tuple-element.47 = c64[1,1,256,129]{3,2,1,0} get-tuple-element(arg_tuple.3), index=8
+  get-tuple-element.48 = c64[] get-tuple-element(arg_tuple.3), index=9
+  get-tuple-element.49 = c64[1,256,129]{2,1,0} get-tuple-element(arg_tuple.3), index=10
+  get-tuple-element.50 = c64[1,256,129]{2,1,0} get-tuple-element(arg_tuple.3), index=11
+  get-tuple-element.51 = c64[] get-tuple-element(arg_tuple.3), index=12
+  get-tuple-element.39 = s32[] get-tuple-element(arg_tuple.3), index=0
+  constant.27 = s32[] constant(100)
+  ROOT lt.1 = pred[] compare(get-tuple-element.39, constant.27), direction=LT
+}
+
+dynamic_index_in_dim.15 {
+  Arg_0.17 = f32[100,1,2,256,256]{4,3,2,1,0} parameter(0)
+  Arg_1.7 = s32[] parameter(1)
+  constant.38 = s32[] constant(0)
+  dynamic_slice.1 = f32[1,1,2,256,256]{4,3,2,1,0} dynamic-slice(Arg_0.17, Arg_1.7, constant.38, constant.38, constant.38, constant.38), dynamic_slice_sizes={1,1,2,256,256}
+  ROOT squeeze.1 = f32[1,2,256,256]{3,2,1,0} reshape(dynamic_slice.1)
+}
+
+fft_6.16 {
+  Arg_0.20 = f32[1,256,256]{2,1,0} parameter(0)
+  ROOT fft.7 = c64[1,256,129]{2,1,0} fft(Arg_0.20), fft_type=RFFT, fft_length={256,256}
+}
+
+fft_5.17 {
+  constant.46 = c64[] constant((2, 0))
+  broadcast_in_dim.20 = c64[129]{0} broadcast(constant.46), dimensions={}
+  constant.45 = c64[1]{0} constant({(1, 0)})
+  constant.48 = s32[] constant(0)
+  dynamic_update_slice.4 = c64[129]{0} dynamic-update-slice(broadcast_in_dim.20, constant.45, constant.48)
+  constant.47 = s32[] constant(128)
+  dynamic_update_slice.5 = c64[129]{0} dynamic-update-slice(dynamic_update_slice.4, constant.45, constant.47)
+  broadcast_in_dim.21 = c64[1,1,129]{2,1,0} reshape(dynamic_update_slice.5)
+  constant.44 = c64[] constant((1.52587891e-05, 0))
+  mul.56 = c64[1,1,129]{2,1,0} broadcast(constant.44), dimensions={}
+  mul.57 = c64[1,1,129]{2,1,0} multiply(broadcast_in_dim.21, mul.56)
+  mul.58 = c64[1,1,129]{2,1,0} broadcast(mul.57), dimensions={0,1,2}
+  mul.59 = c64[1,129]{1,0} reshape(mul.58)
+  mul.60 = c64[1,256,129]{2,1,0} broadcast(mul.59), dimensions={0,2}
+  Arg_0.21 = f32[1,256,256]{2,1,0} parameter(0)
+  jit_fft_.13 = c64[1,256,129]{2,1,0} call(Arg_0.21), to_apply=fft_6.16
+  mul.61 = c64[1,256,129]{2,1,0} multiply(mul.60, jit_fft_.13)
+  real.1 = f32[1,256,129]{2,1,0} real(mul.61)
+  imag.1 = f32[1,256,129]{2,1,0} imag(mul.61)
+  neg.1 = f32[1,256,129]{2,1,0} negate(imag.1)
+  ROOT complex.1 = c64[1,256,129]{2,1,0} complex(real.1, neg.1)
+}
+
+_pad_7.18 {
+  ROOT Arg_0.23 = c64[1,256,129]{2,1,0} parameter(0)
+}
+
+fft_9.19 {
+  Arg_0.27 = c64[1,256,129]{2,1,0} parameter(0)
+  ROOT fft.9 = f32[1,256,256]{2,1,0} fft(Arg_0.27), fft_type=IRFFT, fft_length={256,256}
+}
+
+_rfft_transpose.20 {
+  Arg_0.28 = c64[1,256,129]{2,1,0} parameter(0)
+  real.3 = f32[1,256,129]{2,1,0} real(Arg_0.28)
+  imag.3 = f32[1,256,129]{2,1,0} imag(Arg_0.28)
+  neg.4 = f32[1,256,129]{2,1,0} negate(imag.3)
+  complex.3 = c64[1,256,129]{2,1,0} complex(real.3, neg.4)
+  constant.57 = c64[] constant((2, 0))
+  broadcast_in_dim.24 = c64[129]{0} broadcast(constant.57), dimensions={}
+  constant.58 = c64[1]{0} constant({(1, 0)})
+  constant.56 = s32[] constant(0)
+  dynamic_update_slice.8 = c64[129]{0} dynamic-update-slice(broadcast_in_dim.24, constant.58, constant.56)
+  constant.55 = s32[] constant(128)
+  dynamic_update_slice.9 = c64[129]{0} dynamic-update-slice(dynamic_update_slice.8, constant.58, constant.55)
+  broadcast_in_dim.25 = c64[1,1,129]{2,1,0} reshape(dynamic_update_slice.9)
+  div.8 = c64[1,1,129]{2,1,0} broadcast(broadcast_in_dim.25), dimensions={0,1,2}
+  div.9 = c64[1,129]{1,0} reshape(div.8)
+  div.10 = c64[1,256,129]{2,1,0} broadcast(div.9), dimensions={0,2}
+  div.11 = c64[1,256,129]{2,1,0} divide(complex.3, div.10)
+  jit_fft_.16 = f32[1,256,256]{2,1,0} call(div.11), to_apply=fft_9.19
+  constant.54 = f32[] constant(65536)
+  mul.68 = f32[1,256,256]{2,1,0} broadcast(constant.54), dimensions={}
+  ROOT mul.69 = f32[1,256,256]{2,1,0} multiply(jit_fft_.16, mul.68)
+}
+
+fft_8.21 {
+  Arg_0.29 = c64[1,256,129]{2,1,0} parameter(0)
+  ROOT jit__rfft_transpose_.1 = f32[1,256,256]{2,1,0} call(Arg_0.29), to_apply=_rfft_transpose.20
+}
+
+region_7.22 {
+  reduce_sum.35 = f32[] parameter(0)
+  reduce_sum.36 = f32[] parameter(1)
+  ROOT reduce_sum.37 = f32[] add(reduce_sum.35, reduce_sum.36)
+}
+
+region_8.23 {
+  reduce_sum.42 = f32[] parameter(0)
+  reduce_sum.43 = f32[] parameter(1)
+  ROOT reduce_sum.44 = f32[] add(reduce_sum.42, reduce_sum.43)
+}
+
+fft_11.24 {
+  Arg_0.32 = f32[1,2,256,256]{3,2,1,0} parameter(0)
+  ROOT fft.11 = c64[1,2,256,129]{3,2,1,0} fft(Arg_0.32), fft_type=RFFT, fft_length={256,256}
+}
+
+fft_10.25 {
+  constant.66 = c64[] constant((2, 0))
+  broadcast_in_dim.31 = c64[129]{0} broadcast(constant.66), dimensions={}
+  constant.65 = c64[1]{0} constant({(1, 0)})
+  constant.68 = s32[] constant(0)
+  dynamic_update_slice.12 = c64[129]{0} dynamic-update-slice(broadcast_in_dim.31, constant.65, constant.68)
+  constant.67 = s32[] constant(128)
+  dynamic_update_slice.13 = c64[129]{0} dynamic-update-slice(dynamic_update_slice.12, constant.65, constant.67)
+  broadcast_in_dim.32 = c64[1,1,1,129]{3,2,1,0} reshape(dynamic_update_slice.13)
+  constant.64 = c64[] constant((1.52587891e-05, 0))
+  mul.77 = c64[1,1,1,129]{3,2,1,0} broadcast(constant.64), dimensions={}
+  mul.78 = c64[1,1,1,129]{3,2,1,0} multiply(broadcast_in_dim.32, mul.77)
+  mul.79 = c64[1,1,1,129]{3,2,1,0} broadcast(mul.78), dimensions={0,1,2,3}
+  mul.80 = c64[1,129]{1,0} reshape(mul.79)
+  mul.81 = c64[1,2,256,129]{3,2,1,0} broadcast(mul.80), dimensions={0,3}
+  Arg_0.33 = f32[1,2,256,256]{3,2,1,0} parameter(0)
+  jit_fft_.19 = c64[1,2,256,129]{3,2,1,0} call(Arg_0.33), to_apply=fft_11.24
+  mul.82 = c64[1,2,256,129]{3,2,1,0} multiply(mul.81, jit_fft_.19)
+  real.5 = f32[1,2,256,129]{3,2,1,0} real(mul.82)
+  imag.5 = f32[1,2,256,129]{3,2,1,0} imag(mul.82)
+  neg.7 = f32[1,2,256,129]{3,2,1,0} negate(imag.5)
+  ROOT complex.5 = c64[1,2,256,129]{3,2,1,0} complex(real.5, neg.7)
+}
+
+_pad_12.26 {
+  ROOT Arg_0.35 = c64[1,2,256,129]{3,2,1,0} parameter(0)
+}
+
+region_9.27 {
+  reduce_sum.49 = c64[] parameter(0)
+  reduce_sum.50 = c64[] parameter(1)
+  ROOT reduce_sum.51 = c64[] add(reduce_sum.49, reduce_sum.50)
+}
+
+region_10.28 {
+  reduce_sum.56 = c64[] parameter(0)
+  reduce_sum.57 = c64[] parameter(1)
+  ROOT reduce_sum.58 = c64[] add(reduce_sum.56, reduce_sum.57)
+}
+
+region_11.29 {
+  reduce_sum.63 = f32[] parameter(0)
+  reduce_sum.64 = f32[] parameter(1)
+  ROOT reduce_sum.65 = f32[] add(reduce_sum.63, reduce_sum.64)
+}
+
+region_12.30 {
+  reduce_sum.70 = f32[] parameter(0)
+  reduce_sum.71 = f32[] parameter(1)
+  ROOT reduce_sum.72 = f32[] add(reduce_sum.70, reduce_sum.71)
+}
+
+region_13.31 {
+  reduce_sum.77 = c64[] parameter(0)
+  reduce_sum.78 = c64[] parameter(1)
+  ROOT reduce_sum.79 = c64[] add(reduce_sum.77, reduce_sum.78)
+}
+
+region_14.32 {
+  reduce_sum.84 = c64[] parameter(0)
+  reduce_sum.85 = c64[] parameter(1)
+  ROOT reduce_sum.86 = c64[] add(reduce_sum.84, reduce_sum.85)
+}
+
+region_6.33 {
+  arg_tuple.5 = (s32[], f32[1,256,256]{2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, c64[1,256,129]{2,1,0}, /*index=5*/c64[1,256,129]{2,1,0}, c64[1,1,256,129]{3,2,1,0}, c64[1,256,129]{2,1,0}, c64[1,256,129]{2,1,0}, c64[1,1,256,129]{3,2,1,0}) parameter(0)
+  get-tuple-element.62 = s32[] get-tuple-element(arg_tuple.5), index=0
+  constant.76 = s32[] constant(1)
+  add.7 = s32[] add(get-tuple-element.62, constant.76)
+  get-tuple-element.63 = f32[1,256,256]{2,1,0} get-tuple-element(arg_tuple.5), index=1
+  jit_fft_.24 = c64[1,256,129]{2,1,0} call(get-tuple-element.63), to_apply=fft_5.17
+  jit__pad_.12 = c64[1,256,129]{2,1,0} call(jit_fft_.24), to_apply=_pad_7.18
+  get-tuple-element.68 = c64[1,1,256,129]{3,2,1,0} get-tuple-element(arg_tuple.5), index=6
+  mul.101 = c64[1,1,256,129]{3,2,1,0} broadcast(get-tuple-element.68), dimensions={0,1,2,3}
+  mul.102 = c64[1,256,129]{2,1,0} reshape(mul.101)
+  mul.103 = c64[1,2,256,129]{3,2,1,0} broadcast(mul.102), dimensions={0,2,3}
+  get-tuple-element.67 = c64[1,256,129]{2,1,0} get-tuple-element(arg_tuple.5), index=5
+  get-tuple-element.66 = c64[1,256,129]{2,1,0} get-tuple-element(arg_tuple.5), index=4
+  mul.96 = c64[1,256,129]{2,1,0} multiply(get-tuple-element.66, jit__pad_.12)
+  constant.75 = c64[] constant((-1, 0))
+  broadcast.10 = c64[1,256,129]{2,1,0} broadcast(constant.75), dimensions={}
+  mul.97 = c64[1,256,129]{2,1,0} multiply(mul.96, broadcast.10)
+  constant.74 = c64[] constant((0.5, 0))
+  broadcast.9 = c64[1,256,129]{2,1,0} broadcast(constant.74), dimensions={}
+  mul.98 = c64[1,256,129]{2,1,0} multiply(mul.97, broadcast.9)
+  mul.99 = c64[1,256,129]{2,1,0} multiply(get-tuple-element.67, mul.98)
+  jit_fft_.25 = f32[1,256,256]{2,1,0} call(mul.99), to_apply=fft_8.21
+  neg.10 = f32[1,256,256]{2,1,0} negate(jit_fft_.25)
+  constant.73 = f32[] constant(0)
+  reduce_sum.88 = f32[1]{0} reduce(neg.10, constant.73), dimensions={1,2}, to_apply=region_7.22
+  reshape.4 = f32[1,1,1]{2,1,0} reshape(reduce_sum.88)
+  reduce_sum.89 = f32[] reduce(reshape.4, constant.73), dimensions={0,1,2}, to_apply=region_8.23
+  broadcast_in_dim.40 = f32[1]{0} reshape(reduce_sum.89)
+  constant.72 = f32[1]{0} constant({65536})
+  div.14 = f32[1]{0} divide(broadcast_in_dim.40, constant.72)
+  broadcast_in_dim.41 = f32[1,256,256]{2,1,0} broadcast(div.14), dimensions={0}
+  add_any.5 = f32[1,256,256]{2,1,0} add(jit_fft_.25, broadcast_in_dim.41)
+  broadcast_in_dim.42 = f32[1,2,256,256]{3,2,1,0} broadcast(add_any.5), dimensions={0,2,3}
+  get-tuple-element.65 = f32[100,1,2,256,256]{4,3,2,1,0} get-tuple-element(arg_tuple.5), index=3
+  constant.77 = s32[] constant(100)
+  sub.21 = s32[] subtract(constant.77, get-tuple-element.62)
+  sub.22 = s32[] subtract(sub.21, constant.76)
+  jit_dynamic_index_in_dim_.3 = f32[1,2,256,256]{3,2,1,0} call(get-tuple-element.65, sub.22), to_apply=dynamic_index_in_dim.15
+  mul.100 = f32[1,2,256,256]{3,2,1,0} multiply(broadcast_in_dim.42, jit_dynamic_index_in_dim_.3)
+  jit_fft_.26 = c64[1,2,256,129]{3,2,1,0} call(mul.100), to_apply=fft_10.25
+  jit__pad_.13 = c64[1,2,256,129]{3,2,1,0} call(jit_fft_.26), to_apply=_pad_12.26
+  mul.104 = c64[1,2,256,129]{3,2,1,0} multiply(mul.103, jit__pad_.13)
+  constant.71 = c64[1,2,256,129]{3,2,1,0} constant({...})
+  broadcast_in_dim.43 = c64[1,2,256,129]{3,2,1,0} multiply(mul.104, constant.71)
+  constant.70 = c64[] constant((0, 0))
+  reduce_sum.90 = c64[1,256,129]{2,1,0} reduce(broadcast_in_dim.43, constant.70), dimensions={1}, to_apply=region_9.27
+  reshape.5 = c64[1,1,256,129]{3,2,1,0} reshape(reduce_sum.90)
+  reduce_sum.91 = c64[256,129]{1,0} reduce(reshape.5, constant.70), dimensions={0,1}, to_apply=region_10.28
+  broadcast_in_dim.44 = c64[1,256,129]{2,1,0} reshape(reduce_sum.91)
+  add_any.6 = c64[1,256,129]{2,1,0} add(jit__pad_.12, broadcast_in_dim.44)
+  constant.69 = c64[1,256,129]{2,1,0} constant({...})
+  mul_jit_loss_.3 = c64[1,256,129]{2,1,0} multiply(add_any.6, constant.69)
+  get-tuple-element.71 = c64[1,1,256,129]{3,2,1,0} get-tuple-element(arg_tuple.5), index=9
+  mul.110 = c64[1,1,256,129]{3,2,1,0} broadcast(get-tuple-element.71), dimensions={0,1,2,3}
+  mul.111 = c64[1,256,129]{2,1,0} reshape(mul.110)
+  mul.112 = c64[1,2,256,129]{3,2,1,0} broadcast(mul.111), dimensions={0,2,3}
+  get-tuple-element.70 = c64[1,256,129]{2,1,0} get-tuple-element(arg_tuple.5), index=8
+  neg.9 = c64[1,256,129]{2,1,0} negate(mul.96)
+  get-tuple-element.69 = c64[1,256,129]{2,1,0} get-tuple-element(arg_tuple.5), index=7
+  mul.105 = c64[1,256,129]{2,1,0} multiply(get-tuple-element.69, add_any.6)
+  add_any.7 = c64[1,256,129]{2,1,0} add(neg.9, mul.105)
+  mul.106 = c64[1,256,129]{2,1,0} multiply(add_any.7, broadcast.10)
+  mul.107 = c64[1,256,129]{2,1,0} multiply(mul.106, broadcast.9)
+  mul.108 = c64[1,256,129]{2,1,0} multiply(get-tuple-element.70, mul.107)
+  jit_fft_.27 = f32[1,256,256]{2,1,0} call(mul.108), to_apply=fft_8.21
+  neg.11 = f32[1,256,256]{2,1,0} negate(jit_fft_.27)
+  reduce_sum.92 = f32[1]{0} reduce(neg.11, constant.73), dimensions={1,2}, to_apply=region_11.29
+  reshape.6 = f32[1,1,1]{2,1,0} reshape(reduce_sum.92)
+  reduce_sum.93 = f32[] reduce(reshape.6, constant.73), dimensions={0,1,2}, to_apply=region_12.30
+  broadcast_in_dim.45 = f32[1]{0} reshape(reduce_sum.93)
+  div.15 = f32[1]{0} divide(broadcast_in_dim.45, constant.72)
+  broadcast_in_dim.46 = f32[1,256,256]{2,1,0} broadcast(div.15), dimensions={0}
+  add_any.8 = f32[1,256,256]{2,1,0} add(jit_fft_.27, broadcast_in_dim.46)
+  broadcast_in_dim.47 = f32[1,2,256,256]{3,2,1,0} broadcast(add_any.8), dimensions={0,2,3}
+  get-tuple-element.64 = f32[100,1,2,256,256]{4,3,2,1,0} get-tuple-element(arg_tuple.5), index=2
+  jit_dynamic_index_in_dim_.2 = f32[1,2,256,256]{3,2,1,0} call(get-tuple-element.64, sub.22), to_apply=dynamic_index_in_dim.15
+  mul.109 = f32[1,2,256,256]{3,2,1,0} multiply(broadcast_in_dim.47, jit_dynamic_index_in_dim_.2)
+  jit_fft_.28 = c64[1,2,256,129]{3,2,1,0} call(mul.109), to_apply=fft_10.25
+  jit__pad_.14 = c64[1,2,256,129]{3,2,1,0} call(jit_fft_.28), to_apply=_pad_12.26
+  mul.113 = c64[1,2,256,129]{3,2,1,0} multiply(mul.112, jit__pad_.14)
+  broadcast_in_dim.48 = c64[1,2,256,129]{3,2,1,0} multiply(mul.113, constant.71)
+  reduce_sum.94 = c64[1,256,129]{2,1,0} reduce(broadcast_in_dim.48, constant.70), dimensions={1}, to_apply=region_13.31
+  reshape.7 = c64[1,1,256,129]{3,2,1,0} reshape(reduce_sum.94)
+  reduce_sum.95 = c64[256,129]{1,0} reduce(reshape.7, constant.70), dimensions={0,1}, to_apply=region_14.32
+  broadcast_in_dim.49 = c64[1,256,129]{2,1,0} reshape(reduce_sum.95)
+  add_any.9 = c64[1,256,129]{2,1,0} add(mul_jit_loss_.3, broadcast_in_dim.49)
+  jit_fft_.29 = f32[1,256,256]{2,1,0} call(add_any.9), to_apply=fft_8.21
+  ROOT tuple.3 = (s32[], f32[1,256,256]{2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, c64[1,256,129]{2,1,0}, /*index=5*/c64[1,256,129]{2,1,0}, c64[1,1,256,129]{3,2,1,0}, c64[1,256,129]{2,1,0}, c64[1,256,129]{2,1,0}, c64[1,1,256,129]{3,2,1,0}) tuple(add.7, jit_fft_.29, get-tuple-element.64, get-tuple-element.65, get-tuple-element.66, get-tuple-element.67, get-tuple-element.68, get-tuple-element.69, get-tuple-element.70, get-tuple-element.71)
+}
+
+region_15.34 {
+  arg_tuple.7 = (s32[], f32[1,256,256]{2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, c64[1,256,129]{2,1,0}, /*index=5*/c64[1,256,129]{2,1,0}, c64[1,1,256,129]{3,2,1,0}, c64[1,256,129]{2,1,0}, c64[1,256,129]{2,1,0}, c64[1,1,256,129]{3,2,1,0}) parameter(0)
+  get-tuple-element.83 = f32[1,256,256]{2,1,0} get-tuple-element(arg_tuple.7), index=1
+  get-tuple-element.84 = f32[100,1,2,256,256]{4,3,2,1,0} get-tuple-element(arg_tuple.7), index=2
+  get-tuple-element.85 = f32[100,1,2,256,256]{4,3,2,1,0} get-tuple-element(arg_tuple.7), index=3
+  get-tuple-element.86 = c64[1,256,129]{2,1,0} get-tuple-element(arg_tuple.7), index=4
+  get-tuple-element.87 = c64[1,256,129]{2,1,0} get-tuple-element(arg_tuple.7), index=5
+  get-tuple-element.88 = c64[1,1,256,129]{3,2,1,0} get-tuple-element(arg_tuple.7), index=6
+  get-tuple-element.89 = c64[1,256,129]{2,1,0} get-tuple-element(arg_tuple.7), index=7
+  get-tuple-element.90 = c64[1,256,129]{2,1,0} get-tuple-element(arg_tuple.7), index=8
+  get-tuple-element.91 = c64[1,1,256,129]{3,2,1,0} get-tuple-element(arg_tuple.7), index=9
+  get-tuple-element.82 = s32[] get-tuple-element(arg_tuple.7), index=0
+  constant.79 = s32[] constant(100)
+  ROOT lt.3 = pred[] compare(get-tuple-element.82, constant.79), direction=LT
+}
+
+ENTRY main.35 {
+  constant.83 = s32[] constant(0)
+  u0.1 = f32[1,256,256]{2,1,0} parameter(0)
+  constant.82 = f32[] constant(0)
+  broadcast.11 = f32[100,1,2,256,256]{4,3,2,1,0} broadcast(constant.82), dimensions={}
+  constant.84 = pred[1,256,129]{2,1,0} constant({...})
+  convert_element_type.10 = c64[1,256,129]{2,1,0} convert(constant.84)
+  broadcast_in_dim.51 = c64[1,1,256,129]{3,2,1,0} reshape(convert_element_type.10)
+  jit__pad_.15 = c64[] call(constant.83), to_apply=_pad.1
+  convert_element_type.11 = c64[1,256,129]{2,1,0} convert(constant.84)
+  constant.85 = f32[1,256,129]{2,1,0} constant({...})
+  convert_element_type.12 = c64[1,256,129]{2,1,0} convert(constant.85)
+  convert_element_type.13 = c64[1,256,129]{2,1,0} convert(constant.84)
+  broadcast_in_dim.52 = c64[1,1,256,129]{3,2,1,0} reshape(convert_element_type.13)
+  jit__pad_.16 = c64[] call(constant.83), to_apply=_pad.1
+  convert_element_type.14 = c64[1,256,129]{2,1,0} convert(constant.84)
+  constant.86 = f32[1,256,129]{2,1,0} constant({...})
+  convert_element_type.15 = c64[1,256,129]{2,1,0} convert(constant.86)
+  jit__pad_.17 = c64[] call(constant.83), to_apply=_pad_0.2
+  while.10 = (s32[], f32[1,256,256]{2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, c64[1,1,256,129]{3,2,1,0}, /*index=5*/c64[], c64[1,256,129]{2,1,0}, c64[1,256,129]{2,1,0}, c64[1,1,256,129]{3,2,1,0}, c64[], /*index=10*/c64[1,256,129]{2,1,0}, c64[1,256,129]{2,1,0}, c64[]) tuple(constant.83, u0.1, broadcast.11, broadcast.11, broadcast_in_dim.51, jit__pad_.15, convert_element_type.11, convert_element_type.12, broadcast_in_dim.52, jit__pad_.16, convert_element_type.14, convert_element_type.15, jit__pad_.17)
+  while.11 = (s32[], f32[1,256,256]{2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, c64[1,1,256,129]{3,2,1,0}, /*index=5*/c64[], c64[1,256,129]{2,1,0}, c64[1,256,129]{2,1,0}, c64[1,1,256,129]{3,2,1,0}, c64[], /*index=10*/c64[1,256,129]{2,1,0}, c64[1,256,129]{2,1,0}, c64[]) while(while.10), condition=region_5.14, body=region_0.13
+  while.12 = s32[] get-tuple-element(while.11), index=0
+  while.13 = f32[1,256,256]{2,1,0} get-tuple-element(while.11), index=1
+  constant.87 = f32[1,256,256]{2,1,0} constant({...})
+  sub.23 = f32[1,256,256]{2,1,0} subtract(while.13, constant.87)
+  constant.81 = f32[] constant(2)
+  mul.114 = f32[1,256,256]{2,1,0} broadcast(constant.81), dimensions={}
+  mul.115 = f32[1,256,256]{2,1,0} multiply(sub.23, mul.114)
+  constant.80 = f32[] constant(1.52587891e-05)
+  broadcast_in_dim.50 = f32[1,256,256]{2,1,0} broadcast(constant.80), dimensions={}
+  broadcast_in_dim.53 = f32[1,256,256]{2,1,0} multiply(mul.115, broadcast_in_dim.50)
+  while.14 = f32[100,1,2,256,256]{4,3,2,1,0} get-tuple-element(while.11), index=2
+  while.15 = f32[100,1,2,256,256]{4,3,2,1,0} get-tuple-element(while.11), index=3
+  while.16 = (s32[], f32[1,256,256]{2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, c64[1,256,129]{2,1,0}, /*index=5*/c64[1,256,129]{2,1,0}, c64[1,1,256,129]{3,2,1,0}, c64[1,256,129]{2,1,0}, c64[1,256,129]{2,1,0}, c64[1,1,256,129]{3,2,1,0}) tuple(constant.83, broadcast_in_dim.53, while.14, while.15, convert_element_type.15, convert_element_type.14, broadcast_in_dim.52, convert_element_type.12, convert_element_type.11, broadcast_in_dim.51)
+  while.17 = (s32[], f32[1,256,256]{2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, f32[100,1,2,256,256]{4,3,2,1,0}, c64[1,256,129]{2,1,0}, /*index=5*/c64[1,256,129]{2,1,0}, c64[1,1,256,129]{3,2,1,0}, c64[1,256,129]{2,1,0}, c64[1,256,129]{2,1,0}, c64[1,1,256,129]{3,2,1,0}) while(while.16), condition=region_15.34, body=region_6.33
+  while.18 = s32[] get-tuple-element(while.17), index=0
+  ROOT while.19 = f32[1,256,256]{2,1,0} get-tuple-element(while.17), index=1
+}
+

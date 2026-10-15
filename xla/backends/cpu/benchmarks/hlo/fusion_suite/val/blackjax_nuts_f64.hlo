@@ -1,0 +1,1922 @@
+HloModule jit_f, entry_computation_layout={(f64[32]{0}, f64[2048,32]{1,0}, f64[2048]{0})->(f64[32]{0}, s64[])}
+
+region_0.1 {
+  reduce_sum.3 = f64[] parameter(0)
+  reduce_sum.4 = f64[] parameter(1)
+  ROOT reduce_sum.5 = f64[] add(reduce_sum.3, reduce_sum.4)
+}
+
+region_1.2 {
+  reduce_sum.10 = f64[] parameter(0)
+  reduce_sum.11 = f64[] parameter(1)
+  ROOT reduce_sum.12 = f64[] add(reduce_sum.10, reduce_sum.11)
+}
+
+region_2.3 {
+  arg_tuple.1 = (s64[], s64[], u32[2]{0}, u32[2]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) parameter(0)
+  get-tuple-element.9 = s64[] get-tuple-element(arg_tuple.1), index=0
+  constant.23 = s64[] constant(1)
+  add.30 = s64[] add(get-tuple-element.9, constant.23)
+  get-tuple-element.10 = s64[] get-tuple-element(arg_tuple.1), index=1
+  add.18 = s64[] add(get-tuple-element.10, constant.23)
+  get-tuple-element.11 = u32[2]{0} get-tuple-element(arg_tuple.1), index=2
+  get-tuple-element.12 = u32[2]{0} get-tuple-element(arg_tuple.1), index=3
+  add.19 = u32[2]{0} add(get-tuple-element.11, get-tuple-element.12)
+  get-tuple-element.16 = u32[4]{0} get-tuple-element(arg_tuple.1), index=7
+  unstack.12 = u32[1]{0} slice(get-tuple-element.16), slice={[0:1]}
+  unstack.13 = u32[] reshape(unstack.12)
+  shift_left.8 = u32[2]{0} broadcast(unstack.13), dimensions={}
+  shift_left.9 = u32[2]{0} shift-left(get-tuple-element.12, shift_left.8)
+  constant.22 = u32[] constant(32)
+  sub.8 = u32[] subtract(constant.22, unstack.13)
+  shift_right_logical.9 = u32[2]{0} broadcast(sub.8), dimensions={}
+  shift_right_logical.10 = u32[2]{0} shift-right-logical(get-tuple-element.12, shift_right_logical.9)
+  or.4 = u32[2]{0} or(shift_left.9, shift_right_logical.10)
+  xor.6 = u32[2]{0} xor(add.19, or.4)
+  add.20 = u32[2]{0} add(add.19, xor.6)
+  unstack.14 = u32[1]{0} slice(get-tuple-element.16), slice={[1:2]}
+  unstack.15 = u32[] reshape(unstack.14)
+  shift_left.10 = u32[2]{0} broadcast(unstack.15), dimensions={}
+  shift_left.11 = u32[2]{0} shift-left(xor.6, shift_left.10)
+  sub.9 = u32[] subtract(constant.22, unstack.15)
+  shift_right_logical.11 = u32[2]{0} broadcast(sub.9), dimensions={}
+  shift_right_logical.12 = u32[2]{0} shift-right-logical(xor.6, shift_right_logical.11)
+  or.5 = u32[2]{0} or(shift_left.11, shift_right_logical.12)
+  xor.7 = u32[2]{0} xor(add.20, or.5)
+  add.21 = u32[2]{0} add(add.20, xor.7)
+  unstack.16 = u32[1]{0} slice(get-tuple-element.16), slice={[2:3]}
+  unstack.17 = u32[] reshape(unstack.16)
+  shift_left.12 = u32[2]{0} broadcast(unstack.17), dimensions={}
+  shift_left.13 = u32[2]{0} shift-left(xor.7, shift_left.12)
+  sub.10 = u32[] subtract(constant.22, unstack.17)
+  shift_right_logical.13 = u32[2]{0} broadcast(sub.10), dimensions={}
+  shift_right_logical.14 = u32[2]{0} shift-right-logical(xor.7, shift_right_logical.13)
+  or.6 = u32[2]{0} or(shift_left.13, shift_right_logical.14)
+  xor.8 = u32[2]{0} xor(add.21, or.6)
+  add.22 = u32[2]{0} add(add.21, xor.8)
+  get-tuple-element.13 = u32[] get-tuple-element(arg_tuple.1), index=4
+  add.23 = u32[2]{0} broadcast(get-tuple-element.13), dimensions={}
+  add.24 = u32[2]{0} add(add.22, add.23)
+  unstack.18 = u32[1]{0} slice(get-tuple-element.16), slice={[3:4]}
+  unstack.19 = u32[] reshape(unstack.18)
+  shift_left.14 = u32[2]{0} broadcast(unstack.19), dimensions={}
+  shift_left.15 = u32[2]{0} shift-left(xor.8, shift_left.14)
+  sub.11 = u32[] subtract(constant.22, unstack.19)
+  shift_right_logical.15 = u32[2]{0} broadcast(sub.11), dimensions={}
+  shift_right_logical.16 = u32[2]{0} shift-right-logical(xor.8, shift_right_logical.15)
+  or.7 = u32[2]{0} or(shift_left.15, shift_right_logical.16)
+  xor.9 = u32[2]{0} xor(add.22, or.7)
+  get-tuple-element.14 = u32[] get-tuple-element(arg_tuple.1), index=5
+  add.25 = u32[2]{0} broadcast(get-tuple-element.14), dimensions={}
+  add.26 = u32[2]{0} add(xor.9, add.25)
+  add.27 = s64[] add(get-tuple-element.10, constant.23)
+  convert_element_type.2 = u32[] convert(add.27)
+  add.28 = u32[2]{0} broadcast(convert_element_type.2), dimensions={}
+  add.29 = u32[2]{0} add(add.26, add.28)
+  get-tuple-element.15 = u32[] get-tuple-element(arg_tuple.1), index=6
+  get-tuple-element.17 = u32[4]{0} get-tuple-element(arg_tuple.1), index=8
+  ROOT tuple.1 = (s64[], s64[], u32[2]{0}, u32[2]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) tuple(add.30, add.18, add.24, add.29, get-tuple-element.14, get-tuple-element.15, get-tuple-element.13, get-tuple-element.17, get-tuple-element.16)
+}
+
+region_3.4 {
+  arg_tuple.3 = (s64[], s64[], u32[2]{0}, u32[2]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) parameter(0)
+  get-tuple-element.28 = s64[] get-tuple-element(arg_tuple.3), index=1
+  get-tuple-element.29 = u32[2]{0} get-tuple-element(arg_tuple.3), index=2
+  get-tuple-element.30 = u32[2]{0} get-tuple-element(arg_tuple.3), index=3
+  get-tuple-element.31 = u32[] get-tuple-element(arg_tuple.3), index=4
+  get-tuple-element.32 = u32[] get-tuple-element(arg_tuple.3), index=5
+  get-tuple-element.33 = u32[] get-tuple-element(arg_tuple.3), index=6
+  get-tuple-element.34 = u32[4]{0} get-tuple-element(arg_tuple.3), index=7
+  get-tuple-element.35 = u32[4]{0} get-tuple-element(arg_tuple.3), index=8
+  get-tuple-element.27 = s64[] get-tuple-element(arg_tuple.3), index=0
+  constant.25 = s64[] constant(5)
+  ROOT lt.1 = pred[] compare(get-tuple-element.27, constant.25), direction=LT
+}
+
+threefry2x32.5 {
+  constant.26 = s64[] constant(0)
+  build_kernel__locals__kernel.6 = u32[2]{0} parameter(2)
+  build_kernel__locals__kernel.4 = u32[] parameter(0)
+  add.31 = u32[2]{0} broadcast(build_kernel__locals__kernel.4), dimensions={}
+  add.32 = u32[2]{0} add(build_kernel__locals__kernel.6, add.31)
+  build_kernel__locals__kernel.7 = u32[2]{0} parameter(3)
+  build_kernel__locals__kernel.5 = u32[] parameter(1)
+  add.33 = u32[2]{0} broadcast(build_kernel__locals__kernel.5), dimensions={}
+  add.34 = u32[2]{0} add(build_kernel__locals__kernel.7, add.33)
+  xor.10 = u32[] xor(build_kernel__locals__kernel.4, build_kernel__locals__kernel.5)
+  constant.27 = u32[] constant(466688986)
+  xor.11 = u32[] xor(xor.10, constant.27)
+  constant.28 = u32[4]{0} constant({13, 15, 26, 6})
+  constant.29 = u32[4]{0} constant({17, 29, 16, 24})
+  while.11 = (s64[], s64[], u32[2]{0}, u32[2]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) tuple(constant.26, constant.26, add.32, add.34, build_kernel__locals__kernel.5, xor.11, build_kernel__locals__kernel.4, constant.28, constant.29)
+  while.12 = (s64[], s64[], u32[2]{0}, u32[2]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) while(while.11), condition=region_3.4, body=region_2.3
+  while.13 = s64[] get-tuple-element(while.12), index=0
+  while.14 = s64[] get-tuple-element(while.12), index=1
+  while.17 = u32[] get-tuple-element(while.12), index=4
+  while.18 = u32[] get-tuple-element(while.12), index=5
+  while.19 = u32[] get-tuple-element(while.12), index=6
+  while.20 = u32[4]{0} get-tuple-element(while.12), index=7
+  while.21 = u32[4]{0} get-tuple-element(while.12), index=8
+  while.15 = u32[2]{0} get-tuple-element(while.12), index=2
+  while.16 = u32[2]{0} get-tuple-element(while.12), index=3
+  ROOT tuple.3 = (u32[2]{0}, u32[2]{0}) tuple(while.15, while.16)
+}
+
+_threefry_split.6 {
+  Arg_0.1 = u32[2]{0} parameter(0)
+  unstack.20 = u32[1]{0} slice(Arg_0.1), slice={[0:1]}
+  unstack.21 = u32[] reshape(unstack.20)
+  unstack.22 = u32[1]{0} slice(Arg_0.1), slice={[1:2]}
+  unstack.23 = u32[] reshape(unstack.22)
+  iota_2x32_shape.4 = u64[2]{0} iota(), iota_dimension=0
+  constant.30 = u64[] constant(32)
+  broadcast.7 = u64[2]{0} broadcast(constant.30), dimensions={}
+  iota_2x32_shape.5 = u64[2]{0} shift-right-logical(iota_2x32_shape.4, broadcast.7)
+  iota_2x32_shape.7 = u32[2]{0} convert(iota_2x32_shape.5)
+  iota_2x32_shape.6 = u32[2]{0} convert(iota_2x32_shape.4)
+  build_kernel__locals__kernel.11 = (u32[2]{0}, u32[2]{0}) call(unstack.21, unstack.23, iota_2x32_shape.7, iota_2x32_shape.6), to_apply=threefry2x32.5
+  build_kernel__locals__kernel.12 = u32[2]{0} get-tuple-element(build_kernel__locals__kernel.11), index=0
+  stack.3 = u32[2,1]{1,0} reshape(build_kernel__locals__kernel.12)
+  build_kernel__locals__kernel.13 = u32[2]{0} get-tuple-element(build_kernel__locals__kernel.11), index=1
+  stack.4 = u32[2,1]{1,0} reshape(build_kernel__locals__kernel.13)
+  ROOT stack.5 = u32[2,2]{1,0} concatenate(stack.3, stack.4), dimensions={1}
+}
+
+region_4.7 {
+  arg_tuple.5 = (s64[], s64[], u32[32]{0}, u32[32]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) parameter(0)
+  get-tuple-element.45 = s64[] get-tuple-element(arg_tuple.5), index=0
+  constant.111 = s64[] constant(1)
+  add.64 = s64[] add(get-tuple-element.45, constant.111)
+  get-tuple-element.46 = s64[] get-tuple-element(arg_tuple.5), index=1
+  add.52 = s64[] add(get-tuple-element.46, constant.111)
+  get-tuple-element.47 = u32[32]{0} get-tuple-element(arg_tuple.5), index=2
+  get-tuple-element.48 = u32[32]{0} get-tuple-element(arg_tuple.5), index=3
+  add.53 = u32[32]{0} add(get-tuple-element.47, get-tuple-element.48)
+  get-tuple-element.52 = u32[4]{0} get-tuple-element(arg_tuple.5), index=7
+  unstack.40 = u32[1]{0} slice(get-tuple-element.52), slice={[0:1]}
+  unstack.41 = u32[] reshape(unstack.40)
+  shift_left.24 = u32[32]{0} broadcast(unstack.41), dimensions={}
+  shift_left.25 = u32[32]{0} shift-left(get-tuple-element.48, shift_left.24)
+  constant.110 = u32[] constant(32)
+  sub.17 = u32[] subtract(constant.110, unstack.41)
+  shift_right_logical.26 = u32[32]{0} broadcast(sub.17), dimensions={}
+  shift_right_logical.27 = u32[32]{0} shift-right-logical(get-tuple-element.48, shift_right_logical.26)
+  or.13 = u32[32]{0} or(shift_left.25, shift_right_logical.27)
+  xor.18 = u32[32]{0} xor(add.53, or.13)
+  add.54 = u32[32]{0} add(add.53, xor.18)
+  unstack.42 = u32[1]{0} slice(get-tuple-element.52), slice={[1:2]}
+  unstack.43 = u32[] reshape(unstack.42)
+  shift_left.26 = u32[32]{0} broadcast(unstack.43), dimensions={}
+  shift_left.27 = u32[32]{0} shift-left(xor.18, shift_left.26)
+  sub.18 = u32[] subtract(constant.110, unstack.43)
+  shift_right_logical.28 = u32[32]{0} broadcast(sub.18), dimensions={}
+  shift_right_logical.29 = u32[32]{0} shift-right-logical(xor.18, shift_right_logical.28)
+  or.14 = u32[32]{0} or(shift_left.27, shift_right_logical.29)
+  xor.19 = u32[32]{0} xor(add.54, or.14)
+  add.55 = u32[32]{0} add(add.54, xor.19)
+  unstack.44 = u32[1]{0} slice(get-tuple-element.52), slice={[2:3]}
+  unstack.45 = u32[] reshape(unstack.44)
+  shift_left.28 = u32[32]{0} broadcast(unstack.45), dimensions={}
+  shift_left.29 = u32[32]{0} shift-left(xor.19, shift_left.28)
+  sub.19 = u32[] subtract(constant.110, unstack.45)
+  shift_right_logical.30 = u32[32]{0} broadcast(sub.19), dimensions={}
+  shift_right_logical.31 = u32[32]{0} shift-right-logical(xor.19, shift_right_logical.30)
+  or.15 = u32[32]{0} or(shift_left.29, shift_right_logical.31)
+  xor.20 = u32[32]{0} xor(add.55, or.15)
+  add.56 = u32[32]{0} add(add.55, xor.20)
+  get-tuple-element.49 = u32[] get-tuple-element(arg_tuple.5), index=4
+  add.57 = u32[32]{0} broadcast(get-tuple-element.49), dimensions={}
+  add.58 = u32[32]{0} add(add.56, add.57)
+  unstack.46 = u32[1]{0} slice(get-tuple-element.52), slice={[3:4]}
+  unstack.47 = u32[] reshape(unstack.46)
+  shift_left.30 = u32[32]{0} broadcast(unstack.47), dimensions={}
+  shift_left.31 = u32[32]{0} shift-left(xor.20, shift_left.30)
+  sub.20 = u32[] subtract(constant.110, unstack.47)
+  shift_right_logical.32 = u32[32]{0} broadcast(sub.20), dimensions={}
+  shift_right_logical.33 = u32[32]{0} shift-right-logical(xor.20, shift_right_logical.32)
+  or.16 = u32[32]{0} or(shift_left.31, shift_right_logical.33)
+  xor.21 = u32[32]{0} xor(add.56, or.16)
+  get-tuple-element.50 = u32[] get-tuple-element(arg_tuple.5), index=5
+  add.59 = u32[32]{0} broadcast(get-tuple-element.50), dimensions={}
+  add.60 = u32[32]{0} add(xor.21, add.59)
+  add.61 = s64[] add(get-tuple-element.46, constant.111)
+  convert_element_type.4 = u32[] convert(add.61)
+  add.62 = u32[32]{0} broadcast(convert_element_type.4), dimensions={}
+  add.63 = u32[32]{0} add(add.60, add.62)
+  get-tuple-element.51 = u32[] get-tuple-element(arg_tuple.5), index=6
+  get-tuple-element.53 = u32[4]{0} get-tuple-element(arg_tuple.5), index=8
+  ROOT tuple.5 = (s64[], s64[], u32[32]{0}, u32[32]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) tuple(add.64, add.52, add.58, add.63, get-tuple-element.50, get-tuple-element.51, get-tuple-element.49, get-tuple-element.53, get-tuple-element.52)
+}
+
+region_5.8 {
+  arg_tuple.7 = (s64[], s64[], u32[32]{0}, u32[32]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) parameter(0)
+  get-tuple-element.64 = s64[] get-tuple-element(arg_tuple.7), index=1
+  get-tuple-element.65 = u32[32]{0} get-tuple-element(arg_tuple.7), index=2
+  get-tuple-element.66 = u32[32]{0} get-tuple-element(arg_tuple.7), index=3
+  get-tuple-element.67 = u32[] get-tuple-element(arg_tuple.7), index=4
+  get-tuple-element.68 = u32[] get-tuple-element(arg_tuple.7), index=5
+  get-tuple-element.69 = u32[] get-tuple-element(arg_tuple.7), index=6
+  get-tuple-element.70 = u32[4]{0} get-tuple-element(arg_tuple.7), index=7
+  get-tuple-element.71 = u32[4]{0} get-tuple-element(arg_tuple.7), index=8
+  get-tuple-element.63 = s64[] get-tuple-element(arg_tuple.7), index=0
+  constant.113 = s64[] constant(5)
+  ROOT lt.3 = pred[] compare(get-tuple-element.63, constant.113), direction=LT
+}
+
+threefry2x32_0.9 {
+  constant.114 = s64[] constant(0)
+  Arg_2.2 = u32[32]{0} parameter(2)
+  Arg_0.6 = u32[] parameter(0)
+  add.65 = u32[32]{0} broadcast(Arg_0.6), dimensions={}
+  add.66 = u32[32]{0} add(Arg_2.2, add.65)
+  Arg_3.1 = u32[32]{0} parameter(3)
+  Arg_1.2 = u32[] parameter(1)
+  add.67 = u32[32]{0} broadcast(Arg_1.2), dimensions={}
+  add.68 = u32[32]{0} add(Arg_3.1, add.67)
+  xor.22 = u32[] xor(Arg_0.6, Arg_1.2)
+  constant.115 = u32[] constant(466688986)
+  xor.23 = u32[] xor(xor.22, constant.115)
+  constant.116 = u32[4]{0} constant({13, 15, 26, 6})
+  constant.117 = u32[4]{0} constant({17, 29, 16, 24})
+  while.33 = (s64[], s64[], u32[32]{0}, u32[32]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) tuple(constant.114, constant.114, add.66, add.68, Arg_1.2, xor.23, Arg_0.6, constant.116, constant.117)
+  while.34 = (s64[], s64[], u32[32]{0}, u32[32]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) while(while.33), condition=region_5.8, body=region_4.7
+  while.35 = s64[] get-tuple-element(while.34), index=0
+  while.36 = s64[] get-tuple-element(while.34), index=1
+  while.39 = u32[] get-tuple-element(while.34), index=4
+  while.40 = u32[] get-tuple-element(while.34), index=5
+  while.41 = u32[] get-tuple-element(while.34), index=6
+  while.42 = u32[4]{0} get-tuple-element(while.34), index=7
+  while.43 = u32[4]{0} get-tuple-element(while.34), index=8
+  while.37 = u32[32]{0} get-tuple-element(while.34), index=2
+  while.38 = u32[32]{0} get-tuple-element(while.34), index=3
+  ROOT tuple.7 = (u32[32]{0}, u32[32]{0}) tuple(while.37, while.38)
+}
+
+_uniform.10 {
+  Arg_1.3 = f64[] parameter(1)
+  broadcast_in_dim.4 = f64[1]{0} reshape(Arg_1.3)
+  max.5 = f64[1]{0} broadcast(broadcast_in_dim.4), dimensions={0}
+  max.6 = f64[] reshape(max.5)
+  max.7 = f64[32]{0} broadcast(max.6), dimensions={}
+  Arg_0.7 = u32[2]{0} parameter(0)
+  unstack.48 = u32[1]{0} slice(Arg_0.7), slice={[0:1]}
+  unstack.49 = u32[] reshape(unstack.48)
+  unstack.50 = u32[1]{0} slice(Arg_0.7), slice={[1:2]}
+  unstack.51 = u32[] reshape(unstack.50)
+  iota_2x32_shape.12 = u64[32]{0} iota(), iota_dimension=0
+  constant.121 = u64[] constant(32)
+  broadcast.9 = u64[32]{0} broadcast(constant.121), dimensions={}
+  iota_2x32_shape.13 = u64[32]{0} shift-right-logical(iota_2x32_shape.12, broadcast.9)
+  iota_2x32_shape.15 = u32[32]{0} convert(iota_2x32_shape.13)
+  iota_2x32_shape.14 = u32[32]{0} convert(iota_2x32_shape.12)
+  call.1 = (u32[32]{0}, u32[32]{0}) call(unstack.49, unstack.51, iota_2x32_shape.15, iota_2x32_shape.14), to_apply=threefry2x32_0.9
+  get-tuple-element.74 = u32[32]{0} get-tuple-element(call.1), index=0
+  convert_element_type.7 = u64[32]{0} convert(get-tuple-element.74)
+  shift_left.33 = u64[32]{0} shift-left(convert_element_type.7, broadcast.9)
+  get-tuple-element.75 = u32[32]{0} get-tuple-element(call.1), index=1
+  convert_element_type.8 = u64[32]{0} convert(get-tuple-element.75)
+  or.20 = u64[32]{0} or(shift_left.33, convert_element_type.8)
+  constant.120 = u64[] constant(12)
+  shift_right_logical.35 = u64[32]{0} broadcast(constant.120), dimensions={}
+  shift_right_logical.36 = u64[32]{0} shift-right-logical(or.20, shift_right_logical.35)
+  constant.119 = u64[] constant(4607182418800017408)
+  or.19 = u64[32]{0} broadcast(constant.119), dimensions={}
+  or.21 = u64[32]{0} or(shift_right_logical.36, or.19)
+  bitcast_convert_type.1 = f64[32]{0} bitcast-convert(or.21)
+  constant.118 = f64[] constant(1)
+  sub.23 = f64[32]{0} broadcast(constant.118), dimensions={}
+  sub.24 = f64[32]{0} subtract(bitcast_convert_type.1, sub.23)
+  Arg_2.3 = f64[] parameter(2)
+  broadcast_in_dim.5 = f64[1]{0} reshape(Arg_2.3)
+  sub.25 = f64[1]{0} subtract(broadcast_in_dim.5, broadcast_in_dim.4)
+  mul.8 = f64[1]{0} broadcast(sub.25), dimensions={0}
+  mul.9 = f64[] reshape(mul.8)
+  mul.10 = f64[32]{0} broadcast(mul.9), dimensions={}
+  mul.11 = f64[32]{0} multiply(sub.24, mul.10)
+  add.73 = f64[1]{0} broadcast(broadcast_in_dim.4), dimensions={0}
+  add.74 = f64[] reshape(add.73)
+  add.75 = f64[32]{0} broadcast(add.74), dimensions={}
+  add.76 = f64[32]{0} add(mul.11, add.75)
+  ROOT max.8 = f64[32]{0} maximum(max.7, add.76)
+}
+
+_normal_real.11 {
+  Arg_0.8 = u32[2]{0} parameter(0)
+  constant.189 = f64[] constant(-0.99999999999999989)
+  constant.190 = f64[] constant(1)
+  jit__uniform_.1 = f64[32]{0} call(Arg_0.8, constant.189, constant.190), to_apply=_uniform.10
+  erf_inv.332 = f64[32]{0} abs(jit__uniform_.1)
+  constant.124 = f64[] constant(1)
+  erf_inv.169 = f64[32]{0} broadcast(constant.124), dimensions={}
+  erf_inv.333 = pred[32]{0} compare(erf_inv.332, erf_inv.169), direction=EQ
+  constant.123 = f64[] constant(inf)
+  erf_inv.168 = f64[32]{0} broadcast(constant.123), dimensions={}
+  erf_inv.334 = f64[32]{0} multiply(jit__uniform_.1, erf_inv.168)
+  erf_inv.234 = f64[32]{0} negate(jit__uniform_.1)
+  erf_inv.235 = f64[32]{0} multiply(jit__uniform_.1, erf_inv.234)
+  erf_inv.236 = f64[32]{0} log-plus-one(erf_inv.235)
+  erf_inv.237 = f64[32]{0} negate(erf_inv.236)
+  constant.188 = f64[] constant(6.25)
+  erf_inv.233 = f64[32]{0} broadcast(constant.188), dimensions={}
+  erf_inv.238 = pred[32]{0} compare(erf_inv.237, erf_inv.233), direction=LT
+  constant.187 = f64[] constant(16)
+  erf_inv.232 = f64[32]{0} broadcast(constant.187), dimensions={}
+  erf_inv.239 = pred[32]{0} compare(erf_inv.237, erf_inv.232), direction=LT
+  constant.130 = f64[] constant(0.00018673420803405714)
+  erf_inv.175 = f64[32]{0} broadcast(constant.130), dimensions={}
+  constant.129 = f64[] constant(3.0838856104922208)
+  erf_inv.174 = f64[32]{0} broadcast(constant.129), dimensions={}
+  erf_inv.315 = f64[32]{0} select(erf_inv.238, erf_inv.175, erf_inv.174)
+  constant.132 = f64[] constant(-1.3882523362786469e-05)
+  erf_inv.177 = f64[32]{0} broadcast(constant.132), dimensions={}
+  constant.131 = f64[] constant(1.0052589676941592)
+  erf_inv.176 = f64[32]{0} broadcast(constant.131), dimensions={}
+  erf_inv.311 = f64[32]{0} select(erf_inv.238, erf_inv.177, erf_inv.176)
+  constant.135 = f64[] constant(-1.3654692000834679e-06)
+  erf_inv.180 = f64[32]{0} broadcast(constant.135), dimensions={}
+  constant.134 = f64[] constant(0.0053709145535900636)
+  erf_inv.179 = f64[32]{0} broadcast(constant.134), dimensions={}
+  erf_inv.307 = f64[32]{0} select(erf_inv.238, erf_inv.180, erf_inv.179)
+  constant.133 = f64[] constant(4.8499064014085844)
+  erf_inv.178 = f64[32]{0} broadcast(constant.133), dimensions={}
+  erf_inv.308 = f64[32]{0} select(erf_inv.239, erf_inv.307, erf_inv.178)
+  constant.138 = f64[] constant(4.2347877827932404e-07)
+  erf_inv.183 = f64[32]{0} broadcast(constant.138), dimensions={}
+  constant.137 = f64[] constant(-0.0037512085075692412)
+  erf_inv.182 = f64[32]{0} broadcast(constant.137), dimensions={}
+  erf_inv.303 = f64[32]{0} select(erf_inv.238, erf_inv.183, erf_inv.182)
+  constant.136 = f64[] constant(1.0103004648645344)
+  erf_inv.181 = f64[32]{0} broadcast(constant.136), dimensions={}
+  erf_inv.304 = f64[32]{0} select(erf_inv.239, erf_inv.303, erf_inv.181)
+  constant.141 = f64[] constant(-2.9070369957882005e-08)
+  erf_inv.186 = f64[32]{0} broadcast(constant.141), dimensions={}
+  constant.140 = f64[] constant(0.0024914420961078508)
+  erf_inv.185 = f64[32]{0} broadcast(constant.140), dimensions={}
+  erf_inv.299 = f64[32]{0} select(erf_inv.238, erf_inv.186, erf_inv.185)
+  constant.139 = f64[] constant(-0.00013871931833623122)
+  erf_inv.184 = f64[32]{0} broadcast(constant.139), dimensions={}
+  erf_inv.300 = f64[32]{0} select(erf_inv.239, erf_inv.299, erf_inv.184)
+  constant.144 = f64[] constant(-4.1126339803469837e-09)
+  erf_inv.189 = f64[32]{0} broadcast(constant.144), dimensions={}
+  constant.143 = f64[] constant(-0.0016882755560235047)
+  erf_inv.188 = f64[32]{0} broadcast(constant.143), dimensions={}
+  erf_inv.295 = f64[32]{0} select(erf_inv.238, erf_inv.189, erf_inv.188)
+  constant.142 = f64[] constant(-0.00021503011930044477)
+  erf_inv.187 = f64[32]{0} broadcast(constant.142), dimensions={}
+  erf_inv.296 = f64[32]{0} select(erf_inv.239, erf_inv.295, erf_inv.187)
+  constant.147 = f64[] constant(1.0512122733215323e-09)
+  erf_inv.192 = f64[32]{0} broadcast(constant.147), dimensions={}
+  constant.146 = f64[] constant(0.0009532893797373805)
+  erf_inv.191 = f64[32]{0} broadcast(constant.146), dimensions={}
+  erf_inv.291 = f64[32]{0} select(erf_inv.238, erf_inv.192, erf_inv.191)
+  constant.145 = f64[] constant(7.5995277030017761e-05)
+  erf_inv.190 = f64[32]{0} broadcast(constant.145), dimensions={}
+  erf_inv.292 = f64[32]{0} select(erf_inv.239, erf_inv.291, erf_inv.190)
+  constant.150 = f64[] constant(-5.4154120542946279e-11)
+  erf_inv.195 = f64[32]{0} broadcast(constant.150), dimensions={}
+  constant.149 = f64[] constant(-0.00035503752036284748)
+  erf_inv.194 = f64[32]{0} broadcast(constant.149), dimensions={}
+  erf_inv.287 = f64[32]{0} select(erf_inv.238, erf_inv.195, erf_inv.194)
+  constant.148 = f64[] constant(-1.9681778105531671e-05)
+  erf_inv.193 = f64[32]{0} broadcast(constant.148), dimensions={}
+  erf_inv.288 = f64[32]{0} select(erf_inv.239, erf_inv.287, erf_inv.193)
+  constant.153 = f64[] constant(-1.2975133253453532e-11)
+  erf_inv.198 = f64[32]{0} broadcast(constant.153), dimensions={}
+  constant.152 = f64[] constant(2.4031110387097894e-05)
+  erf_inv.197 = f64[32]{0} broadcast(constant.152), dimensions={}
+  erf_inv.283 = f64[32]{0} select(erf_inv.238, erf_inv.198, erf_inv.197)
+  constant.151 = f64[] constant(4.5260625972231537e-06)
+  erf_inv.196 = f64[32]{0} broadcast(constant.151), dimensions={}
+  erf_inv.284 = f64[32]{0} select(erf_inv.239, erf_inv.283, erf_inv.196)
+  constant.156 = f64[] constant(2.6335093153082323e-12)
+  erf_inv.201 = f64[32]{0} broadcast(constant.156), dimensions={}
+  constant.155 = f64[] constant(6.8284851459573175e-05)
+  erf_inv.200 = f64[32]{0} broadcast(constant.155), dimensions={}
+  erf_inv.279 = f64[32]{0} select(erf_inv.238, erf_inv.201, erf_inv.200)
+  constant.154 = f64[] constant(-9.9298272942317e-07)
+  erf_inv.199 = f64[32]{0} broadcast(constant.154), dimensions={}
+  erf_inv.280 = f64[32]{0} select(erf_inv.239, erf_inv.279, erf_inv.199)
+  constant.159 = f64[] constant(-8.1519341976054722e-14)
+  erf_inv.204 = f64[32]{0} broadcast(constant.159), dimensions={}
+  constant.158 = f64[] constant(-4.7318229009055734e-05)
+  erf_inv.203 = f64[32]{0} broadcast(constant.158), dimensions={}
+  erf_inv.275 = f64[32]{0} select(erf_inv.238, erf_inv.204, erf_inv.203)
+  constant.157 = f64[] constant(2.2900482228026655e-07)
+  erf_inv.202 = f64[32]{0} broadcast(constant.157), dimensions={}
+  erf_inv.276 = f64[32]{0} select(erf_inv.239, erf_inv.275, erf_inv.202)
+  constant.162 = f64[] constant(-4.0545662729752069e-14)
+  erf_inv.207 = f64[32]{0} broadcast(constant.162), dimensions={}
+  constant.161 = f64[] constant(1.2475304481671779e-05)
+  erf_inv.206 = f64[32]{0} broadcast(constant.161), dimensions={}
+  erf_inv.271 = f64[32]{0} select(erf_inv.238, erf_inv.207, erf_inv.206)
+  constant.160 = f64[] constant(-6.7711997758452339e-08)
+  erf_inv.205 = f64[32]{0} broadcast(constant.160), dimensions={}
+  erf_inv.272 = f64[32]{0} select(erf_inv.239, erf_inv.271, erf_inv.205)
+  constant.165 = f64[] constant(6.6376381343583238e-15)
+  erf_inv.210 = f64[32]{0} broadcast(constant.165), dimensions={}
+  constant.164 = f64[] constant(2.9234449089955446e-06)
+  erf_inv.209 = f64[32]{0} broadcast(constant.164), dimensions={}
+  erf_inv.267 = f64[32]{0} select(erf_inv.238, erf_inv.210, erf_inv.209)
+  constant.163 = f64[] constant(2.9147953450901081e-08)
+  erf_inv.208 = f64[32]{0} broadcast(constant.163), dimensions={}
+  erf_inv.268 = f64[32]{0} select(erf_inv.239, erf_inv.267, erf_inv.208)
+  constant.168 = f64[] constant(2.0972767875968562e-17)
+  erf_inv.213 = f64[32]{0} broadcast(constant.168), dimensions={}
+  constant.167 = f64[] constant(-4.013867526981546e-06)
+  erf_inv.212 = f64[32]{0} broadcast(constant.167), dimensions={}
+  erf_inv.263 = f64[32]{0} select(erf_inv.238, erf_inv.213, erf_inv.212)
+  constant.166 = f64[] constant(-1.496002662714924e-08)
+  erf_inv.211 = f64[32]{0} broadcast(constant.166), dimensions={}
+  erf_inv.264 = f64[32]{0} select(erf_inv.239, erf_inv.263, erf_inv.211)
+  constant.171 = f64[] constant(-1.3331716628546209e-16)
+  erf_inv.216 = f64[32]{0} broadcast(constant.171), dimensions={}
+  constant.170 = f64[] constant(1.5027403968909828e-06)
+  erf_inv.215 = f64[32]{0} broadcast(constant.170), dimensions={}
+  erf_inv.259 = f64[32]{0} select(erf_inv.238, erf_inv.216, erf_inv.215)
+  constant.169 = f64[] constant(7.61570120807834e-09)
+  erf_inv.214 = f64[32]{0} broadcast(constant.169), dimensions={}
+  erf_inv.260 = f64[32]{0} select(erf_inv.239, erf_inv.259, erf_inv.214)
+  constant.174 = f64[] constant(1.1157877678025181e-17)
+  erf_inv.219 = f64[32]{0} broadcast(constant.174), dimensions={}
+  constant.173 = f64[] constant(1.8239629214389228e-08)
+  erf_inv.218 = f64[32]{0} broadcast(constant.173), dimensions={}
+  erf_inv.255 = f64[32]{0} select(erf_inv.238, erf_inv.219, erf_inv.218)
+  constant.172 = f64[] constant(-3.789465440126737e-09)
+  erf_inv.217 = f64[32]{0} broadcast(constant.172), dimensions={}
+  erf_inv.256 = f64[32]{0} select(erf_inv.239, erf_inv.255, erf_inv.217)
+  constant.177 = f64[] constant(1.28584807152564e-18)
+  erf_inv.222 = f64[32]{0} broadcast(constant.177), dimensions={}
+  constant.176 = f64[] constant(-2.7517406297064545e-07)
+  erf_inv.221 = f64[32]{0} broadcast(constant.176), dimensions={}
+  erf_inv.251 = f64[32]{0} select(erf_inv.238, erf_inv.222, erf_inv.221)
+  constant.175 = f64[] constant(1.5076572693500548e-09)
+  erf_inv.220 = f64[32]{0} broadcast(constant.175), dimensions={}
+  erf_inv.252 = f64[32]{0} select(erf_inv.239, erf_inv.251, erf_inv.220)
+  constant.180 = f64[] constant(-1.6850591381820166e-19)
+  erf_inv.225 = f64[32]{0} broadcast(constant.180), dimensions={}
+  constant.179 = f64[] constant(9.0756561938885391e-08)
+  erf_inv.224 = f64[32]{0} broadcast(constant.179), dimensions={}
+  erf_inv.247 = f64[32]{0} select(erf_inv.238, erf_inv.225, erf_inv.224)
+  constant.178 = f64[] constant(-2.5556418169965252e-10)
+  erf_inv.223 = f64[32]{0} broadcast(constant.178), dimensions={}
+  erf_inv.248 = f64[32]{0} select(erf_inv.239, erf_inv.247, erf_inv.223)
+  constant.183 = f64[] constant(-3.64441206401782e-21)
+  erf_inv.228 = f64[32]{0} broadcast(constant.183), dimensions={}
+  constant.182 = f64[] constant(2.2137376921775787e-09)
+  erf_inv.227 = f64[32]{0} broadcast(constant.182), dimensions={}
+  erf_inv.245 = f64[32]{0} select(erf_inv.238, erf_inv.228, erf_inv.227)
+  constant.181 = f64[] constant(-2.7109920616438573e-11)
+  erf_inv.226 = f64[32]{0} broadcast(constant.181), dimensions={}
+  erf_inv.246 = f64[32]{0} select(erf_inv.239, erf_inv.245, erf_inv.226)
+  constant.186 = f64[] constant(3.125)
+  erf_inv.231 = f64[32]{0} broadcast(constant.186), dimensions={}
+  erf_inv.241 = f64[32]{0} subtract(erf_inv.237, erf_inv.231)
+  erf_inv.240 = f64[32]{0} sqrt(erf_inv.237)
+  constant.185 = f64[] constant(3.25)
+  erf_inv.230 = f64[32]{0} broadcast(constant.185), dimensions={}
+  constant.184 = f64[] constant(5)
+  erf_inv.229 = f64[32]{0} broadcast(constant.184), dimensions={}
+  erf_inv.242 = f64[32]{0} select(erf_inv.239, erf_inv.230, erf_inv.229)
+  erf_inv.243 = f64[32]{0} subtract(erf_inv.240, erf_inv.242)
+  erf_inv.244 = f64[32]{0} select(erf_inv.238, erf_inv.241, erf_inv.243)
+  erf_inv.249 = f64[32]{0} multiply(erf_inv.246, erf_inv.244)
+  erf_inv.250 = f64[32]{0} add(erf_inv.248, erf_inv.249)
+  erf_inv.253 = f64[32]{0} multiply(erf_inv.250, erf_inv.244)
+  erf_inv.254 = f64[32]{0} add(erf_inv.252, erf_inv.253)
+  erf_inv.257 = f64[32]{0} multiply(erf_inv.254, erf_inv.244)
+  erf_inv.258 = f64[32]{0} add(erf_inv.256, erf_inv.257)
+  erf_inv.261 = f64[32]{0} multiply(erf_inv.258, erf_inv.244)
+  erf_inv.262 = f64[32]{0} add(erf_inv.260, erf_inv.261)
+  erf_inv.265 = f64[32]{0} multiply(erf_inv.262, erf_inv.244)
+  erf_inv.266 = f64[32]{0} add(erf_inv.264, erf_inv.265)
+  erf_inv.269 = f64[32]{0} multiply(erf_inv.266, erf_inv.244)
+  erf_inv.270 = f64[32]{0} add(erf_inv.268, erf_inv.269)
+  erf_inv.273 = f64[32]{0} multiply(erf_inv.270, erf_inv.244)
+  erf_inv.274 = f64[32]{0} add(erf_inv.272, erf_inv.273)
+  erf_inv.277 = f64[32]{0} multiply(erf_inv.274, erf_inv.244)
+  erf_inv.278 = f64[32]{0} add(erf_inv.276, erf_inv.277)
+  erf_inv.281 = f64[32]{0} multiply(erf_inv.278, erf_inv.244)
+  erf_inv.282 = f64[32]{0} add(erf_inv.280, erf_inv.281)
+  erf_inv.285 = f64[32]{0} multiply(erf_inv.282, erf_inv.244)
+  erf_inv.286 = f64[32]{0} add(erf_inv.284, erf_inv.285)
+  erf_inv.289 = f64[32]{0} multiply(erf_inv.286, erf_inv.244)
+  erf_inv.290 = f64[32]{0} add(erf_inv.288, erf_inv.289)
+  erf_inv.293 = f64[32]{0} multiply(erf_inv.290, erf_inv.244)
+  erf_inv.294 = f64[32]{0} add(erf_inv.292, erf_inv.293)
+  erf_inv.297 = f64[32]{0} multiply(erf_inv.294, erf_inv.244)
+  erf_inv.298 = f64[32]{0} add(erf_inv.296, erf_inv.297)
+  erf_inv.301 = f64[32]{0} multiply(erf_inv.298, erf_inv.244)
+  erf_inv.302 = f64[32]{0} add(erf_inv.300, erf_inv.301)
+  erf_inv.305 = f64[32]{0} multiply(erf_inv.302, erf_inv.244)
+  erf_inv.306 = f64[32]{0} add(erf_inv.304, erf_inv.305)
+  erf_inv.309 = f64[32]{0} multiply(erf_inv.306, erf_inv.244)
+  erf_inv.310 = f64[32]{0} add(erf_inv.308, erf_inv.309)
+  erf_inv.312 = f64[32]{0} multiply(erf_inv.310, erf_inv.244)
+  erf_inv.313 = f64[32]{0} add(erf_inv.311, erf_inv.312)
+  erf_inv.314 = f64[32]{0} select(erf_inv.239, erf_inv.313, erf_inv.310)
+  erf_inv.316 = f64[32]{0} multiply(erf_inv.314, erf_inv.244)
+  erf_inv.317 = f64[32]{0} add(erf_inv.315, erf_inv.316)
+  erf_inv.318 = f64[32]{0} select(erf_inv.239, erf_inv.317, erf_inv.314)
+  erf_inv.319 = f64[32]{0} multiply(erf_inv.318, erf_inv.244)
+  constant.128 = f64[] constant(-0.000740702534166267)
+  erf_inv.173 = f64[32]{0} broadcast(constant.128), dimensions={}
+  erf_inv.320 = f64[32]{0} add(erf_inv.319, erf_inv.173)
+  erf_inv.321 = f64[32]{0} select(erf_inv.238, erf_inv.320, erf_inv.318)
+  erf_inv.322 = f64[32]{0} multiply(erf_inv.321, erf_inv.244)
+  constant.127 = f64[] constant(-0.0060336708714301491)
+  erf_inv.172 = f64[32]{0} broadcast(constant.127), dimensions={}
+  erf_inv.323 = f64[32]{0} add(erf_inv.322, erf_inv.172)
+  erf_inv.324 = f64[32]{0} select(erf_inv.238, erf_inv.323, erf_inv.321)
+  erf_inv.325 = f64[32]{0} multiply(erf_inv.324, erf_inv.244)
+  constant.126 = f64[] constant(0.24015818242558962)
+  erf_inv.171 = f64[32]{0} broadcast(constant.126), dimensions={}
+  erf_inv.326 = f64[32]{0} add(erf_inv.325, erf_inv.171)
+  erf_inv.327 = f64[32]{0} select(erf_inv.238, erf_inv.326, erf_inv.324)
+  erf_inv.328 = f64[32]{0} multiply(erf_inv.327, erf_inv.244)
+  constant.125 = f64[] constant(1.6536545626831027)
+  erf_inv.170 = f64[32]{0} broadcast(constant.125), dimensions={}
+  erf_inv.329 = f64[32]{0} add(erf_inv.328, erf_inv.170)
+  erf_inv.330 = f64[32]{0} select(erf_inv.238, erf_inv.329, erf_inv.327)
+  erf_inv.331 = f64[32]{0} multiply(erf_inv.330, jit__uniform_.1)
+  erf_inv.335 = f64[32]{0} select(erf_inv.333, erf_inv.334, erf_inv.331)
+  constant.122 = f64[] constant(1.4142135623730951)
+  mul.13 = f64[32]{0} broadcast(constant.122), dimensions={}
+  ROOT mul.14 = f64[32]{0} multiply(erf_inv.335, mul.13)
+}
+
+_normal.12 {
+  Arg_0.9 = u32[2]{0} parameter(0)
+  ROOT jit__normal_real_.1 = f64[32]{0} call(Arg_0.9), to_apply=_normal_real.11
+}
+
+region_7.13 {
+  arg_tuple.10 = (s64[], s64[], u32[1]{0}, u32[1]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) parameter(0)
+  get-tuple-element.113 = s64[] get-tuple-element(arg_tuple.10), index=0
+  constant.213 = s64[] constant(1)
+  add.107 = s64[] add(get-tuple-element.113, constant.213)
+  get-tuple-element.114 = s64[] get-tuple-element(arg_tuple.10), index=1
+  add.95 = s64[] add(get-tuple-element.114, constant.213)
+  get-tuple-element.115 = u32[1]{0} get-tuple-element(arg_tuple.10), index=2
+  get-tuple-element.116 = u32[1]{0} get-tuple-element(arg_tuple.10), index=3
+  add.96 = u32[1]{0} add(get-tuple-element.115, get-tuple-element.116)
+  get-tuple-element.120 = u32[4]{0} get-tuple-element(arg_tuple.10), index=7
+  unstack.64 = u32[1]{0} slice(get-tuple-element.120), slice={[0:1]}
+  shift_left.38 = u32[1]{0} shift-left(get-tuple-element.116, unstack.64)
+  constant.212 = u32[] constant(32)
+  unstack.65 = u32[] reshape(unstack.64)
+  sub.30 = u32[] subtract(constant.212, unstack.65)
+  shift_right_logical.46 = u32[1]{0} reshape(sub.30)
+  shift_right_logical.47 = u32[1]{0} shift-right-logical(get-tuple-element.116, shift_right_logical.46)
+  or.26 = u32[1]{0} or(shift_left.38, shift_right_logical.47)
+  xor.30 = u32[1]{0} xor(add.96, or.26)
+  add.97 = u32[1]{0} add(add.96, xor.30)
+  unstack.66 = u32[1]{0} slice(get-tuple-element.120), slice={[1:2]}
+  shift_left.39 = u32[1]{0} shift-left(xor.30, unstack.66)
+  unstack.67 = u32[] reshape(unstack.66)
+  sub.31 = u32[] subtract(constant.212, unstack.67)
+  shift_right_logical.48 = u32[1]{0} reshape(sub.31)
+  shift_right_logical.49 = u32[1]{0} shift-right-logical(xor.30, shift_right_logical.48)
+  or.27 = u32[1]{0} or(shift_left.39, shift_right_logical.49)
+  xor.31 = u32[1]{0} xor(add.97, or.27)
+  add.98 = u32[1]{0} add(add.97, xor.31)
+  unstack.68 = u32[1]{0} slice(get-tuple-element.120), slice={[2:3]}
+  shift_left.40 = u32[1]{0} shift-left(xor.31, unstack.68)
+  unstack.69 = u32[] reshape(unstack.68)
+  sub.32 = u32[] subtract(constant.212, unstack.69)
+  shift_right_logical.50 = u32[1]{0} reshape(sub.32)
+  shift_right_logical.51 = u32[1]{0} shift-right-logical(xor.31, shift_right_logical.50)
+  or.28 = u32[1]{0} or(shift_left.40, shift_right_logical.51)
+  xor.32 = u32[1]{0} xor(add.98, or.28)
+  add.99 = u32[1]{0} add(add.98, xor.32)
+  get-tuple-element.117 = u32[] get-tuple-element(arg_tuple.10), index=4
+  add.100 = u32[1]{0} reshape(get-tuple-element.117)
+  add.101 = u32[1]{0} add(add.99, add.100)
+  unstack.70 = u32[1]{0} slice(get-tuple-element.120), slice={[3:4]}
+  shift_left.41 = u32[1]{0} shift-left(xor.32, unstack.70)
+  unstack.71 = u32[] reshape(unstack.70)
+  sub.33 = u32[] subtract(constant.212, unstack.71)
+  shift_right_logical.52 = u32[1]{0} reshape(sub.33)
+  shift_right_logical.53 = u32[1]{0} shift-right-logical(xor.32, shift_right_logical.52)
+  or.29 = u32[1]{0} or(shift_left.41, shift_right_logical.53)
+  xor.33 = u32[1]{0} xor(add.99, or.29)
+  get-tuple-element.118 = u32[] get-tuple-element(arg_tuple.10), index=5
+  add.102 = u32[1]{0} reshape(get-tuple-element.118)
+  add.103 = u32[1]{0} add(xor.33, add.102)
+  add.104 = s64[] add(get-tuple-element.114, constant.213)
+  convert_element_type.11 = u32[] convert(add.104)
+  add.105 = u32[1]{0} reshape(convert_element_type.11)
+  add.106 = u32[1]{0} add(add.103, add.105)
+  get-tuple-element.119 = u32[] get-tuple-element(arg_tuple.10), index=6
+  get-tuple-element.121 = u32[4]{0} get-tuple-element(arg_tuple.10), index=8
+  ROOT tuple.9 = (s64[], s64[], u32[1]{0}, u32[1]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) tuple(add.107, add.95, add.101, add.106, get-tuple-element.118, get-tuple-element.119, get-tuple-element.117, get-tuple-element.121, get-tuple-element.120)
+}
+
+region_8.14 {
+  arg_tuple.12 = (s64[], s64[], u32[1]{0}, u32[1]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) parameter(0)
+  get-tuple-element.132 = s64[] get-tuple-element(arg_tuple.12), index=1
+  get-tuple-element.133 = u32[1]{0} get-tuple-element(arg_tuple.12), index=2
+  get-tuple-element.134 = u32[1]{0} get-tuple-element(arg_tuple.12), index=3
+  get-tuple-element.135 = u32[] get-tuple-element(arg_tuple.12), index=4
+  get-tuple-element.136 = u32[] get-tuple-element(arg_tuple.12), index=5
+  get-tuple-element.137 = u32[] get-tuple-element(arg_tuple.12), index=6
+  get-tuple-element.138 = u32[4]{0} get-tuple-element(arg_tuple.12), index=7
+  get-tuple-element.139 = u32[4]{0} get-tuple-element(arg_tuple.12), index=8
+  get-tuple-element.131 = s64[] get-tuple-element(arg_tuple.12), index=0
+  constant.215 = s64[] constant(5)
+  ROOT lt.5 = pred[] compare(get-tuple-element.131, constant.215), direction=LT
+}
+
+threefry2x32_1.15 {
+  constant.216 = s64[] constant(0)
+  dynamic_multiplicative_expansion__locals__expand__locals__expand_once.6 = u32[1]{0} parameter(2)
+  dynamic_multiplicative_expansion__locals__expand__locals__expand_once.4 = u32[] parameter(0)
+  add.108 = u32[1]{0} reshape(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.4)
+  add.109 = u32[1]{0} add(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.6, add.108)
+  dynamic_multiplicative_expansion__locals__expand__locals__expand_once.7 = u32[1]{0} parameter(3)
+  dynamic_multiplicative_expansion__locals__expand__locals__expand_once.5 = u32[] parameter(1)
+  add.110 = u32[1]{0} reshape(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.5)
+  add.111 = u32[1]{0} add(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.7, add.110)
+  xor.34 = u32[] xor(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.4, dynamic_multiplicative_expansion__locals__expand__locals__expand_once.5)
+  constant.217 = u32[] constant(466688986)
+  xor.35 = u32[] xor(xor.34, constant.217)
+  constant.218 = u32[4]{0} constant({13, 15, 26, 6})
+  constant.219 = u32[4]{0} constant({17, 29, 16, 24})
+  while.55 = (s64[], s64[], u32[1]{0}, u32[1]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) tuple(constant.216, constant.216, add.109, add.111, dynamic_multiplicative_expansion__locals__expand__locals__expand_once.5, xor.35, dynamic_multiplicative_expansion__locals__expand__locals__expand_once.4, constant.218, constant.219)
+  while.56 = (s64[], s64[], u32[1]{0}, u32[1]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) while(while.55), condition=region_8.14, body=region_7.13
+  while.57 = s64[] get-tuple-element(while.56), index=0
+  while.58 = s64[] get-tuple-element(while.56), index=1
+  while.61 = u32[] get-tuple-element(while.56), index=4
+  while.62 = u32[] get-tuple-element(while.56), index=5
+  while.63 = u32[] get-tuple-element(while.56), index=6
+  while.64 = u32[4]{0} get-tuple-element(while.56), index=7
+  while.65 = u32[4]{0} get-tuple-element(while.56), index=8
+  while.59 = u32[1]{0} get-tuple-element(while.56), index=2
+  while.60 = u32[1]{0} get-tuple-element(while.56), index=3
+  ROOT tuple.11 = (u32[1]{0}, u32[1]{0}) tuple(while.59, while.60)
+}
+
+_threefry_fold_in.16 {
+  Arg_0.11 = u32[2]{0} parameter(0)
+  unstack.72 = u32[1]{0} slice(Arg_0.11), slice={[0:1]}
+  unstack.73 = u32[] reshape(unstack.72)
+  unstack.74 = u32[1]{0} slice(Arg_0.11), slice={[1:2]}
+  unstack.75 = u32[] reshape(unstack.74)
+  Arg_1.5 = u32[] parameter(1)
+  constant.220 = u32[] constant(32)
+  shift_right_logical.54 = u32[] shift-right-logical(Arg_1.5, constant.220)
+  broadcast_in_dim.8 = u32[1]{0} reshape(shift_right_logical.54)
+  broadcast_in_dim.9 = u32[1]{0} reshape(Arg_1.5)
+  dynamic_multiplicative_expansion__locals__expand__locals__expand_once.11 = (u32[1]{0}, u32[1]{0}) call(unstack.73, unstack.75, broadcast_in_dim.8, broadcast_in_dim.9), to_apply=threefry2x32_1.15
+  dynamic_multiplicative_expansion__locals__expand__locals__expand_once.12 = u32[1]{0} get-tuple-element(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.11), index=0
+  dynamic_multiplicative_expansion__locals__expand__locals__expand_once.13 = u32[1]{0} get-tuple-element(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.11), index=1
+  ROOT concatenate.2 = u32[2]{0} concatenate(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.12, dynamic_multiplicative_expansion__locals__expand__locals__expand_once.13), dimensions={0}
+}
+
+region_9.17 {
+  arg_tuple.14 = (s64[], s64[], u32[3]{0}, u32[3]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) parameter(0)
+  get-tuple-element.149 = s64[] get-tuple-element(arg_tuple.14), index=0
+  constant.229 = s64[] constant(1)
+  add.141 = s64[] add(get-tuple-element.149, constant.229)
+  get-tuple-element.150 = s64[] get-tuple-element(arg_tuple.14), index=1
+  add.129 = s64[] add(get-tuple-element.150, constant.229)
+  get-tuple-element.151 = u32[3]{0} get-tuple-element(arg_tuple.14), index=2
+  get-tuple-element.152 = u32[3]{0} get-tuple-element(arg_tuple.14), index=3
+  add.130 = u32[3]{0} add(get-tuple-element.151, get-tuple-element.152)
+  get-tuple-element.156 = u32[4]{0} get-tuple-element(arg_tuple.14), index=7
+  unstack.88 = u32[1]{0} slice(get-tuple-element.156), slice={[0:1]}
+  unstack.89 = u32[] reshape(unstack.88)
+  shift_left.50 = u32[3]{0} broadcast(unstack.89), dimensions={}
+  shift_left.51 = u32[3]{0} shift-left(get-tuple-element.152, shift_left.50)
+  constant.228 = u32[] constant(32)
+  sub.38 = u32[] subtract(constant.228, unstack.89)
+  shift_right_logical.63 = u32[3]{0} broadcast(sub.38), dimensions={}
+  shift_right_logical.64 = u32[3]{0} shift-right-logical(get-tuple-element.152, shift_right_logical.63)
+  or.34 = u32[3]{0} or(shift_left.51, shift_right_logical.64)
+  xor.42 = u32[3]{0} xor(add.130, or.34)
+  add.131 = u32[3]{0} add(add.130, xor.42)
+  unstack.90 = u32[1]{0} slice(get-tuple-element.156), slice={[1:2]}
+  unstack.91 = u32[] reshape(unstack.90)
+  shift_left.52 = u32[3]{0} broadcast(unstack.91), dimensions={}
+  shift_left.53 = u32[3]{0} shift-left(xor.42, shift_left.52)
+  sub.39 = u32[] subtract(constant.228, unstack.91)
+  shift_right_logical.65 = u32[3]{0} broadcast(sub.39), dimensions={}
+  shift_right_logical.66 = u32[3]{0} shift-right-logical(xor.42, shift_right_logical.65)
+  or.35 = u32[3]{0} or(shift_left.53, shift_right_logical.66)
+  xor.43 = u32[3]{0} xor(add.131, or.35)
+  add.132 = u32[3]{0} add(add.131, xor.43)
+  unstack.92 = u32[1]{0} slice(get-tuple-element.156), slice={[2:3]}
+  unstack.93 = u32[] reshape(unstack.92)
+  shift_left.54 = u32[3]{0} broadcast(unstack.93), dimensions={}
+  shift_left.55 = u32[3]{0} shift-left(xor.43, shift_left.54)
+  sub.40 = u32[] subtract(constant.228, unstack.93)
+  shift_right_logical.67 = u32[3]{0} broadcast(sub.40), dimensions={}
+  shift_right_logical.68 = u32[3]{0} shift-right-logical(xor.43, shift_right_logical.67)
+  or.36 = u32[3]{0} or(shift_left.55, shift_right_logical.68)
+  xor.44 = u32[3]{0} xor(add.132, or.36)
+  add.133 = u32[3]{0} add(add.132, xor.44)
+  get-tuple-element.153 = u32[] get-tuple-element(arg_tuple.14), index=4
+  add.134 = u32[3]{0} broadcast(get-tuple-element.153), dimensions={}
+  add.135 = u32[3]{0} add(add.133, add.134)
+  unstack.94 = u32[1]{0} slice(get-tuple-element.156), slice={[3:4]}
+  unstack.95 = u32[] reshape(unstack.94)
+  shift_left.56 = u32[3]{0} broadcast(unstack.95), dimensions={}
+  shift_left.57 = u32[3]{0} shift-left(xor.44, shift_left.56)
+  sub.41 = u32[] subtract(constant.228, unstack.95)
+  shift_right_logical.69 = u32[3]{0} broadcast(sub.41), dimensions={}
+  shift_right_logical.70 = u32[3]{0} shift-right-logical(xor.44, shift_right_logical.69)
+  or.37 = u32[3]{0} or(shift_left.57, shift_right_logical.70)
+  xor.45 = u32[3]{0} xor(add.133, or.37)
+  get-tuple-element.154 = u32[] get-tuple-element(arg_tuple.14), index=5
+  add.136 = u32[3]{0} broadcast(get-tuple-element.154), dimensions={}
+  add.137 = u32[3]{0} add(xor.45, add.136)
+  add.138 = s64[] add(get-tuple-element.150, constant.229)
+  convert_element_type.13 = u32[] convert(add.138)
+  add.139 = u32[3]{0} broadcast(convert_element_type.13), dimensions={}
+  add.140 = u32[3]{0} add(add.137, add.139)
+  get-tuple-element.155 = u32[] get-tuple-element(arg_tuple.14), index=6
+  get-tuple-element.157 = u32[4]{0} get-tuple-element(arg_tuple.14), index=8
+  ROOT tuple.13 = (s64[], s64[], u32[3]{0}, u32[3]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) tuple(add.141, add.129, add.135, add.140, get-tuple-element.154, get-tuple-element.155, get-tuple-element.153, get-tuple-element.157, get-tuple-element.156)
+}
+
+region_10.18 {
+  arg_tuple.16 = (s64[], s64[], u32[3]{0}, u32[3]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) parameter(0)
+  get-tuple-element.168 = s64[] get-tuple-element(arg_tuple.16), index=1
+  get-tuple-element.169 = u32[3]{0} get-tuple-element(arg_tuple.16), index=2
+  get-tuple-element.170 = u32[3]{0} get-tuple-element(arg_tuple.16), index=3
+  get-tuple-element.171 = u32[] get-tuple-element(arg_tuple.16), index=4
+  get-tuple-element.172 = u32[] get-tuple-element(arg_tuple.16), index=5
+  get-tuple-element.173 = u32[] get-tuple-element(arg_tuple.16), index=6
+  get-tuple-element.174 = u32[4]{0} get-tuple-element(arg_tuple.16), index=7
+  get-tuple-element.175 = u32[4]{0} get-tuple-element(arg_tuple.16), index=8
+  get-tuple-element.167 = s64[] get-tuple-element(arg_tuple.16), index=0
+  constant.231 = s64[] constant(5)
+  ROOT lt.7 = pred[] compare(get-tuple-element.167, constant.231), direction=LT
+}
+
+threefry2x32_3.19 {
+  constant.232 = s64[] constant(0)
+  dynamic_multiplicative_expansion__locals__expand__locals__expand_once.20 = u32[3]{0} parameter(2)
+  dynamic_multiplicative_expansion__locals__expand__locals__expand_once.18 = u32[] parameter(0)
+  add.142 = u32[3]{0} broadcast(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.18), dimensions={}
+  add.143 = u32[3]{0} add(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.20, add.142)
+  dynamic_multiplicative_expansion__locals__expand__locals__expand_once.21 = u32[3]{0} parameter(3)
+  dynamic_multiplicative_expansion__locals__expand__locals__expand_once.19 = u32[] parameter(1)
+  add.144 = u32[3]{0} broadcast(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.19), dimensions={}
+  add.145 = u32[3]{0} add(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.21, add.144)
+  xor.46 = u32[] xor(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.18, dynamic_multiplicative_expansion__locals__expand__locals__expand_once.19)
+  constant.233 = u32[] constant(466688986)
+  xor.47 = u32[] xor(xor.46, constant.233)
+  constant.234 = u32[4]{0} constant({13, 15, 26, 6})
+  constant.235 = u32[4]{0} constant({17, 29, 16, 24})
+  while.77 = (s64[], s64[], u32[3]{0}, u32[3]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) tuple(constant.232, constant.232, add.143, add.145, dynamic_multiplicative_expansion__locals__expand__locals__expand_once.19, xor.47, dynamic_multiplicative_expansion__locals__expand__locals__expand_once.18, constant.234, constant.235)
+  while.78 = (s64[], s64[], u32[3]{0}, u32[3]{0}, u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) while(while.77), condition=region_10.18, body=region_9.17
+  while.79 = s64[] get-tuple-element(while.78), index=0
+  while.80 = s64[] get-tuple-element(while.78), index=1
+  while.83 = u32[] get-tuple-element(while.78), index=4
+  while.84 = u32[] get-tuple-element(while.78), index=5
+  while.85 = u32[] get-tuple-element(while.78), index=6
+  while.86 = u32[4]{0} get-tuple-element(while.78), index=7
+  while.87 = u32[4]{0} get-tuple-element(while.78), index=8
+  while.81 = u32[3]{0} get-tuple-element(while.78), index=2
+  while.82 = u32[3]{0} get-tuple-element(while.78), index=3
+  ROOT tuple.15 = (u32[3]{0}, u32[3]{0}) tuple(while.81, while.82)
+}
+
+_threefry_split_2.20 {
+  Arg_0.13 = u32[2]{0} parameter(0)
+  unstack.96 = u32[1]{0} slice(Arg_0.13), slice={[0:1]}
+  unstack.97 = u32[] reshape(unstack.96)
+  unstack.98 = u32[1]{0} slice(Arg_0.13), slice={[1:2]}
+  unstack.99 = u32[] reshape(unstack.98)
+  iota_2x32_shape.20 = u64[3]{0} iota(), iota_dimension=0
+  constant.236 = u64[] constant(32)
+  broadcast.12 = u64[3]{0} broadcast(constant.236), dimensions={}
+  iota_2x32_shape.21 = u64[3]{0} shift-right-logical(iota_2x32_shape.20, broadcast.12)
+  iota_2x32_shape.23 = u32[3]{0} convert(iota_2x32_shape.21)
+  iota_2x32_shape.22 = u32[3]{0} convert(iota_2x32_shape.20)
+  dynamic_multiplicative_expansion__locals__expand__locals__expand_once.25 = (u32[3]{0}, u32[3]{0}) call(unstack.97, unstack.99, iota_2x32_shape.23, iota_2x32_shape.22), to_apply=threefry2x32_3.19
+  dynamic_multiplicative_expansion__locals__expand__locals__expand_once.26 = u32[3]{0} get-tuple-element(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.25), index=0
+  stack.9 = u32[3,1]{1,0} reshape(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.26)
+  dynamic_multiplicative_expansion__locals__expand__locals__expand_once.27 = u32[3]{0} get-tuple-element(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.25), index=1
+  stack.10 = u32[3,1]{1,0} reshape(dynamic_multiplicative_expansion__locals__expand__locals__expand_once.27)
+  ROOT stack.11 = u32[3,2]{1,0} concatenate(stack.9, stack.10), dimensions={1}
+}
+
+region_11.21 {
+  arg_tuple.18 = (s64[], s64[], u32[], u32[], u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) parameter(0)
+  get-tuple-element.185 = s64[] get-tuple-element(arg_tuple.18), index=0
+  constant.251 = s64[] constant(1)
+  add.167 = s64[] add(get-tuple-element.185, constant.251)
+  get-tuple-element.186 = s64[] get-tuple-element(arg_tuple.18), index=1
+  add.158 = s64[] add(get-tuple-element.186, constant.251)
+  get-tuple-element.187 = u32[] get-tuple-element(arg_tuple.18), index=2
+  get-tuple-element.188 = u32[] get-tuple-element(arg_tuple.18), index=3
+  add.159 = u32[] add(get-tuple-element.187, get-tuple-element.188)
+  get-tuple-element.192 = u32[4]{0} get-tuple-element(arg_tuple.18), index=7
+  unstack.118 = u32[1]{0} slice(get-tuple-element.192), slice={[0:1]}
+  unstack.119 = u32[] reshape(unstack.118)
+  shift_left.62 = u32[] shift-left(get-tuple-element.188, unstack.119)
+  constant.250 = u32[] constant(32)
+  sub.46 = u32[] subtract(constant.250, unstack.119)
+  shift_right_logical.75 = u32[] shift-right-logical(get-tuple-element.188, sub.46)
+  or.42 = u32[] or(shift_left.62, shift_right_logical.75)
+  xor.54 = u32[] xor(add.159, or.42)
+  add.160 = u32[] add(add.159, xor.54)
+  unstack.120 = u32[1]{0} slice(get-tuple-element.192), slice={[1:2]}
+  unstack.121 = u32[] reshape(unstack.120)
+  shift_left.63 = u32[] shift-left(xor.54, unstack.121)
+  sub.47 = u32[] subtract(constant.250, unstack.121)
+  shift_right_logical.76 = u32[] shift-right-logical(xor.54, sub.47)
+  or.43 = u32[] or(shift_left.63, shift_right_logical.76)
+  xor.55 = u32[] xor(add.160, or.43)
+  add.161 = u32[] add(add.160, xor.55)
+  unstack.122 = u32[1]{0} slice(get-tuple-element.192), slice={[2:3]}
+  unstack.123 = u32[] reshape(unstack.122)
+  shift_left.64 = u32[] shift-left(xor.55, unstack.123)
+  sub.48 = u32[] subtract(constant.250, unstack.123)
+  shift_right_logical.77 = u32[] shift-right-logical(xor.55, sub.48)
+  or.44 = u32[] or(shift_left.64, shift_right_logical.77)
+  xor.56 = u32[] xor(add.161, or.44)
+  add.162 = u32[] add(add.161, xor.56)
+  get-tuple-element.189 = u32[] get-tuple-element(arg_tuple.18), index=4
+  add.163 = u32[] add(add.162, get-tuple-element.189)
+  unstack.124 = u32[1]{0} slice(get-tuple-element.192), slice={[3:4]}
+  unstack.125 = u32[] reshape(unstack.124)
+  shift_left.65 = u32[] shift-left(xor.56, unstack.125)
+  sub.49 = u32[] subtract(constant.250, unstack.125)
+  shift_right_logical.78 = u32[] shift-right-logical(xor.56, sub.49)
+  or.45 = u32[] or(shift_left.65, shift_right_logical.78)
+  xor.57 = u32[] xor(add.162, or.45)
+  get-tuple-element.190 = u32[] get-tuple-element(arg_tuple.18), index=5
+  add.164 = u32[] add(xor.57, get-tuple-element.190)
+  add.165 = s64[] add(get-tuple-element.186, constant.251)
+  convert_element_type.15 = u32[] convert(add.165)
+  add.166 = u32[] add(add.164, convert_element_type.15)
+  get-tuple-element.191 = u32[] get-tuple-element(arg_tuple.18), index=6
+  get-tuple-element.193 = u32[4]{0} get-tuple-element(arg_tuple.18), index=8
+  ROOT tuple.17 = (s64[], s64[], u32[], u32[], u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) tuple(add.167, add.158, add.163, add.166, get-tuple-element.190, get-tuple-element.191, get-tuple-element.189, get-tuple-element.193, get-tuple-element.192)
+}
+
+region_12.22 {
+  arg_tuple.20 = (s64[], s64[], u32[], u32[], u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) parameter(0)
+  get-tuple-element.204 = s64[] get-tuple-element(arg_tuple.20), index=1
+  get-tuple-element.205 = u32[] get-tuple-element(arg_tuple.20), index=2
+  get-tuple-element.206 = u32[] get-tuple-element(arg_tuple.20), index=3
+  get-tuple-element.207 = u32[] get-tuple-element(arg_tuple.20), index=4
+  get-tuple-element.208 = u32[] get-tuple-element(arg_tuple.20), index=5
+  get-tuple-element.209 = u32[] get-tuple-element(arg_tuple.20), index=6
+  get-tuple-element.210 = u32[4]{0} get-tuple-element(arg_tuple.20), index=7
+  get-tuple-element.211 = u32[4]{0} get-tuple-element(arg_tuple.20), index=8
+  get-tuple-element.203 = s64[] get-tuple-element(arg_tuple.20), index=0
+  constant.253 = s64[] constant(5)
+  ROOT lt.9 = pred[] compare(get-tuple-element.203, constant.253), direction=LT
+}
+
+threefry2x32_5.23 {
+  constant.254 = s64[] constant(0)
+  Arg_2.6 = u32[] parameter(2)
+  Arg_0.17 = u32[] parameter(0)
+  add.168 = u32[] add(Arg_2.6, Arg_0.17)
+  Arg_3.3 = u32[] parameter(3)
+  Arg_1.9 = u32[] parameter(1)
+  add.169 = u32[] add(Arg_3.3, Arg_1.9)
+  xor.58 = u32[] xor(Arg_0.17, Arg_1.9)
+  constant.255 = u32[] constant(466688986)
+  xor.59 = u32[] xor(xor.58, constant.255)
+  constant.256 = u32[4]{0} constant({13, 15, 26, 6})
+  constant.257 = u32[4]{0} constant({17, 29, 16, 24})
+  while.99 = (s64[], s64[], u32[], u32[], u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) tuple(constant.254, constant.254, add.168, add.169, Arg_1.9, xor.59, Arg_0.17, constant.256, constant.257)
+  while.100 = (s64[], s64[], u32[], u32[], u32[], /*index=5*/u32[], u32[], u32[4]{0}, u32[4]{0}) while(while.99), condition=region_12.22, body=region_11.21
+  while.101 = s64[] get-tuple-element(while.100), index=0
+  while.102 = s64[] get-tuple-element(while.100), index=1
+  while.105 = u32[] get-tuple-element(while.100), index=4
+  while.106 = u32[] get-tuple-element(while.100), index=5
+  while.107 = u32[] get-tuple-element(while.100), index=6
+  while.108 = u32[4]{0} get-tuple-element(while.100), index=7
+  while.109 = u32[4]{0} get-tuple-element(while.100), index=8
+  while.103 = u32[] get-tuple-element(while.100), index=2
+  while.104 = u32[] get-tuple-element(while.100), index=3
+  ROOT tuple.19 = (u32[], u32[]) tuple(while.103, while.104)
+}
+
+_uniform_4.24 {
+  Arg_1.10 = f64[] parameter(1)
+  Arg_0.18 = u32[2]{0} parameter(0)
+  unstack.126 = u32[1]{0} slice(Arg_0.18), slice={[0:1]}
+  unstack.127 = u32[] reshape(unstack.126)
+  unstack.128 = u32[1]{0} slice(Arg_0.18), slice={[1:2]}
+  unstack.129 = u32[] reshape(unstack.128)
+  constant.262 = u32[] constant(0)
+  call.3 = (u32[], u32[]) call(unstack.127, unstack.129, constant.262, constant.262), to_apply=threefry2x32_5.23
+  get-tuple-element.214 = u32[] get-tuple-element(call.3), index=0
+  convert_element_type.18 = u64[] convert(get-tuple-element.214)
+  constant.261 = u64[] constant(32)
+  shift_left.67 = u64[] shift-left(convert_element_type.18, constant.261)
+  get-tuple-element.215 = u32[] get-tuple-element(call.3), index=1
+  convert_element_type.19 = u64[] convert(get-tuple-element.215)
+  or.48 = u64[] or(shift_left.67, convert_element_type.19)
+  constant.260 = u64[] constant(12)
+  shift_right_logical.80 = u64[] shift-right-logical(or.48, constant.260)
+  constant.259 = u64[] constant(4607182418800017408)
+  or.49 = u64[] or(shift_right_logical.80, constant.259)
+  bitcast_convert_type.3 = f64[] bitcast-convert(or.49)
+  constant.258 = f64[] constant(1)
+  sub.52 = f64[] subtract(bitcast_convert_type.3, constant.258)
+  Arg_2.7 = f64[] parameter(2)
+  sub.53 = f64[] subtract(Arg_2.7, Arg_1.10)
+  mul.17 = f64[] multiply(sub.52, sub.53)
+  add.171 = f64[] add(mul.17, Arg_1.10)
+  ROOT max.10 = f64[] maximum(Arg_1.10, add.171)
+}
+
+_bernoulli.25 {
+  Arg_0.19 = u32[2]{0} parameter(0)
+  constant.263 = f64[] constant(0)
+  constant.264 = f64[] constant(1)
+  jit__uniform_.3 = f64[] call(Arg_0.19, constant.263, constant.264), to_apply=_uniform_4.24
+  Arg_1.11 = f64[] parameter(1)
+  ROOT lt.11 = pred[] compare(jit__uniform_.3, Arg_1.11), direction=LT
+}
+
+_where.26 {
+  Arg_0.21 = pred[] parameter(0)
+  Arg_1.13 = s64[] parameter(1)
+  Arg_2.9 = s64[] parameter(2)
+  ROOT select_n.4 = s64[] select(Arg_0.21, Arg_1.13, Arg_2.9)
+}
+
+region_13.27 {
+  arg_tuple.22 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}) parameter(0)
+  get-tuple-element.220 = f64[32]{0} get-tuple-element(arg_tuple.22), index=0
+  get-tuple-element.221 = f64[32]{0} get-tuple-element(arg_tuple.22), index=1
+  get-tuple-element.222 = f64[] get-tuple-element(arg_tuple.22), index=2
+  get-tuple-element.223 = f64[32]{0} get-tuple-element(arg_tuple.22), index=3
+  ROOT tuple.21 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}) tuple(get-tuple-element.220, get-tuple-element.221, get-tuple-element.222, get-tuple-element.223)
+}
+
+region_14.28 {
+  arg_tuple.24 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}) parameter(0)
+  get-tuple-element.228 = f64[32]{0} get-tuple-element(arg_tuple.24), index=0
+  get-tuple-element.229 = f64[32]{0} get-tuple-element(arg_tuple.24), index=1
+  get-tuple-element.230 = f64[] get-tuple-element(arg_tuple.24), index=2
+  get-tuple-element.231 = f64[32]{0} get-tuple-element(arg_tuple.24), index=3
+  ROOT tuple.23 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}) tuple(get-tuple-element.228, get-tuple-element.229, get-tuple-element.230, get-tuple-element.231)
+}
+
+_where_6.29 {
+  Arg_0.23 = pred[] parameter(0)
+  Arg_1.15 = s64[] parameter(1)
+  Arg_2.11 = s64[] parameter(2)
+  ROOT select_n.6 = s64[] select(Arg_0.23, Arg_1.15, Arg_2.11)
+}
+
+_where_7.30 {
+  Arg_0.25 = s64[] parameter(0)
+  constant.266 = s64[] constant(0)
+  ne.2 = pred[] compare(Arg_0.25, constant.266), direction=NE
+  Arg_1.17 = s64[] parameter(1)
+  Arg_2.13 = s64[] parameter(2)
+  ROOT select_n.8 = s64[] select(ne.2, Arg_1.17, Arg_2.13)
+}
+
+_where_8.31 {
+  Arg_0.27 = pred[] parameter(0)
+  Arg_1.19 = f64[] parameter(1)
+  Arg_2.15 = f64[] parameter(2)
+  ROOT select_n.10 = f64[] select(Arg_0.27, Arg_1.19, Arg_2.15)
+}
+
+region_16.32 {
+  reduce_sum.17 = f64[] parameter(0)
+  reduce_sum.18 = f64[] parameter(1)
+  ROOT reduce_sum.19 = f64[] add(reduce_sum.17, reduce_sum.18)
+}
+
+region_17.33 {
+  reduce_sum.24 = f64[] parameter(0)
+  reduce_sum.25 = f64[] parameter(1)
+  ROOT reduce_sum.26 = f64[] add(reduce_sum.24, reduce_sum.25)
+}
+
+region_19.34 {
+  arg_tuple.28 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[]) parameter(0)
+  get-tuple-element.288 = f64[32]{0} get-tuple-element(arg_tuple.28), index=0
+  get-tuple-element.289 = f64[32]{0} get-tuple-element(arg_tuple.28), index=1
+  get-tuple-element.290 = f64[] get-tuple-element(arg_tuple.28), index=2
+  get-tuple-element.291 = f64[32]{0} get-tuple-element(arg_tuple.28), index=3
+  get-tuple-element.292 = f64[] get-tuple-element(arg_tuple.28), index=4
+  ROOT tuple.25 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[]) tuple(get-tuple-element.288, get-tuple-element.289, get-tuple-element.290, get-tuple-element.291, get-tuple-element.292)
+}
+
+region_20.35 {
+  arg_tuple.30 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[]) parameter(0)
+  get-tuple-element.298 = f64[32]{0} get-tuple-element(arg_tuple.30), index=0
+  get-tuple-element.299 = f64[32]{0} get-tuple-element(arg_tuple.30), index=1
+  get-tuple-element.300 = f64[] get-tuple-element(arg_tuple.30), index=2
+  get-tuple-element.301 = f64[32]{0} get-tuple-element(arg_tuple.30), index=3
+  get-tuple-element.302 = f64[] get-tuple-element(arg_tuple.30), index=4
+  ROOT tuple.27 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[]) tuple(get-tuple-element.298, get-tuple-element.299, get-tuple-element.300, get-tuple-element.301, get-tuple-element.302)
+}
+
+region_18.36 {
+  arg_tuple.31 = (f64[32]{0}, f64[32]{0}, s64[], f64[], f64[], /*index=5*/u32[2]{0}, f64[], f64[], f64[32]{0}, f64[32]{0}, /*index=10*/f64[], f64[32]{0}, f64[], f64[32]{0}, f64[], /*index=15*/f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, f64[], /*index=20*/f64[32]{0}) parameter(0)
+  get-tuple-element.320 = f64[32]{0} get-tuple-element(arg_tuple.31), index=17
+  get-tuple-element.321 = f64[32]{0} get-tuple-element(arg_tuple.31), index=18
+  get-tuple-element.322 = f64[] get-tuple-element(arg_tuple.31), index=19
+  get-tuple-element.323 = f64[32]{0} get-tuple-element(arg_tuple.31), index=20
+  get-tuple-element.303 = f64[32]{0} get-tuple-element(arg_tuple.31), index=0
+  get-tuple-element.304 = f64[32]{0} get-tuple-element(arg_tuple.31), index=1
+  add.185 = f64[32]{0} add(get-tuple-element.303, get-tuple-element.304)
+  get-tuple-element.305 = s64[] get-tuple-element(arg_tuple.31), index=2
+  constant.285 = s64[] constant(1)
+  add.186 = s64[] add(get-tuple-element.305, constant.285)
+  get-tuple-element.308 = u32[2]{0} get-tuple-element(arg_tuple.31), index=5
+  constant.284 = f64[] constant(1)
+  get-tuple-element.306 = f64[] get-tuple-element(arg_tuple.31), index=3
+  get-tuple-element.307 = f64[] get-tuple-element(arg_tuple.31), index=4
+  sub.63 = f64[] subtract(get-tuple-element.306, get-tuple-element.307)
+  neg.11 = f64[] negate(sub.63)
+  exp.7 = f64[] exponential(neg.11)
+  add.187 = f64[] add(exp.7, constant.284)
+  div.1 = f64[] divide(constant.284, add.187)
+  jit__bernoulli_.2 = pred[] call(get-tuple-element.308, div.1), to_apply=_bernoulli.25
+  convert_element_type.25 = s32[] convert(jit__bernoulli_.2)
+  get-tuple-element.311 = f64[32]{0} get-tuple-element(arg_tuple.31), index=8
+  get-tuple-element.312 = f64[32]{0} get-tuple-element(arg_tuple.31), index=9
+  get-tuple-element.313 = f64[] get-tuple-element(arg_tuple.31), index=10
+  get-tuple-element.314 = f64[32]{0} get-tuple-element(arg_tuple.31), index=11
+  get-tuple-element.315 = f64[] get-tuple-element(arg_tuple.31), index=12
+  cond.16 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[]) tuple(get-tuple-element.311, get-tuple-element.312, get-tuple-element.313, get-tuple-element.314, get-tuple-element.315)
+  get-tuple-element.316 = f64[32]{0} get-tuple-element(arg_tuple.31), index=13
+  get-tuple-element.317 = f64[] get-tuple-element(arg_tuple.31), index=14
+  get-tuple-element.318 = f64[32]{0} get-tuple-element(arg_tuple.31), index=15
+  get-tuple-element.319 = f64[] get-tuple-element(arg_tuple.31), index=16
+  cond.17 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[]) tuple(get-tuple-element.316, get-tuple-element.304, get-tuple-element.317, get-tuple-element.318, get-tuple-element.319)
+  cond.18 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[]) conditional(convert_element_type.25, cond.16, cond.17), branch_computations={region_19.34, region_20.35}
+  cond.19 = f64[32]{0} get-tuple-element(cond.18), index=0
+  cond.20 = f64[32]{0} get-tuple-element(cond.18), index=1
+  cond.21 = f64[] get-tuple-element(cond.18), index=2
+  cond.22 = f64[32]{0} get-tuple-element(cond.18), index=3
+  cond.23 = f64[] get-tuple-element(cond.18), index=4
+  sub.64 = f64[] subtract(get-tuple-element.307, get-tuple-element.306)
+  ne.8 = pred[] compare(sub.64, sub.64), direction=NE
+  add.188 = f64[] add(get-tuple-element.307, get-tuple-element.306)
+  max.14 = f64[] maximum(get-tuple-element.307, get-tuple-element.306)
+  abs.4 = f64[] abs(sub.64)
+  neg.12 = f64[] negate(abs.4)
+  exp.8 = f64[] exponential(neg.12)
+  log1p.4 = f64[] log-plus-one(exp.8)
+  add.189 = f64[] add(max.14, log1p.4)
+  select_n.16 = f64[] select(ne.8, add.188, add.189)
+  get-tuple-element.309 = f64[] get-tuple-element(arg_tuple.31), index=6
+  get-tuple-element.310 = f64[] get-tuple-element(arg_tuple.31), index=7
+  sub.65 = f64[] subtract(get-tuple-element.309, get-tuple-element.310)
+  ne.9 = pred[] compare(sub.65, sub.65), direction=NE
+  add.190 = f64[] add(get-tuple-element.309, get-tuple-element.310)
+  max.15 = f64[] maximum(get-tuple-element.309, get-tuple-element.310)
+  abs.5 = f64[] abs(sub.65)
+  neg.13 = f64[] negate(abs.5)
+  exp.9 = f64[] exponential(neg.13)
+  log1p.5 = f64[] log-plus-one(exp.9)
+  add.191 = f64[] add(max.15, log1p.5)
+  select_n.17 = f64[] select(ne.9, add.190, add.191)
+  ROOT tuple.29 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/s64[], f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, /*index=10*/f64[], f64[], f64[]) tuple(get-tuple-element.320, get-tuple-element.321, get-tuple-element.322, get-tuple-element.323, add.185, add.186, cond.19, cond.20, cond.21, cond.22, cond.23, select_n.16, select_n.17)
+}
+
+region_21.37 {
+  arg_tuple.33 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[], /*index=5*/f64[], f64[]) parameter(0)
+  get-tuple-element.331 = f64[32]{0} get-tuple-element(arg_tuple.33), index=0
+  get-tuple-element.332 = f64[32]{0} get-tuple-element(arg_tuple.33), index=1
+  get-tuple-element.333 = f64[] get-tuple-element(arg_tuple.33), index=2
+  get-tuple-element.334 = f64[32]{0} get-tuple-element(arg_tuple.33), index=3
+  constant.287 = s64[] constant(1)
+  get-tuple-element.335 = f64[] get-tuple-element(arg_tuple.33), index=4
+  get-tuple-element.336 = f64[] get-tuple-element(arg_tuple.33), index=5
+  get-tuple-element.337 = f64[] get-tuple-element(arg_tuple.33), index=6
+  ROOT tuple.31 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/s64[], f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, /*index=10*/f64[], f64[], f64[]) tuple(get-tuple-element.331, get-tuple-element.332, get-tuple-element.333, get-tuple-element.334, get-tuple-element.332, constant.287, get-tuple-element.331, get-tuple-element.332, get-tuple-element.333, get-tuple-element.334, get-tuple-element.335, get-tuple-element.336, get-tuple-element.337)
+}
+
+bitwise_count.38 {
+  Arg_0.29 = s64[] parameter(0)
+  abs.7 = s64[] abs(Arg_0.29)
+  population_count.1 = s64[] popcnt(abs.7)
+  ROOT convert_element_type.27 = u8[] convert(population_count.1)
+}
+
+_where_9.39 {
+  Arg_0.32 = pred[] parameter(0)
+  Arg_1.22 = s64[] parameter(1)
+  Arg_2.17 = s64[] parameter(2)
+  ROOT select_n.19 = s64[] select(Arg_0.32, Arg_1.22, Arg_2.17)
+}
+
+remainder.40 {
+  Arg_0.33 = s64[] parameter(0)
+  Arg_1.23 = s64[] parameter(1)
+  constant.291 = s64[] constant(0)
+  eq.6 = pred[] compare(Arg_1.23, constant.291), direction=EQ
+  constant.290 = s64[] constant(1)
+  jit__where_.11 = s64[] call(eq.6, constant.290, Arg_1.23), to_apply=_where_9.39
+  rem.1 = s64[] remainder(Arg_0.33, jit__where_.11)
+  lt.14 = pred[] compare(rem.1, constant.291), direction=LT
+  lt.15 = pred[] compare(jit__where_.11, constant.291), direction=LT
+  ne.13 = pred[] compare(lt.14, lt.15), direction=NE
+  ne.12 = pred[] compare(rem.1, constant.291), direction=NE
+  and.8 = pred[] and(ne.13, ne.12)
+  add.195 = s64[] add(rem.1, jit__where_.11)
+  ROOT select_n.21 = s64[] select(and.8, add.195, rem.1)
+}
+
+region_22.41 {
+  arg_tuple.35 = (f64[6,32]{1,0}, f64[6,32]{1,0}) parameter(0)
+  get-tuple-element.340 = f64[6,32]{1,0} get-tuple-element(arg_tuple.35), index=0
+  get-tuple-element.341 = f64[6,32]{1,0} get-tuple-element(arg_tuple.35), index=1
+  ROOT tuple.33 = (f64[6,32]{1,0}, f64[6,32]{1,0}) tuple(get-tuple-element.340, get-tuple-element.341)
+}
+
+region_24.42 {
+  scatter.2 = f64[] parameter(0)
+  ROOT scatter.3 = f64[] parameter(1)
+}
+
+region_25.43 {
+  scatter.7 = f64[] parameter(0)
+  ROOT scatter.8 = f64[] parameter(1)
+}
+
+region_23.44 {
+  arg_tuple.37 = (s32[], f64[6,32]{1,0}, f64[32]{0}, f64[6,32]{1,0}, f64[32]{0}) parameter(0)
+  get-tuple-element.348 = f64[6,32]{1,0} get-tuple-element(arg_tuple.37), index=1
+  get-tuple-element.347 = s32[] get-tuple-element(arg_tuple.37), index=0
+  constant.295 = s32[] constant(0)
+  lt.18 = pred[] compare(get-tuple-element.347, constant.295), direction=LT
+  constant.294 = s32[] constant(6)
+  add.198 = s32[] add(get-tuple-element.347, constant.294)
+  select_n.24 = s32[] select(lt.18, add.198, get-tuple-element.347)
+  broadcast_in_dim.13 = s32[1]{0} reshape(select_n.24)
+  get-tuple-element.349 = f64[32]{0} get-tuple-element(arg_tuple.37), index=2
+  scatter.10 = f64[6,32]{1,0} scatter(get-tuple-element.348, broadcast_in_dim.13, get-tuple-element.349), update_window_dims={0}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=0, indices_are_sorted=true, unique_indices=true, to_apply=region_24.42
+  get-tuple-element.350 = f64[6,32]{1,0} get-tuple-element(arg_tuple.37), index=3
+  lt.19 = pred[] compare(get-tuple-element.347, constant.295), direction=LT
+  add.199 = s32[] add(get-tuple-element.347, constant.294)
+  select_n.25 = s32[] select(lt.19, add.199, get-tuple-element.347)
+  broadcast_in_dim.14 = s32[1]{0} reshape(select_n.25)
+  get-tuple-element.351 = f64[32]{0} get-tuple-element(arg_tuple.37), index=4
+  scatter.11 = f64[6,32]{1,0} scatter(get-tuple-element.350, broadcast_in_dim.14, get-tuple-element.351), update_window_dims={0}, inserted_window_dims={0}, scatter_dims_to_operand_dims={0}, index_vector_dim=0, indices_are_sorted=true, unique_indices=true, to_apply=region_25.43
+  ROOT tuple.35 = (f64[6,32]{1,0}, f64[6,32]{1,0}) tuple(scatter.10, scatter.11)
+}
+
+region_26.45 {
+  arg_tuple.39 = (s32[], pred[], s32[], f64[6,32]{1,0}, f64[32]{0}, /*index=5*/f64[6,32]{1,0}, f64[32]{0}) parameter(0)
+  get-tuple-element.360 = pred[] get-tuple-element(arg_tuple.39), index=1
+  get-tuple-element.359 = s32[] get-tuple-element(arg_tuple.39), index=0
+  constant.303 = s32[] constant(1)
+  sub.72 = s32[] subtract(get-tuple-element.359, constant.303)
+  get-tuple-element.364 = f64[6,32]{1,0} get-tuple-element(arg_tuple.39), index=5
+  constant.305 = s32[] constant(0)
+  lt.25 = pred[] compare(get-tuple-element.359, constant.305), direction=LT
+  constant.304 = s32[] constant(6)
+  add.208 = s32[] add(get-tuple-element.359, constant.304)
+  select_n.31 = s32[] select(lt.25, add.208, get-tuple-element.359)
+  dynamic_slice.5 = f64[1,32]{1,0} dynamic-slice(get-tuple-element.364, select_n.31, constant.305), dynamic_slice_sizes={1,32}
+  squeeze.5 = f64[32]{0} reshape(dynamic_slice.5)
+  get-tuple-element.363 = f64[32]{0} get-tuple-element(arg_tuple.39), index=4
+  get-tuple-element.362 = f64[6,32]{1,0} get-tuple-element(arg_tuple.39), index=3
+  lt.23 = pred[] compare(get-tuple-element.359, constant.305), direction=LT
+  add.205 = s32[] add(get-tuple-element.359, constant.304)
+  select_n.29 = s32[] select(lt.23, add.205, get-tuple-element.359)
+  dynamic_slice.3 = f64[1,32]{1,0} dynamic-slice(get-tuple-element.362, select_n.29, constant.305), dynamic_slice_sizes={1,32}
+  squeeze.3 = f64[32]{0} reshape(dynamic_slice.3)
+  sub.71 = f64[32]{0} subtract(get-tuple-element.363, squeeze.3)
+  lt.24 = pred[] compare(get-tuple-element.359, constant.305), direction=LT
+  add.206 = s32[] add(get-tuple-element.359, constant.304)
+  select_n.30 = s32[] select(lt.24, add.206, get-tuple-element.359)
+  dynamic_slice.4 = f64[1,32]{1,0} dynamic-slice(get-tuple-element.364, select_n.30, constant.305), dynamic_slice_sizes={1,32}
+  squeeze.4 = f64[32]{0} reshape(dynamic_slice.4)
+  add.207 = f64[32]{0} add(sub.71, squeeze.4)
+  get-tuple-element.365 = f64[32]{0} get-tuple-element(arg_tuple.39), index=6
+  add.209 = f64[32]{0} add(get-tuple-element.365, squeeze.5)
+  constant.302 = f64[] constant(2)
+  broadcast.19 = f64[32]{0} broadcast(constant.302), dimensions={}
+  div.3 = f64[32]{0} divide(add.209, broadcast.19)
+  sub.73 = f64[32]{0} subtract(add.207, div.3)
+  dot_general.11 = f64[] dot(squeeze.5, sub.73), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  constant.301 = f64[] constant(0)
+  le.2 = pred[] compare(dot_general.11, constant.301), direction=LE
+  dot_general.12 = f64[] dot(get-tuple-element.365, sub.73), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  le.3 = pred[] compare(dot_general.12, constant.301), direction=LE
+  or.51 = pred[] or(le.2, le.3)
+  get-tuple-element.361 = s32[] get-tuple-element(arg_tuple.39), index=2
+  ROOT tuple.37 = (s32[], pred[], s32[], f64[6,32]{1,0}, f64[32]{0}, /*index=5*/f64[6,32]{1,0}, f64[32]{0}) tuple(sub.72, or.51, get-tuple-element.361, get-tuple-element.362, get-tuple-element.363, get-tuple-element.364, get-tuple-element.365)
+}
+
+region_27.46 {
+  arg_tuple.41 = (s32[], pred[], s32[], f64[6,32]{1,0}, f64[32]{0}, /*index=5*/f64[6,32]{1,0}, f64[32]{0}) parameter(0)
+  get-tuple-element.376 = f64[6,32]{1,0} get-tuple-element(arg_tuple.41), index=3
+  get-tuple-element.377 = f64[32]{0} get-tuple-element(arg_tuple.41), index=4
+  get-tuple-element.378 = f64[6,32]{1,0} get-tuple-element(arg_tuple.41), index=5
+  get-tuple-element.379 = f64[32]{0} get-tuple-element(arg_tuple.41), index=6
+  get-tuple-element.373 = s32[] get-tuple-element(arg_tuple.41), index=0
+  get-tuple-element.375 = s32[] get-tuple-element(arg_tuple.41), index=2
+  ge.1 = pred[] compare(get-tuple-element.373, get-tuple-element.375), direction=GE
+  get-tuple-element.374 = pred[] get-tuple-element(arg_tuple.41), index=1
+  not.2 = pred[] not(get-tuple-element.374)
+  ROOT and.10 = pred[] and(ge.1, not.2)
+}
+
+region_15.47 {
+  arg_tuple.42 = (s64[], f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, /*index=5*/f64[], f64[], f64[], f64[32]{0}, f64[32]{0}, /*index=10*/f64[], f64[32]{0}, f64[32]{0}, f64[32]{0}, f64[], /*index=15*/f64[32]{0}, f64[32]{0}, s64[], f64[6,32]{1,0}, f64[6,32]{1,0}, /*index=20*/s32[], s32[], pred[], pred[], s64[], /*index=25*/u32[2]{0}, s64[], f64[2048,32]{1,0}, f64[2048]{0}, f64[]) parameter(0)
+  get-tuple-element.394 = f64[] get-tuple-element(arg_tuple.42), index=14
+  get-tuple-element.400 = s32[] get-tuple-element(arg_tuple.42), index=20
+  get-tuple-element.401 = s32[] get-tuple-element(arg_tuple.42), index=21
+  get-tuple-element.402 = pred[] get-tuple-element(arg_tuple.42), index=22
+  get-tuple-element.403 = pred[] get-tuple-element(arg_tuple.42), index=23
+  get-tuple-element.380 = s64[] get-tuple-element(arg_tuple.42), index=0
+  constant.309 = s64[] constant(1)
+  shift_right_arithmetic.1 = s64[] shift-right-arithmetic(get-tuple-element.380, constant.309)
+  jit_bitwise_count_.2 = u8[] call(shift_right_arithmetic.1), to_apply=bitwise_count.38
+  convert_element_type.34 = s32[] convert(jit_bitwise_count_.2)
+  constant.306 = pred[] constant(false)
+  not.3 = s64[] not(get-tuple-element.380)
+  add.216 = s64[] add(get-tuple-element.380, constant.309)
+  and.11 = s64[] and(not.3, add.216)
+  sub.79 = s64[] subtract(and.11, constant.309)
+  jit_bitwise_count_.3 = u8[] call(sub.79), to_apply=bitwise_count.38
+  convert_element_type.35 = s32[] convert(jit_bitwise_count_.3)
+  sub.80 = s32[] subtract(convert_element_type.34, convert_element_type.35)
+  constant.308 = s32[] constant(1)
+  add.217 = s32[] add(sub.80, constant.308)
+  constant.307 = s64[] constant(2)
+  jit_remainder_.1 = s64[] call(get-tuple-element.380, constant.307), to_apply=remainder.40
+  constant.310 = s64[] constant(0)
+  eq.11 = pred[] compare(jit_remainder_.1, constant.310), direction=EQ
+  convert_element_type.36 = s32[] convert(eq.11)
+  get-tuple-element.398 = f64[6,32]{1,0} get-tuple-element(arg_tuple.42), index=18
+  get-tuple-element.399 = f64[6,32]{1,0} get-tuple-element(arg_tuple.42), index=19
+  cond.60 = (f64[6,32]{1,0}, f64[6,32]{1,0}) tuple(get-tuple-element.398, get-tuple-element.399)
+  get-tuple-element.393 = f64[32]{0} get-tuple-element(arg_tuple.42), index=13
+  get-tuple-element.406 = s64[] get-tuple-element(arg_tuple.42), index=26
+  convert_element_type.32 = f64[] convert(get-tuple-element.406)
+  constant.320 = f64[] constant(0.005)
+  mul.38 = f64[] multiply(convert_element_type.32, constant.320)
+  constant.319 = f64[] constant(0.5)
+  mul.39 = f64[] multiply(mul.38, constant.319)
+  mul.40 = f64[32]{0} broadcast(mul.39), dimensions={}
+  get-tuple-element.395 = f64[32]{0} get-tuple-element(arg_tuple.42), index=15
+  mul.41 = f64[32]{0} multiply(mul.40, get-tuple-element.395)
+  add.211 = f64[32]{0} add(get-tuple-element.393, mul.41)
+  mul.47 = f64[] multiply(mul.38, constant.319)
+  mul.48 = f64[32]{0} broadcast(mul.47), dimensions={}
+  get-tuple-element.392 = f64[32]{0} get-tuple-element(arg_tuple.42), index=12
+  mul.42 = f64[32]{0} broadcast(mul.38), dimensions={}
+  dot_general.13 = f64[32]{0} dot(constant.319, add.211), lhs_contracting_dims={}, rhs_contracting_dims={}
+  dot_general.14 = f64[32]{0} dot(constant.319, add.211), lhs_contracting_dims={}, rhs_contracting_dims={}
+  add_any.5 = f64[32]{0} add(dot_general.13, dot_general.14)
+  mul.43 = f64[32]{0} multiply(mul.42, add_any.5)
+  add.212 = f64[32]{0} add(get-tuple-element.392, mul.43)
+  constant.315 = f64[] constant(2)
+  broadcast.22 = f64[32]{0} broadcast(constant.315), dimensions={}
+  mul.45 = f64[32]{0} multiply(add.212, broadcast.22)
+  constant.314 = f64[] constant(-0.5)
+  broadcast.21 = f64[32]{0} broadcast(constant.314), dimensions={}
+  broadcast_in_dim.15 = f64[32]{0} multiply(mul.45, broadcast.21)
+  get-tuple-element.407 = f64[2048,32]{1,0} get-tuple-element(arg_tuple.42), index=27
+  dot_general.15 = f64[2048]{0} dot(get-tuple-element.407, add.212), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  constant.317 = f64[] constant(inf)
+  broadcast.23 = f64[2048]{0} broadcast(constant.317), dimensions={}
+  eq.8 = pred[2048]{0} compare(dot_general.15, broadcast.23), direction=EQ
+  constant.318 = f64[] constant(0)
+  broadcast.24 = f64[2048]{0} broadcast(constant.318), dimensions={}
+  select_n.33 = f64[2048]{0} select(eq.8, broadcast.24, dot_general.15)
+  sub.74 = f64[2048]{0} subtract(broadcast.24, dot_general.15)
+  ne.14 = pred[2048]{0} compare(sub.74, sub.74), direction=NE
+  max.16 = f64[2048]{0} maximum(dot_general.15, broadcast.24)
+  abs.8 = f64[2048]{0} abs(sub.74)
+  neg.14 = f64[2048]{0} negate(abs.8)
+  exp.10 = f64[2048]{0} exponential(neg.14)
+  log1p.6 = f64[2048]{0} log-plus-one(exp.10)
+  add.213 = f64[2048]{0} add(max.16, log1p.6)
+  select_n.32 = f64[2048]{0} select(ne.14, dot_general.15, add.213)
+  eq.9 = pred[2048]{0} compare(select_n.32, broadcast.23), direction=EQ
+  select_n.34 = f64[2048]{0} select(eq.9, broadcast.24, select_n.32)
+  sub.75 = f64[2048]{0} subtract(select_n.33, select_n.34)
+  exp.11 = f64[2048]{0} exponential(sub.75)
+  constant.313 = f64[] constant(-1)
+  broadcast.20 = f64[2048]{0} broadcast(constant.313), dimensions={}
+  neg.15 = f64[2048]{0} multiply(exp.11, broadcast.20)
+  get-tuple-element.408 = f64[2048]{0} get-tuple-element(arg_tuple.42), index=28
+  add_any.6 = f64[2048]{0} add(neg.15, get-tuple-element.408)
+  dot_general.16 = f64[32]{0} dot(add_any.6, get-tuple-element.407), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  add_any.7 = f64[32]{0} add(broadcast_in_dim.15, dot_general.16)
+  mul.49 = f64[32]{0} multiply(mul.48, add_any.7)
+  add.214 = f64[32]{0} add(add.211, mul.49)
+  eq.10 = pred[] compare(get-tuple-element.380, constant.310), direction=EQ
+  convert_element_type.33 = s32[] convert(eq.10)
+  get-tuple-element.396 = f64[32]{0} get-tuple-element(arg_tuple.42), index=16
+  get-tuple-element.397 = s64[] get-tuple-element(arg_tuple.42), index=17
+  get-tuple-element.409 = f64[] get-tuple-element(arg_tuple.42), index=29
+  mul.44 = f64[2048]{0} multiply(get-tuple-element.408, dot_general.15)
+  sub.76 = f64[2048]{0} subtract(mul.44, select_n.32)
+  constant.316 = f64[] constant(0)
+  reduce_sum.28 = f64[] reduce(sub.76, constant.316), dimensions={0}, to_apply=region_16.32
+  integer_pow.2 = f64[32]{0} multiply(add.212, add.212)
+  reduce_sum.29 = f64[] reduce(integer_pow.2, constant.316), dimensions={0}, to_apply=region_17.33
+  mul.46 = f64[] multiply(reduce_sum.29, constant.319)
+  sub.77 = f64[] subtract(reduce_sum.28, mul.46)
+  neg.16 = f64[] negate(sub.77)
+  dot_general.17 = f64[] dot(add.214, add.214), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  mul.50 = f64[] multiply(dot_general.17, constant.319)
+  add.215 = f64[] add(neg.16, mul.50)
+  sub.78 = f64[] subtract(get-tuple-element.409, add.215)
+  ne.15 = pred[] compare(sub.78, sub.78), direction=NE
+  constant.312 = f64[] constant(-inf)
+  jit__where_.12 = f64[] call(ne.15, constant.312, sub.78), to_apply=_where_8.31
+  get-tuple-element.386 = f64[] get-tuple-element(arg_tuple.42), index=6
+  get-tuple-element.405 = u32[2]{0} get-tuple-element(arg_tuple.42), index=25
+  convert_element_type.31 = u32[] convert(get-tuple-element.380)
+  jit__threefry_fold_in_.2 = u32[2]{0} call(get-tuple-element.405, convert_element_type.31), to_apply=_threefry_fold_in.16
+  get-tuple-element.387 = f64[] get-tuple-element(arg_tuple.42), index=7
+  min.2 = f64[] minimum(jit__where_.12, constant.316)
+  get-tuple-element.381 = f64[32]{0} get-tuple-element(arg_tuple.42), index=1
+  get-tuple-element.382 = f64[32]{0} get-tuple-element(arg_tuple.42), index=2
+  get-tuple-element.383 = f64[] get-tuple-element(arg_tuple.42), index=3
+  get-tuple-element.384 = f64[32]{0} get-tuple-element(arg_tuple.42), index=4
+  get-tuple-element.385 = f64[] get-tuple-element(arg_tuple.42), index=5
+  get-tuple-element.388 = f64[32]{0} get-tuple-element(arg_tuple.42), index=8
+  get-tuple-element.389 = f64[32]{0} get-tuple-element(arg_tuple.42), index=9
+  get-tuple-element.390 = f64[] get-tuple-element(arg_tuple.42), index=10
+  get-tuple-element.391 = f64[32]{0} get-tuple-element(arg_tuple.42), index=11
+  cond.44 = (f64[32]{0}, f64[32]{0}, s64[], f64[], f64[], /*index=5*/u32[2]{0}, f64[], f64[], f64[32]{0}, f64[32]{0}, /*index=10*/f64[], f64[32]{0}, f64[], f64[32]{0}, f64[], /*index=15*/f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, f64[], /*index=20*/f64[32]{0}) tuple(get-tuple-element.396, add.214, get-tuple-element.397, jit__where_.12, get-tuple-element.386, jit__threefry_fold_in_.2, get-tuple-element.387, min.2, get-tuple-element.381, get-tuple-element.382, get-tuple-element.383, get-tuple-element.384, get-tuple-element.385, add.212, sub.77, add_any.7, add.215, get-tuple-element.388, get-tuple-element.389, get-tuple-element.390, get-tuple-element.391)
+  cond.45 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[], /*index=5*/f64[], f64[]) tuple(add.212, add.214, sub.77, add_any.7, add.215, jit__where_.12, min.2)
+  cond.46 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/s64[], f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, /*index=10*/f64[], f64[], f64[]) conditional(convert_element_type.33, cond.44, cond.45), branch_computations={region_18.36, region_21.37}
+  cond.51 = f64[32]{0} get-tuple-element(cond.46), index=4
+  cond.61 = (s32[], f64[6,32]{1,0}, f64[32]{0}, f64[6,32]{1,0}, f64[32]{0}) tuple(convert_element_type.34, get-tuple-element.398, add.214, get-tuple-element.399, cond.51)
+  cond.62 = (f64[6,32]{1,0}, f64[6,32]{1,0}) conditional(convert_element_type.36, cond.60, cond.61), branch_computations={region_22.41, region_23.44}
+  cond.64 = f64[6,32]{1,0} get-tuple-element(cond.62), index=1
+  cond.63 = f64[6,32]{1,0} get-tuple-element(cond.62), index=0
+  while.114 = (s32[], pred[], s32[], f64[6,32]{1,0}, f64[32]{0}, /*index=5*/f64[6,32]{1,0}, f64[32]{0}) tuple(convert_element_type.34, constant.306, add.217, cond.64, cond.51, cond.63, add.214)
+  while.115 = (s32[], pred[], s32[], f64[6,32]{1,0}, f64[32]{0}, /*index=5*/f64[6,32]{1,0}, f64[32]{0}) while(while.114), condition=region_27.46, body=region_26.45
+  while.116 = s32[] get-tuple-element(while.115), index=0
+  add.218 = s64[] add(get-tuple-element.380, constant.309)
+  cond.53 = f64[32]{0} get-tuple-element(cond.46), index=6
+  cond.54 = f64[32]{0} get-tuple-element(cond.46), index=7
+  cond.55 = f64[] get-tuple-element(cond.46), index=8
+  cond.56 = f64[32]{0} get-tuple-element(cond.46), index=9
+  cond.57 = f64[] get-tuple-element(cond.46), index=10
+  cond.58 = f64[] get-tuple-element(cond.46), index=11
+  cond.59 = f64[] get-tuple-element(cond.46), index=12
+  cond.47 = f64[32]{0} get-tuple-element(cond.46), index=0
+  cond.48 = f64[32]{0} get-tuple-element(cond.46), index=1
+  cond.49 = f64[] get-tuple-element(cond.46), index=2
+  cond.50 = f64[32]{0} get-tuple-element(cond.46), index=3
+  cond.52 = s64[] get-tuple-element(cond.46), index=5
+  neg.17 = f64[] negate(jit__where_.12)
+  constant.311 = f64[] constant(1000)
+  gt.2 = pred[] compare(neg.17, constant.311), direction=GT
+  while.117 = pred[] get-tuple-element(while.115), index=1
+  get-tuple-element.404 = s64[] get-tuple-element(arg_tuple.42), index=24
+  ROOT tuple.39 = (s64[], f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, /*index=5*/f64[], f64[], f64[], f64[32]{0}, f64[32]{0}, /*index=10*/f64[], f64[32]{0}, f64[32]{0}, f64[32]{0}, f64[], /*index=15*/f64[32]{0}, f64[32]{0}, s64[], f64[6,32]{1,0}, f64[6,32]{1,0}, /*index=20*/s32[], s32[], pred[], pred[], s64[], /*index=25*/u32[2]{0}, s64[], f64[2048,32]{1,0}, f64[2048]{0}, f64[]) tuple(add.218, cond.53, cond.54, cond.55, cond.56, cond.57, cond.58, cond.59, cond.47, cond.48, cond.49, cond.50, add.212, add.214, sub.77, add_any.7, cond.51, cond.52, cond.63, cond.64, add.217, convert_element_type.34, gt.2, while.117, get-tuple-element.404, get-tuple-element.405, get-tuple-element.406, get-tuple-element.407, get-tuple-element.408, get-tuple-element.409)
+}
+
+region_28.48 {
+  arg_tuple.44 = (s64[], f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, /*index=5*/f64[], f64[], f64[], f64[32]{0}, f64[32]{0}, /*index=10*/f64[], f64[32]{0}, f64[32]{0}, f64[32]{0}, f64[], /*index=15*/f64[32]{0}, f64[32]{0}, s64[], f64[6,32]{1,0}, f64[6,32]{1,0}, /*index=20*/s32[], s32[], pred[], pred[], s64[], /*index=25*/u32[2]{0}, s64[], f64[2048,32]{1,0}, f64[2048]{0}, f64[]) parameter(0)
+  get-tuple-element.441 = f64[32]{0} get-tuple-element(arg_tuple.44), index=1
+  get-tuple-element.442 = f64[32]{0} get-tuple-element(arg_tuple.44), index=2
+  get-tuple-element.443 = f64[] get-tuple-element(arg_tuple.44), index=3
+  get-tuple-element.444 = f64[32]{0} get-tuple-element(arg_tuple.44), index=4
+  get-tuple-element.445 = f64[] get-tuple-element(arg_tuple.44), index=5
+  get-tuple-element.446 = f64[] get-tuple-element(arg_tuple.44), index=6
+  get-tuple-element.447 = f64[] get-tuple-element(arg_tuple.44), index=7
+  get-tuple-element.448 = f64[32]{0} get-tuple-element(arg_tuple.44), index=8
+  get-tuple-element.449 = f64[32]{0} get-tuple-element(arg_tuple.44), index=9
+  get-tuple-element.450 = f64[] get-tuple-element(arg_tuple.44), index=10
+  get-tuple-element.451 = f64[32]{0} get-tuple-element(arg_tuple.44), index=11
+  get-tuple-element.452 = f64[32]{0} get-tuple-element(arg_tuple.44), index=12
+  get-tuple-element.453 = f64[32]{0} get-tuple-element(arg_tuple.44), index=13
+  get-tuple-element.454 = f64[] get-tuple-element(arg_tuple.44), index=14
+  get-tuple-element.455 = f64[32]{0} get-tuple-element(arg_tuple.44), index=15
+  get-tuple-element.456 = f64[32]{0} get-tuple-element(arg_tuple.44), index=16
+  get-tuple-element.457 = s64[] get-tuple-element(arg_tuple.44), index=17
+  get-tuple-element.458 = f64[6,32]{1,0} get-tuple-element(arg_tuple.44), index=18
+  get-tuple-element.459 = f64[6,32]{1,0} get-tuple-element(arg_tuple.44), index=19
+  get-tuple-element.460 = s32[] get-tuple-element(arg_tuple.44), index=20
+  get-tuple-element.461 = s32[] get-tuple-element(arg_tuple.44), index=21
+  get-tuple-element.465 = u32[2]{0} get-tuple-element(arg_tuple.44), index=25
+  get-tuple-element.466 = s64[] get-tuple-element(arg_tuple.44), index=26
+  get-tuple-element.467 = f64[2048,32]{1,0} get-tuple-element(arg_tuple.44), index=27
+  get-tuple-element.468 = f64[2048]{0} get-tuple-element(arg_tuple.44), index=28
+  get-tuple-element.469 = f64[] get-tuple-element(arg_tuple.44), index=29
+  get-tuple-element.440 = s64[] get-tuple-element(arg_tuple.44), index=0
+  get-tuple-element.464 = s64[] get-tuple-element(arg_tuple.44), index=24
+  lt.27 = pred[] compare(get-tuple-element.440, get-tuple-element.464), direction=LT
+  get-tuple-element.463 = pred[] get-tuple-element(arg_tuple.44), index=23
+  not.6 = pred[] not(get-tuple-element.463)
+  and.14 = pred[] and(lt.27, not.6)
+  get-tuple-element.462 = pred[] get-tuple-element(arg_tuple.44), index=22
+  not.7 = pred[] not(get-tuple-element.462)
+  ROOT and.15 = pred[] and(and.14, not.7)
+}
+
+region_29.49 {
+  arg_tuple.46 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/f64[32]{0}, f64[], f64[32]{0}) parameter(0)
+  get-tuple-element.478 = f64[32]{0} get-tuple-element(arg_tuple.46), index=0
+  get-tuple-element.479 = f64[32]{0} get-tuple-element(arg_tuple.46), index=1
+  get-tuple-element.480 = f64[] get-tuple-element(arg_tuple.46), index=2
+  get-tuple-element.481 = f64[32]{0} get-tuple-element(arg_tuple.46), index=3
+  get-tuple-element.482 = f64[32]{0} get-tuple-element(arg_tuple.46), index=4
+  get-tuple-element.483 = f64[32]{0} get-tuple-element(arg_tuple.46), index=5
+  get-tuple-element.484 = f64[] get-tuple-element(arg_tuple.46), index=6
+  get-tuple-element.485 = f64[32]{0} get-tuple-element(arg_tuple.46), index=7
+  ROOT tuple.41 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/f64[32]{0}, f64[], f64[32]{0}) tuple(get-tuple-element.478, get-tuple-element.479, get-tuple-element.480, get-tuple-element.481, get-tuple-element.482, get-tuple-element.483, get-tuple-element.484, get-tuple-element.485)
+}
+
+region_30.50 {
+  arg_tuple.48 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/f64[32]{0}, f64[], f64[32]{0}) parameter(0)
+  get-tuple-element.494 = f64[32]{0} get-tuple-element(arg_tuple.48), index=0
+  get-tuple-element.495 = f64[32]{0} get-tuple-element(arg_tuple.48), index=1
+  get-tuple-element.496 = f64[] get-tuple-element(arg_tuple.48), index=2
+  get-tuple-element.497 = f64[32]{0} get-tuple-element(arg_tuple.48), index=3
+  get-tuple-element.498 = f64[32]{0} get-tuple-element(arg_tuple.48), index=4
+  get-tuple-element.499 = f64[32]{0} get-tuple-element(arg_tuple.48), index=5
+  get-tuple-element.500 = f64[] get-tuple-element(arg_tuple.48), index=6
+  get-tuple-element.501 = f64[32]{0} get-tuple-element(arg_tuple.48), index=7
+  ROOT tuple.43 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/f64[32]{0}, f64[], f64[32]{0}) tuple(get-tuple-element.494, get-tuple-element.495, get-tuple-element.496, get-tuple-element.497, get-tuple-element.498, get-tuple-element.499, get-tuple-element.500, get-tuple-element.501)
+}
+
+clip.51 {
+  Arg_1.25 = s64[] parameter(1)
+  convert_element_type.40 = f64[] convert(Arg_1.25)
+  Arg_0.35 = f64[] parameter(0)
+  ROOT min.4 = f64[] minimum(convert_element_type.40, Arg_0.35)
+}
+
+region_32.52 {
+  arg_tuple.51 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[]) parameter(0)
+  get-tuple-element.522 = f64[32]{0} get-tuple-element(arg_tuple.51), index=0
+  get-tuple-element.523 = f64[32]{0} get-tuple-element(arg_tuple.51), index=1
+  get-tuple-element.524 = f64[] get-tuple-element(arg_tuple.51), index=2
+  get-tuple-element.525 = f64[32]{0} get-tuple-element(arg_tuple.51), index=3
+  get-tuple-element.526 = f64[] get-tuple-element(arg_tuple.51), index=4
+  ROOT tuple.45 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[]) tuple(get-tuple-element.522, get-tuple-element.523, get-tuple-element.524, get-tuple-element.525, get-tuple-element.526)
+}
+
+region_33.53 {
+  arg_tuple.53 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[]) parameter(0)
+  get-tuple-element.532 = f64[32]{0} get-tuple-element(arg_tuple.53), index=0
+  get-tuple-element.533 = f64[32]{0} get-tuple-element(arg_tuple.53), index=1
+  get-tuple-element.534 = f64[] get-tuple-element(arg_tuple.53), index=2
+  get-tuple-element.535 = f64[32]{0} get-tuple-element(arg_tuple.53), index=3
+  get-tuple-element.536 = f64[] get-tuple-element(arg_tuple.53), index=4
+  ROOT tuple.47 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[]) tuple(get-tuple-element.532, get-tuple-element.533, get-tuple-element.534, get-tuple-element.535, get-tuple-element.536)
+}
+
+region_31.54 {
+  arg_tuple.54 = (f64[], f64[], u32[2]{0}, f64[], f64[], /*index=5*/f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[], /*index=10*/f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[]) parameter(0)
+  get-tuple-element.539 = u32[2]{0} get-tuple-element(arg_tuple.54), index=2
+  get-tuple-element.537 = f64[] get-tuple-element(arg_tuple.54), index=0
+  get-tuple-element.538 = f64[] get-tuple-element(arg_tuple.54), index=1
+  sub.84 = f64[] subtract(get-tuple-element.537, get-tuple-element.538)
+  exp.15 = f64[] exponential(sub.84)
+  constant.322 = s64[] constant(1)
+  jit_clip_.1 = f64[] call(exp.15, constant.322), to_apply=clip.51
+  jit__bernoulli_.4 = pred[] call(get-tuple-element.539, jit_clip_.1), to_apply=_bernoulli.25
+  convert_element_type.42 = s32[] convert(jit__bernoulli_.4)
+  get-tuple-element.542 = f64[32]{0} get-tuple-element(arg_tuple.54), index=5
+  get-tuple-element.543 = f64[32]{0} get-tuple-element(arg_tuple.54), index=6
+  get-tuple-element.544 = f64[] get-tuple-element(arg_tuple.54), index=7
+  get-tuple-element.545 = f64[32]{0} get-tuple-element(arg_tuple.54), index=8
+  get-tuple-element.546 = f64[] get-tuple-element(arg_tuple.54), index=9
+  cond.85 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[]) tuple(get-tuple-element.542, get-tuple-element.543, get-tuple-element.544, get-tuple-element.545, get-tuple-element.546)
+  get-tuple-element.547 = f64[32]{0} get-tuple-element(arg_tuple.54), index=10
+  get-tuple-element.548 = f64[32]{0} get-tuple-element(arg_tuple.54), index=11
+  get-tuple-element.549 = f64[] get-tuple-element(arg_tuple.54), index=12
+  get-tuple-element.550 = f64[32]{0} get-tuple-element(arg_tuple.54), index=13
+  get-tuple-element.551 = f64[] get-tuple-element(arg_tuple.54), index=14
+  cond.86 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[]) tuple(get-tuple-element.547, get-tuple-element.548, get-tuple-element.549, get-tuple-element.550, get-tuple-element.551)
+  cond.87 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[]) conditional(convert_element_type.42, cond.85, cond.86), branch_computations={region_32.52, region_33.53}
+  cond.88 = f64[32]{0} get-tuple-element(cond.87), index=0
+  cond.89 = f64[32]{0} get-tuple-element(cond.87), index=1
+  cond.90 = f64[] get-tuple-element(cond.87), index=2
+  cond.91 = f64[32]{0} get-tuple-element(cond.87), index=3
+  cond.92 = f64[] get-tuple-element(cond.87), index=4
+  sub.85 = f64[] subtract(get-tuple-element.538, get-tuple-element.537)
+  ne.18 = pred[] compare(sub.85, sub.85), direction=NE
+  add.223 = f64[] add(get-tuple-element.538, get-tuple-element.537)
+  max.19 = f64[] maximum(get-tuple-element.538, get-tuple-element.537)
+  abs.11 = f64[] abs(sub.85)
+  neg.20 = f64[] negate(abs.11)
+  exp.16 = f64[] exponential(neg.20)
+  log1p.9 = f64[] log-plus-one(exp.16)
+  add.224 = f64[] add(max.19, log1p.9)
+  select_n.37 = f64[] select(ne.18, add.223, add.224)
+  get-tuple-element.540 = f64[] get-tuple-element(arg_tuple.54), index=3
+  get-tuple-element.541 = f64[] get-tuple-element(arg_tuple.54), index=4
+  sub.86 = f64[] subtract(get-tuple-element.540, get-tuple-element.541)
+  ne.19 = pred[] compare(sub.86, sub.86), direction=NE
+  add.225 = f64[] add(get-tuple-element.540, get-tuple-element.541)
+  max.20 = f64[] maximum(get-tuple-element.540, get-tuple-element.541)
+  abs.12 = f64[] abs(sub.86)
+  neg.21 = f64[] negate(abs.12)
+  exp.17 = f64[] exponential(neg.21)
+  log1p.10 = f64[] log-plus-one(exp.17)
+  add.226 = f64[] add(max.20, log1p.10)
+  select_n.38 = f64[] select(ne.19, add.225, add.226)
+  ROOT tuple.49 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[], /*index=5*/f64[], f64[]) tuple(cond.88, cond.89, cond.90, cond.91, cond.92, select_n.37, select_n.38)
+}
+
+region_34.55 {
+  arg_tuple.56 = (f64[], f64[], f64[32]{0}, f64[32]{0}, f64[], /*index=5*/f64[32]{0}, f64[], f64[]) parameter(0)
+  get-tuple-element.562 = f64[32]{0} get-tuple-element(arg_tuple.56), index=2
+  get-tuple-element.563 = f64[32]{0} get-tuple-element(arg_tuple.56), index=3
+  get-tuple-element.564 = f64[] get-tuple-element(arg_tuple.56), index=4
+  get-tuple-element.565 = f64[32]{0} get-tuple-element(arg_tuple.56), index=5
+  get-tuple-element.566 = f64[] get-tuple-element(arg_tuple.56), index=6
+  get-tuple-element.567 = f64[] get-tuple-element(arg_tuple.56), index=7
+  get-tuple-element.560 = f64[] get-tuple-element(arg_tuple.56), index=0
+  get-tuple-element.561 = f64[] get-tuple-element(arg_tuple.56), index=1
+  sub.88 = f64[] subtract(get-tuple-element.560, get-tuple-element.561)
+  ne.21 = pred[] compare(sub.88, sub.88), direction=NE
+  add.229 = f64[] add(get-tuple-element.560, get-tuple-element.561)
+  max.22 = f64[] maximum(get-tuple-element.560, get-tuple-element.561)
+  abs.14 = f64[] abs(sub.88)
+  neg.23 = f64[] negate(abs.14)
+  exp.19 = f64[] exponential(neg.23)
+  log1p.12 = f64[] log-plus-one(exp.19)
+  add.230 = f64[] add(max.22, log1p.12)
+  select_n.40 = f64[] select(ne.21, add.229, add.230)
+  ROOT tuple.51 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[], /*index=5*/f64[], f64[]) tuple(get-tuple-element.562, get-tuple-element.563, get-tuple-element.564, get-tuple-element.565, get-tuple-element.566, get-tuple-element.567, select_n.40)
+}
+
+region_35.56 {
+  arg_tuple.58 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, s64[], /*index=10*/f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=15*/f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, s64[]) parameter(0)
+  get-tuple-element.588 = f64[32]{0} get-tuple-element(arg_tuple.58), index=0
+  get-tuple-element.589 = f64[32]{0} get-tuple-element(arg_tuple.58), index=1
+  get-tuple-element.590 = f64[] get-tuple-element(arg_tuple.58), index=2
+  get-tuple-element.591 = f64[32]{0} get-tuple-element(arg_tuple.58), index=3
+  get-tuple-element.592 = f64[32]{0} get-tuple-element(arg_tuple.58), index=4
+  get-tuple-element.593 = f64[32]{0} get-tuple-element(arg_tuple.58), index=5
+  get-tuple-element.594 = f64[] get-tuple-element(arg_tuple.58), index=6
+  get-tuple-element.595 = f64[32]{0} get-tuple-element(arg_tuple.58), index=7
+  get-tuple-element.596 = f64[32]{0} get-tuple-element(arg_tuple.58), index=8
+  get-tuple-element.597 = s64[] get-tuple-element(arg_tuple.58), index=9
+  get-tuple-element.598 = f64[32]{0} get-tuple-element(arg_tuple.58), index=10
+  get-tuple-element.599 = f64[32]{0} get-tuple-element(arg_tuple.58), index=11
+  get-tuple-element.600 = f64[] get-tuple-element(arg_tuple.58), index=12
+  get-tuple-element.601 = f64[32]{0} get-tuple-element(arg_tuple.58), index=13
+  get-tuple-element.602 = f64[32]{0} get-tuple-element(arg_tuple.58), index=14
+  get-tuple-element.603 = f64[32]{0} get-tuple-element(arg_tuple.58), index=15
+  get-tuple-element.604 = f64[] get-tuple-element(arg_tuple.58), index=16
+  get-tuple-element.605 = f64[32]{0} get-tuple-element(arg_tuple.58), index=17
+  get-tuple-element.606 = f64[32]{0} get-tuple-element(arg_tuple.58), index=18
+  get-tuple-element.607 = s64[] get-tuple-element(arg_tuple.58), index=19
+  ROOT tuple.53 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, s64[], /*index=10*/f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=15*/f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, s64[]) tuple(get-tuple-element.588, get-tuple-element.589, get-tuple-element.590, get-tuple-element.591, get-tuple-element.592, get-tuple-element.593, get-tuple-element.594, get-tuple-element.595, get-tuple-element.596, get-tuple-element.597, get-tuple-element.598, get-tuple-element.599, get-tuple-element.600, get-tuple-element.601, get-tuple-element.602, get-tuple-element.603, get-tuple-element.604, get-tuple-element.605, get-tuple-element.606, get-tuple-element.607)
+}
+
+region_36.57 {
+  arg_tuple.60 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, s64[], /*index=10*/f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=15*/f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, s64[]) parameter(0)
+  get-tuple-element.628 = f64[32]{0} get-tuple-element(arg_tuple.60), index=0
+  get-tuple-element.629 = f64[32]{0} get-tuple-element(arg_tuple.60), index=1
+  get-tuple-element.630 = f64[] get-tuple-element(arg_tuple.60), index=2
+  get-tuple-element.631 = f64[32]{0} get-tuple-element(arg_tuple.60), index=3
+  get-tuple-element.632 = f64[32]{0} get-tuple-element(arg_tuple.60), index=4
+  get-tuple-element.633 = f64[32]{0} get-tuple-element(arg_tuple.60), index=5
+  get-tuple-element.634 = f64[] get-tuple-element(arg_tuple.60), index=6
+  get-tuple-element.635 = f64[32]{0} get-tuple-element(arg_tuple.60), index=7
+  get-tuple-element.636 = f64[32]{0} get-tuple-element(arg_tuple.60), index=8
+  get-tuple-element.637 = s64[] get-tuple-element(arg_tuple.60), index=9
+  get-tuple-element.638 = f64[32]{0} get-tuple-element(arg_tuple.60), index=10
+  get-tuple-element.639 = f64[32]{0} get-tuple-element(arg_tuple.60), index=11
+  get-tuple-element.640 = f64[] get-tuple-element(arg_tuple.60), index=12
+  get-tuple-element.641 = f64[32]{0} get-tuple-element(arg_tuple.60), index=13
+  get-tuple-element.642 = f64[32]{0} get-tuple-element(arg_tuple.60), index=14
+  get-tuple-element.643 = f64[32]{0} get-tuple-element(arg_tuple.60), index=15
+  get-tuple-element.644 = f64[] get-tuple-element(arg_tuple.60), index=16
+  get-tuple-element.645 = f64[32]{0} get-tuple-element(arg_tuple.60), index=17
+  get-tuple-element.646 = f64[32]{0} get-tuple-element(arg_tuple.60), index=18
+  get-tuple-element.647 = s64[] get-tuple-element(arg_tuple.60), index=19
+  ROOT tuple.55 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, s64[], /*index=10*/f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=15*/f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, s64[]) tuple(get-tuple-element.628, get-tuple-element.629, get-tuple-element.630, get-tuple-element.631, get-tuple-element.632, get-tuple-element.633, get-tuple-element.634, get-tuple-element.635, get-tuple-element.636, get-tuple-element.637, get-tuple-element.638, get-tuple-element.639, get-tuple-element.640, get-tuple-element.641, get-tuple-element.642, get-tuple-element.643, get-tuple-element.644, get-tuple-element.645, get-tuple-element.646, get-tuple-element.647)
+}
+
+region_6.58 {
+  arg_tuple.61 = (s64[], f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, /*index=5*/f64[], f64[], f64[], f64[32]{0}, f64[32]{0}, /*index=10*/f64[], f64[32]{0}, f64[32]{0}, f64[32]{0}, f64[], /*index=15*/f64[32]{0}, f64[32]{0}, s64[], f64[6,32]{1,0}, f64[6,32]{1,0}, /*index=20*/s32[], s32[], pred[], pred[], u32[2]{0}, /*index=25*/f64[], f64[2048,32]{1,0}, f64[2048]{0}) parameter(0)
+  get-tuple-element.670 = pred[] get-tuple-element(arg_tuple.61), index=22
+  get-tuple-element.671 = pred[] get-tuple-element(arg_tuple.61), index=23
+  constant.333 = s64[] constant(0)
+  get-tuple-element.672 = u32[2]{0} get-tuple-element(arg_tuple.61), index=24
+  get-tuple-element.648 = s64[] get-tuple-element(arg_tuple.61), index=0
+  convert_element_type.44 = u32[] convert(get-tuple-element.648)
+  jit__threefry_fold_in_.3 = u32[2]{0} call(get-tuple-element.672, convert_element_type.44), to_apply=_threefry_fold_in.16
+  jit__threefry_split_.2 = u32[3,2]{1,0} call(jit__threefry_fold_in_.3), to_apply=_threefry_split_2.20
+  unstack.130 = u32[1,2]{1,0} slice(jit__threefry_split_.2), slice={[0:1], [0:2]}
+  unstack.131 = u32[2]{0} reshape(unstack.130)
+  constant.336 = f64[] constant(0.5)
+  jit__bernoulli_.5 = pred[] call(unstack.131, constant.336), to_apply=_bernoulli.25
+  constant.335 = s64[] constant(1)
+  constant.334 = s64[] constant(-1)
+  jit__where_.13 = s64[] call(jit__bernoulli_.5, constant.335, constant.334), to_apply=_where.26
+  gt.5 = pred[] compare(jit__where_.13, constant.333), direction=GT
+  convert_element_type.45 = s32[] convert(gt.5)
+  get-tuple-element.656 = f64[32]{0} get-tuple-element(arg_tuple.61), index=8
+  get-tuple-element.657 = f64[32]{0} get-tuple-element(arg_tuple.61), index=9
+  get-tuple-element.658 = f64[] get-tuple-element(arg_tuple.61), index=10
+  get-tuple-element.659 = f64[32]{0} get-tuple-element(arg_tuple.61), index=11
+  cond.125 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}) tuple(get-tuple-element.656, get-tuple-element.657, get-tuple-element.658, get-tuple-element.659)
+  get-tuple-element.660 = f64[32]{0} get-tuple-element(arg_tuple.61), index=12
+  get-tuple-element.661 = f64[32]{0} get-tuple-element(arg_tuple.61), index=13
+  get-tuple-element.662 = f64[] get-tuple-element(arg_tuple.61), index=14
+  get-tuple-element.663 = f64[32]{0} get-tuple-element(arg_tuple.61), index=15
+  cond.126 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}) tuple(get-tuple-element.660, get-tuple-element.661, get-tuple-element.662, get-tuple-element.663)
+  cond.127 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}) conditional(convert_element_type.45, cond.125, cond.126), branch_computations={region_13.27, region_14.28}
+  cond.128 = f64[32]{0} get-tuple-element(cond.127), index=0
+  cond.129 = f64[32]{0} get-tuple-element(cond.127), index=1
+  cond.130 = f64[] get-tuple-element(cond.127), index=2
+  cond.131 = f64[32]{0} get-tuple-element(cond.127), index=3
+  neg.24 = f64[] negate(cond.130)
+  dot_general.20 = f64[] dot(cond.129, cond.129), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  mul.57 = f64[] multiply(dot_general.20, constant.336)
+  add.235 = f64[] add(neg.24, mul.57)
+  get-tuple-element.673 = f64[] get-tuple-element(arg_tuple.61), index=25
+  sub.90 = f64[] subtract(get-tuple-element.673, add.235)
+  ne.22 = pred[] compare(sub.90, sub.90), direction=NE
+  constant.325 = f64[] constant(-inf)
+  jit__where_.21 = f64[] call(ne.22, constant.325, sub.90), to_apply=_where_8.31
+  constant.324 = f64[] constant(0)
+  min.5 = f64[] minimum(jit__where_.21, constant.324)
+  get-tuple-element.666 = f64[6,32]{1,0} get-tuple-element(arg_tuple.61), index=18
+  get-tuple-element.667 = f64[6,32]{1,0} get-tuple-element(arg_tuple.61), index=19
+  get-tuple-element.668 = s32[] get-tuple-element(arg_tuple.61), index=20
+  get-tuple-element.669 = s32[] get-tuple-element(arg_tuple.61), index=21
+  constant.332 = pred[] constant(false)
+  shift_right_logical.86 = s64[] shift-right-logical(get-tuple-element.648, constant.335)
+  shift_right_logical.87 = s64[] shift-right-logical(shift_right_logical.86, constant.335)
+  shift_right_logical.88 = s64[] shift-right-logical(shift_right_logical.87, constant.335)
+  shift_right_logical.89 = s64[] shift-right-logical(shift_right_logical.88, constant.335)
+  shift_right_logical.90 = s64[] shift-right-logical(shift_right_logical.89, constant.335)
+  and.21 = s64[] and(shift_right_logical.90, constant.335)
+  and.20 = s64[] and(shift_right_logical.89, constant.335)
+  and.19 = s64[] and(shift_right_logical.88, constant.335)
+  and.18 = s64[] and(shift_right_logical.87, constant.335)
+  and.17 = s64[] and(shift_right_logical.86, constant.335)
+  and.16 = s64[] and(get-tuple-element.648, constant.335)
+  jit__where_.14 = s64[] call(constant.332, constant.333, constant.335), to_apply=_where_6.29
+  constant.331 = s64[] constant(2)
+  mul.51 = s64[] multiply(jit__where_.14, constant.331)
+  jit__where_.15 = s64[] call(and.16, mul.51, jit__where_.14), to_apply=_where_7.30
+  constant.330 = s64[] constant(4)
+  mul.52 = s64[] multiply(jit__where_.15, constant.330)
+  jit__where_.16 = s64[] call(and.17, mul.52, jit__where_.15), to_apply=_where_7.30
+  constant.329 = s64[] constant(16)
+  mul.53 = s64[] multiply(jit__where_.16, constant.329)
+  jit__where_.17 = s64[] call(and.18, mul.53, jit__where_.16), to_apply=_where_7.30
+  constant.328 = s64[] constant(256)
+  mul.54 = s64[] multiply(jit__where_.17, constant.328)
+  jit__where_.18 = s64[] call(and.19, mul.54, jit__where_.17), to_apply=_where_7.30
+  constant.327 = s64[] constant(65536)
+  mul.55 = s64[] multiply(jit__where_.18, constant.327)
+  jit__where_.19 = s64[] call(and.20, mul.55, jit__where_.18), to_apply=_where_7.30
+  constant.326 = s64[] constant(4294967296)
+  mul.56 = s64[] multiply(jit__where_.19, constant.326)
+  jit__where_.20 = s64[] call(and.21, mul.56, jit__where_.19), to_apply=_where_7.30
+  unstack.132 = u32[1,2]{1,0} slice(jit__threefry_split_.2), slice={[1:2], [0:2]}
+  unstack.133 = u32[2]{0} reshape(unstack.132)
+  get-tuple-element.674 = f64[2048,32]{1,0} get-tuple-element(arg_tuple.61), index=26
+  get-tuple-element.675 = f64[2048]{0} get-tuple-element(arg_tuple.61), index=27
+  while.144 = (s64[], f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, /*index=5*/f64[], f64[], f64[], f64[32]{0}, f64[32]{0}, /*index=10*/f64[], f64[32]{0}, f64[32]{0}, f64[32]{0}, f64[], /*index=15*/f64[32]{0}, f64[32]{0}, s64[], f64[6,32]{1,0}, f64[6,32]{1,0}, /*index=20*/s32[], s32[], pred[], pred[], s64[], /*index=25*/u32[2]{0}, s64[], f64[2048,32]{1,0}, f64[2048]{0}, f64[]) tuple(constant.333, cond.128, cond.129, cond.130, cond.131, add.235, jit__where_.21, min.5, cond.128, cond.129, cond.130, cond.131, cond.128, cond.129, cond.130, cond.131, cond.129, constant.333, get-tuple-element.666, get-tuple-element.667, get-tuple-element.668, get-tuple-element.669, constant.332, constant.332, jit__where_.20, unstack.133, jit__where_.13, get-tuple-element.674, get-tuple-element.675, get-tuple-element.673)
+  while.145 = (s64[], f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, /*index=5*/f64[], f64[], f64[], f64[32]{0}, f64[32]{0}, /*index=10*/f64[], f64[32]{0}, f64[32]{0}, f64[32]{0}, f64[], /*index=15*/f64[32]{0}, f64[32]{0}, s64[], f64[6,32]{1,0}, f64[6,32]{1,0}, /*index=20*/s32[], s32[], pred[], pred[], s64[], /*index=25*/u32[2]{0}, s64[], f64[2048,32]{1,0}, f64[2048]{0}, f64[]) while(while.144), condition=region_28.48, body=region_15.47
+  while.146 = s64[] get-tuple-element(while.145), index=0
+  gt.7 = pred[] compare(jit__where_.13, constant.333), direction=GT
+  convert_element_type.48 = s32[] convert(gt.7)
+  gt.6 = pred[] compare(jit__where_.13, constant.333), direction=GT
+  convert_element_type.46 = s32[] convert(gt.6)
+  while.158 = f64[32]{0} get-tuple-element(while.145), index=12
+  while.159 = f64[32]{0} get-tuple-element(while.145), index=13
+  while.160 = f64[] get-tuple-element(while.145), index=14
+  while.161 = f64[32]{0} get-tuple-element(while.145), index=15
+  while.154 = f64[32]{0} get-tuple-element(while.145), index=8
+  while.155 = f64[32]{0} get-tuple-element(while.145), index=9
+  while.156 = f64[] get-tuple-element(while.145), index=10
+  while.157 = f64[32]{0} get-tuple-element(while.145), index=11
+  cond.132 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/f64[32]{0}, f64[], f64[32]{0}) tuple(while.158, while.159, while.160, while.161, while.154, while.155, while.156, while.157)
+  cond.133 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/f64[32]{0}, f64[], f64[32]{0}) tuple(while.154, while.155, while.156, while.157, while.158, while.159, while.160, while.161)
+  cond.134 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/f64[32]{0}, f64[], f64[32]{0}) conditional(convert_element_type.46, cond.132, cond.133), branch_computations={region_29.49, region_30.50}
+  cond.135 = f64[32]{0} get-tuple-element(cond.134), index=0
+  cond.136 = f64[32]{0} get-tuple-element(cond.134), index=1
+  cond.137 = f64[] get-tuple-element(cond.134), index=2
+  cond.138 = f64[32]{0} get-tuple-element(cond.134), index=3
+  cond.139 = f64[32]{0} get-tuple-element(cond.134), index=4
+  cond.140 = f64[32]{0} get-tuple-element(cond.134), index=5
+  cond.141 = f64[] get-tuple-element(cond.134), index=6
+  cond.142 = f64[32]{0} get-tuple-element(cond.134), index=7
+  while.162 = f64[32]{0} get-tuple-element(while.145), index=16
+  while.163 = s64[] get-tuple-element(while.145), index=17
+  get-tuple-element.664 = f64[32]{0} get-tuple-element(arg_tuple.61), index=16
+  get-tuple-element.665 = s64[] get-tuple-element(arg_tuple.61), index=17
+  cond.153 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, s64[], /*index=10*/f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=15*/f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, s64[]) tuple(cond.135, cond.136, cond.137, cond.138, cond.139, cond.140, cond.141, cond.142, while.162, while.163, get-tuple-element.656, get-tuple-element.657, get-tuple-element.658, get-tuple-element.659, get-tuple-element.660, get-tuple-element.661, get-tuple-element.662, get-tuple-element.663, get-tuple-element.664, get-tuple-element.665)
+  cond.154 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, s64[], /*index=10*/f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=15*/f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, s64[]) tuple(get-tuple-element.656, get-tuple-element.657, get-tuple-element.658, get-tuple-element.659, get-tuple-element.660, get-tuple-element.661, get-tuple-element.662, get-tuple-element.663, get-tuple-element.664, get-tuple-element.665, cond.135, cond.136, cond.137, cond.138, cond.139, cond.140, cond.141, cond.142, while.162, while.163)
+  cond.155 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=5*/f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, s64[], /*index=10*/f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, /*index=15*/f64[32]{0}, f64[], f64[32]{0}, f64[32]{0}, s64[]) conditional(convert_element_type.48, cond.153, cond.154), branch_computations={region_35.56, region_36.57}
+  cond.160 = f64[32]{0} get-tuple-element(cond.155), index=4
+  cond.161 = f64[32]{0} get-tuple-element(cond.155), index=5
+  cond.162 = f64[] get-tuple-element(cond.155), index=6
+  cond.163 = f64[32]{0} get-tuple-element(cond.155), index=7
+  cond.166 = f64[32]{0} get-tuple-element(cond.155), index=10
+  cond.167 = f64[32]{0} get-tuple-element(cond.155), index=11
+  cond.168 = f64[] get-tuple-element(cond.155), index=12
+  cond.169 = f64[32]{0} get-tuple-element(cond.155), index=13
+  add.239 = s64[] add(get-tuple-element.648, constant.335)
+  while.168 = pred[] get-tuple-element(while.145), index=22
+  while.169 = pred[] get-tuple-element(while.145), index=23
+  or.55 = pred[] or(while.168, while.169)
+  convert_element_type.47 = s32[] convert(or.55)
+  while.152 = f64[] get-tuple-element(while.145), index=6
+  get-tuple-element.654 = f64[] get-tuple-element(arg_tuple.61), index=6
+  unstack.134 = u32[1,2]{1,0} slice(jit__threefry_split_.2), slice={[2:3], [0:2]}
+  unstack.135 = u32[2]{0} reshape(unstack.134)
+  get-tuple-element.655 = f64[] get-tuple-element(arg_tuple.61), index=7
+  while.153 = f64[] get-tuple-element(while.145), index=7
+  get-tuple-element.649 = f64[32]{0} get-tuple-element(arg_tuple.61), index=1
+  get-tuple-element.650 = f64[32]{0} get-tuple-element(arg_tuple.61), index=2
+  get-tuple-element.651 = f64[] get-tuple-element(arg_tuple.61), index=3
+  get-tuple-element.652 = f64[32]{0} get-tuple-element(arg_tuple.61), index=4
+  get-tuple-element.653 = f64[] get-tuple-element(arg_tuple.61), index=5
+  while.147 = f64[32]{0} get-tuple-element(while.145), index=1
+  while.148 = f64[32]{0} get-tuple-element(while.145), index=2
+  while.149 = f64[] get-tuple-element(while.145), index=3
+  while.150 = f64[32]{0} get-tuple-element(while.145), index=4
+  while.151 = f64[] get-tuple-element(while.145), index=5
+  cond.143 = (f64[], f64[], u32[2]{0}, f64[], f64[], /*index=5*/f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[], /*index=10*/f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[]) tuple(while.152, get-tuple-element.654, unstack.135, get-tuple-element.655, while.153, get-tuple-element.649, get-tuple-element.650, get-tuple-element.651, get-tuple-element.652, get-tuple-element.653, while.147, while.148, while.149, while.150, while.151)
+  cond.144 = (f64[], f64[], f64[32]{0}, f64[32]{0}, f64[], /*index=5*/f64[32]{0}, f64[], f64[]) tuple(get-tuple-element.655, while.153, get-tuple-element.649, get-tuple-element.650, get-tuple-element.651, get-tuple-element.652, get-tuple-element.653, get-tuple-element.654)
+  cond.145 = (f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, f64[], /*index=5*/f64[], f64[]) conditional(convert_element_type.47, cond.143, cond.144), branch_computations={region_31.54, region_34.55}
+  cond.146 = f64[32]{0} get-tuple-element(cond.145), index=0
+  cond.147 = f64[32]{0} get-tuple-element(cond.145), index=1
+  cond.148 = f64[] get-tuple-element(cond.145), index=2
+  cond.149 = f64[32]{0} get-tuple-element(cond.145), index=3
+  cond.150 = f64[] get-tuple-element(cond.145), index=4
+  cond.151 = f64[] get-tuple-element(cond.145), index=5
+  cond.152 = f64[] get-tuple-element(cond.145), index=6
+  cond.156 = f64[32]{0} get-tuple-element(cond.155), index=0
+  cond.157 = f64[32]{0} get-tuple-element(cond.155), index=1
+  cond.158 = f64[] get-tuple-element(cond.155), index=2
+  cond.159 = f64[32]{0} get-tuple-element(cond.155), index=3
+  cond.170 = f64[32]{0} get-tuple-element(cond.155), index=14
+  cond.171 = f64[32]{0} get-tuple-element(cond.155), index=15
+  cond.172 = f64[] get-tuple-element(cond.155), index=16
+  cond.173 = f64[32]{0} get-tuple-element(cond.155), index=17
+  cond.164 = f64[32]{0} get-tuple-element(cond.155), index=8
+  cond.174 = f64[32]{0} get-tuple-element(cond.155), index=18
+  add.236 = f64[32]{0} add(cond.164, cond.174)
+  cond.165 = s64[] get-tuple-element(cond.155), index=9
+  cond.175 = s64[] get-tuple-element(cond.155), index=19
+  add.237 = s64[] add(cond.165, cond.175)
+  while.164 = f64[6,32]{1,0} get-tuple-element(while.145), index=18
+  while.165 = f64[6,32]{1,0} get-tuple-element(while.145), index=19
+  while.166 = s32[] get-tuple-element(while.145), index=20
+  while.167 = s32[] get-tuple-element(while.145), index=21
+  add.238 = f64[32]{0} add(cond.171, cond.157)
+  constant.323 = f64[] constant(2)
+  broadcast.25 = f64[32]{0} broadcast(constant.323), dimensions={}
+  div.5 = f64[32]{0} divide(add.238, broadcast.25)
+  sub.91 = f64[32]{0} subtract(add.236, div.5)
+  dot_general.21 = f64[] dot(cond.157, sub.91), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  le.6 = pred[] compare(dot_general.21, constant.324), direction=LE
+  dot_general.22 = f64[] dot(cond.171, sub.91), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  le.7 = pred[] compare(dot_general.22, constant.324), direction=LE
+  or.56 = pred[] or(le.6, le.7)
+  or.57 = pred[] or(while.169, or.56)
+  ROOT tuple.57 = (s64[], f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, /*index=5*/f64[], f64[], f64[], f64[32]{0}, f64[32]{0}, /*index=10*/f64[], f64[32]{0}, f64[32]{0}, f64[32]{0}, f64[], /*index=15*/f64[32]{0}, f64[32]{0}, s64[], f64[6,32]{1,0}, f64[6,32]{1,0}, /*index=20*/s32[], s32[], pred[], pred[], u32[2]{0}, /*index=25*/f64[], f64[2048,32]{1,0}, f64[2048]{0}) tuple(add.239, cond.146, cond.147, cond.148, cond.149, cond.150, cond.151, cond.152, cond.156, cond.157, cond.158, cond.159, cond.170, cond.171, cond.172, cond.173, add.236, add.237, while.164, while.165, while.166, while.167, while.168, or.57, get-tuple-element.672, get-tuple-element.673, get-tuple-element.674, get-tuple-element.675)
+}
+
+region_37.59 {
+  arg_tuple.63 = (s64[], f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, /*index=5*/f64[], f64[], f64[], f64[32]{0}, f64[32]{0}, /*index=10*/f64[], f64[32]{0}, f64[32]{0}, f64[32]{0}, f64[], /*index=15*/f64[32]{0}, f64[32]{0}, s64[], f64[6,32]{1,0}, f64[6,32]{1,0}, /*index=20*/s32[], s32[], pred[], pred[], u32[2]{0}, /*index=25*/f64[], f64[2048,32]{1,0}, f64[2048]{0}) parameter(0)
+  get-tuple-element.705 = f64[32]{0} get-tuple-element(arg_tuple.63), index=1
+  get-tuple-element.706 = f64[32]{0} get-tuple-element(arg_tuple.63), index=2
+  get-tuple-element.707 = f64[] get-tuple-element(arg_tuple.63), index=3
+  get-tuple-element.708 = f64[32]{0} get-tuple-element(arg_tuple.63), index=4
+  get-tuple-element.709 = f64[] get-tuple-element(arg_tuple.63), index=5
+  get-tuple-element.710 = f64[] get-tuple-element(arg_tuple.63), index=6
+  get-tuple-element.711 = f64[] get-tuple-element(arg_tuple.63), index=7
+  get-tuple-element.712 = f64[32]{0} get-tuple-element(arg_tuple.63), index=8
+  get-tuple-element.713 = f64[32]{0} get-tuple-element(arg_tuple.63), index=9
+  get-tuple-element.714 = f64[] get-tuple-element(arg_tuple.63), index=10
+  get-tuple-element.715 = f64[32]{0} get-tuple-element(arg_tuple.63), index=11
+  get-tuple-element.716 = f64[32]{0} get-tuple-element(arg_tuple.63), index=12
+  get-tuple-element.717 = f64[32]{0} get-tuple-element(arg_tuple.63), index=13
+  get-tuple-element.718 = f64[] get-tuple-element(arg_tuple.63), index=14
+  get-tuple-element.719 = f64[32]{0} get-tuple-element(arg_tuple.63), index=15
+  get-tuple-element.720 = f64[32]{0} get-tuple-element(arg_tuple.63), index=16
+  get-tuple-element.721 = s64[] get-tuple-element(arg_tuple.63), index=17
+  get-tuple-element.722 = f64[6,32]{1,0} get-tuple-element(arg_tuple.63), index=18
+  get-tuple-element.723 = f64[6,32]{1,0} get-tuple-element(arg_tuple.63), index=19
+  get-tuple-element.724 = s32[] get-tuple-element(arg_tuple.63), index=20
+  get-tuple-element.725 = s32[] get-tuple-element(arg_tuple.63), index=21
+  get-tuple-element.728 = u32[2]{0} get-tuple-element(arg_tuple.63), index=24
+  get-tuple-element.729 = f64[] get-tuple-element(arg_tuple.63), index=25
+  get-tuple-element.730 = f64[2048,32]{1,0} get-tuple-element(arg_tuple.63), index=26
+  get-tuple-element.731 = f64[2048]{0} get-tuple-element(arg_tuple.63), index=27
+  get-tuple-element.704 = s64[] get-tuple-element(arg_tuple.63), index=0
+  constant.338 = s64[] constant(6)
+  lt.29 = pred[] compare(get-tuple-element.704, constant.338), direction=LT
+  get-tuple-element.726 = pred[] get-tuple-element(arg_tuple.63), index=22
+  not.10 = pred[] not(get-tuple-element.726)
+  and.24 = pred[] and(lt.29, not.10)
+  get-tuple-element.727 = pred[] get-tuple-element(arg_tuple.63), index=23
+  not.11 = pred[] not(get-tuple-element.727)
+  ROOT and.25 = pred[] and(and.24, not.11)
+}
+
+ENTRY main.60 {
+  constant.349 = s64[] constant(0)
+  w0.1 = f64[32]{0} parameter(0)
+  constant.351 = s64[] constant(1)
+  constant.350 = s64[] constant(32)
+  shift_right_logical.91 = s64[] shift-right-logical(constant.351, constant.350)
+  convert_element_type.49 = u32[] convert(shift_right_logical.91)
+  broadcast_in_dim.17 = u32[1]{0} reshape(convert_element_type.49)
+  constant.340 = u32[1]{0} constant({1})
+  concatenate.3 = u32[2]{0} concatenate(broadcast_in_dim.17, constant.340), dimensions={0}
+  jit__threefry_split_.3 = u32[2,2]{1,0} call(concatenate.3), to_apply=_threefry_split.6
+  unstack.136 = u32[1,2]{1,0} slice(jit__threefry_split_.3), slice={[0:1], [0:2]}
+  unstack.137 = u32[2]{0} reshape(unstack.136)
+  jit__normal_.1 = f64[32]{0} call(unstack.137), to_apply=_normal.12
+  y.1 = f64[2048]{0} parameter(2)
+  X.1 = f64[2048,32]{1,0} parameter(1)
+  dot_general.23 = f64[2048]{0} dot(X.1, w0.1), lhs_contracting_dims={1}, rhs_contracting_dims={0}
+  mul.58 = f64[2048]{0} multiply(y.1, dot_general.23)
+  constant.345 = f64[] constant(0)
+  broadcast.31 = f64[2048]{0} broadcast(constant.345), dimensions={}
+  sub.92 = f64[2048]{0} subtract(broadcast.31, dot_general.23)
+  ne.23 = pred[2048]{0} compare(sub.92, sub.92), direction=NE
+  max.23 = f64[2048]{0} maximum(dot_general.23, broadcast.31)
+  abs.15 = f64[2048]{0} abs(sub.92)
+  neg.25 = f64[2048]{0} negate(abs.15)
+  exp.20 = f64[2048]{0} exponential(neg.25)
+  log1p.13 = f64[2048]{0} log-plus-one(exp.20)
+  add.240 = f64[2048]{0} add(max.23, log1p.13)
+  select_n.41 = f64[2048]{0} select(ne.23, dot_general.23, add.240)
+  sub.94 = f64[2048]{0} subtract(mul.58, select_n.41)
+  constant.353 = f64[] constant(0)
+  reduce_sum.30 = f64[] reduce(sub.94, constant.353), dimensions={0}, to_apply=region_0.1
+  integer_pow.3 = f64[32]{0} multiply(w0.1, w0.1)
+  reduce_sum.31 = f64[] reduce(integer_pow.3, constant.353), dimensions={0}, to_apply=region_1.2
+  constant.352 = f64[] constant(0.5)
+  mul.60 = f64[] multiply(reduce_sum.31, constant.352)
+  sub.95 = f64[] subtract(reduce_sum.30, mul.60)
+  constant.343 = f64[] constant(2)
+  broadcast.29 = f64[32]{0} broadcast(constant.343), dimensions={}
+  mul.59 = f64[32]{0} multiply(w0.1, broadcast.29)
+  constant.342 = f64[] constant(-0.5)
+  broadcast.28 = f64[32]{0} broadcast(constant.342), dimensions={}
+  broadcast_in_dim.16 = f64[32]{0} multiply(mul.59, broadcast.28)
+  constant.344 = f64[] constant(inf)
+  broadcast.30 = f64[2048]{0} broadcast(constant.344), dimensions={}
+  eq.12 = pred[2048]{0} compare(dot_general.23, broadcast.30), direction=EQ
+  select_n.42 = f64[2048]{0} select(eq.12, broadcast.31, dot_general.23)
+  eq.13 = pred[2048]{0} compare(select_n.41, broadcast.30), direction=EQ
+  select_n.43 = f64[2048]{0} select(eq.13, broadcast.31, select_n.41)
+  sub.93 = f64[2048]{0} subtract(select_n.42, select_n.43)
+  exp.21 = f64[2048]{0} exponential(sub.93)
+  constant.341 = f64[] constant(-1)
+  broadcast.27 = f64[2048]{0} broadcast(constant.341), dimensions={}
+  neg.26 = f64[2048]{0} multiply(exp.21, broadcast.27)
+  add_any.8 = f64[2048]{0} add(neg.26, y.1)
+  dot_general.24 = f64[32]{0} dot(add_any.8, X.1), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  add_any.9 = f64[32]{0} add(broadcast_in_dim.16, dot_general.24)
+  neg.27 = f64[] negate(sub.95)
+  dot_general.25 = f64[] dot(jit__normal_.1, jit__normal_.1), lhs_contracting_dims={0}, rhs_contracting_dims={0}
+  mul.61 = f64[] multiply(dot_general.25, constant.352)
+  add.241 = f64[] add(neg.27, mul.61)
+  constant.348 = f64[] constant(-inf)
+  constant.339 = f64[] constant(0)
+  broadcast.26 = f64[6,32]{1,0} broadcast(constant.339), dimensions={}
+  constant.347 = s32[] constant(0)
+  constant.346 = pred[] constant(false)
+  unstack.138 = u32[1,2]{1,0} slice(jit__threefry_split_.3), slice={[1:2], [0:2]}
+  unstack.139 = u32[2]{0} reshape(unstack.138)
+  while.196 = (s64[], f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, /*index=5*/f64[], f64[], f64[], f64[32]{0}, f64[32]{0}, /*index=10*/f64[], f64[32]{0}, f64[32]{0}, f64[32]{0}, f64[], /*index=15*/f64[32]{0}, f64[32]{0}, s64[], f64[6,32]{1,0}, f64[6,32]{1,0}, /*index=20*/s32[], s32[], pred[], pred[], u32[2]{0}, /*index=25*/f64[], f64[2048,32]{1,0}, f64[2048]{0}) tuple(constant.349, w0.1, jit__normal_.1, sub.95, add_any.9, add.241, constant.353, constant.348, w0.1, jit__normal_.1, sub.95, add_any.9, w0.1, jit__normal_.1, sub.95, add_any.9, jit__normal_.1, constant.349, broadcast.26, broadcast.26, constant.347, constant.347, constant.346, constant.346, unstack.139, add.241, X.1, y.1)
+  while.197 = (s64[], f64[32]{0}, f64[32]{0}, f64[], f64[32]{0}, /*index=5*/f64[], f64[], f64[], f64[32]{0}, f64[32]{0}, /*index=10*/f64[], f64[32]{0}, f64[32]{0}, f64[32]{0}, f64[], /*index=15*/f64[32]{0}, f64[32]{0}, s64[], f64[6,32]{1,0}, f64[6,32]{1,0}, /*index=20*/s32[], s32[], pred[], pred[], u32[2]{0}, /*index=25*/f64[], f64[2048,32]{1,0}, f64[2048]{0}) while(while.196), condition=region_37.59, body=region_6.58
+  while.198 = s64[] get-tuple-element(while.197), index=0
+  while.200 = f64[32]{0} get-tuple-element(while.197), index=2
+  while.201 = f64[] get-tuple-element(while.197), index=3
+  while.202 = f64[32]{0} get-tuple-element(while.197), index=4
+  while.203 = f64[] get-tuple-element(while.197), index=5
+  while.204 = f64[] get-tuple-element(while.197), index=6
+  while.205 = f64[] get-tuple-element(while.197), index=7
+  while.206 = f64[32]{0} get-tuple-element(while.197), index=8
+  while.207 = f64[32]{0} get-tuple-element(while.197), index=9
+  while.208 = f64[] get-tuple-element(while.197), index=10
+  while.209 = f64[32]{0} get-tuple-element(while.197), index=11
+  while.210 = f64[32]{0} get-tuple-element(while.197), index=12
+  while.211 = f64[32]{0} get-tuple-element(while.197), index=13
+  while.212 = f64[] get-tuple-element(while.197), index=14
+  while.213 = f64[32]{0} get-tuple-element(while.197), index=15
+  while.214 = f64[32]{0} get-tuple-element(while.197), index=16
+  while.216 = f64[6,32]{1,0} get-tuple-element(while.197), index=18
+  while.217 = f64[6,32]{1,0} get-tuple-element(while.197), index=19
+  while.218 = s32[] get-tuple-element(while.197), index=20
+  while.219 = s32[] get-tuple-element(while.197), index=21
+  while.220 = pred[] get-tuple-element(while.197), index=22
+  while.221 = pred[] get-tuple-element(while.197), index=23
+  while.199 = f64[32]{0} get-tuple-element(while.197), index=1
+  while.215 = s64[] get-tuple-element(while.197), index=17
+  ROOT tuple.59 = (f64[32]{0}, s64[]) tuple(while.199, while.215)
+}
+
